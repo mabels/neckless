@@ -1,42 +1,147 @@
 package pipeline
 
 import (
+	"encoding/json"
+	"errors"
 	"time"
+
+	"github.com/google/uuid"
 )
 
-// PipelineArgs Command Args
-// type  struct {
-// 	name string
-// 	// valid period.Period
-// }
+type MemberType string
 
-// // KeyPair is the pub and privkey container
-// // KeyPair is the pub and privkey container
-// type KeyPair struct {
-// 	Priv PublicKey
-// 	Publ PrivateKey
-// }
+const (
+	Device = MemberType("Device")
+	Person = MemberType("Person")
+)
 
-// func (*KeyPair) PublAsKey() []byte {
-// 	return []byte{}
-// }
+type MemberArg struct {
+	Id         string
+	Type       MemberType
+	Name       string
+	Device     string
+	ValidUntil *time.Time
+	Updated    *time.Time `json:"updated"`
+	Created    *time.Time `json:"created"`
+}
 
-// func (*KeyPair) PrivAsKey() []byte {
-// 	return []byte{}
-// }
-
-// Pipeline is The Created Entry for the PipeLine
-type Pipeline struct {
-	Id         string    `json:"id"`
-	Name       string    `json:"name"`
-	KeyPair    KeyType   `json:"keyPair"`
-	ValidUntil time.Time `json:"valid"`
+type Member struct {
+	Id         string
+	Type       MemberType
+	Name       string
+	Device     string
+	ValidUntil time.Time
 	Updated    time.Time `json:"updated"`
 	Created    time.Time `json:"created"`
 }
 
-// Key is curve25519 key.
-type Key [KeySize]byte
+type PrivateMemberArg struct {
+	Member     MemberArg
+	PrivateKey *PrivateKey
+}
+
+type PrivateMember struct {
+	Member
+	PrivateKey PrivateKey
+}
+
+type PublicMember struct {
+	Member
+	PublicKey PublicKey
+}
+
+func NewMember(m *MemberArg) (*Member, error) {
+	ret := Member{}
+	if len(m.Id) == 0 {
+		ret.Id = uuid.New().String()
+	} else {
+		ret.Id = m.Id
+	}
+
+	ret.Type = m.Type
+	if len(m.Name) == 0 {
+		return &ret, errors.New("Require name")
+	}
+	ret.Name = m.Name
+	if len(m.Device) != 0 {
+		ret.Device = m.Device
+	}
+	now := time.Now()
+	if m.ValidUntil != nil {
+		ret.ValidUntil = *m.ValidUntil
+	} else {
+		ret.ValidUntil = now.AddDate(5, 0, 0)
+	}
+	if m.Updated != nil {
+		ret.Updated = *m.Updated
+	} else {
+		ret.Updated = now
+	}
+	if m.Created != nil {
+		ret.Created = *m.Created
+	} else {
+		ret.Created = now
+	}
+	return &ret, nil
+}
+
+func MakePrivateMember(pm *PrivateMemberArg) (*PrivateMember, error) {
+	m, err := NewMember(&pm.Member)
+	if err != nil {
+		return nil, err
+	}
+	pk, err := NewPrivateKey(pm.PrivateKey)
+	if err != nil {
+		return nil, err
+	}
+	return &PrivateMember{
+		Member:     *m,
+		PrivateKey: *pk,
+	}, nil
+}
+
+func (pm *PrivateMember) Public() *PublicMember {
+	return &PublicMember{
+		Member:    pm.Member,
+		PublicKey: *pm.PrivateKey.Public(),
+	}
+}
+
+func MakePublicMember(pm *PublicMember) (*PublicMember, error) {
+	return &PublicMember{
+		Member:    pm.Member,
+		PublicKey: pm.PublicKey,
+	}, nil
+}
+
+type JsonPublicMember struct {
+	Member
+	PublicKey string
+}
+
+func (pm *PublicMember) AsJson() ([]byte, error) {
+	return json.Marshal(JsonPublicMember{
+		Member:    pm.Member,
+		PublicKey: pm.PublicKey.Marshal(),
+	})
+}
+
+type JsonPrivateMember struct {
+	Member
+	PrivateKey string
+}
+
+func (pm *PrivateMember) AsJson() ([]byte, error) {
+	return json.Marshal(JsonPrivateMember{
+		Member:     pm.Member,
+		PrivateKey: pm.PrivateKey.Marshal(),
+	})
+}
+
+func FromJson(str []byte) (*PrivateMember, *PublicMember, error) {
+	json.Unmarshal(str)
+	return nil, nil, nil
+}
 
 // // Create is used to Create a Pipeline
 // func Create(arg PipelineArgs) *Pipeline {
