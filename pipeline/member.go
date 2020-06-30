@@ -26,13 +26,13 @@ type MemberArg struct {
 }
 
 type Member struct {
-	Id         string
-	Type       MemberType
-	Name       string
-	Device     string
-	ValidUntil time.Time
-	Updated    time.Time `json:"updated"`
-	Created    time.Time `json:"created"`
+	Id         string     `json:"id"`
+	Type       MemberType `json:"type"`
+	Name       string     `json:"name"`
+	Device     string     `json:"device,omitempty"`
+	ValidUntil time.Time  `json:"validUntil"`
+	Updated    time.Time  `json:"updated"`
+	Created    time.Time  `json:"created"`
 }
 
 type PrivateMemberArg struct {
@@ -116,31 +116,79 @@ func MakePublicMember(pm *PublicMember) (*PublicMember, error) {
 
 type JsonPublicMember struct {
 	Member
-	PublicKey string
+	PublicKey string `json:"publicKey"`
 }
 
-func (pm *PublicMember) AsJson() ([]byte, error) {
-	return json.Marshal(JsonPublicMember{
+func (pm *PublicMember) AsJson() *JsonPublicMember {
+	return &JsonPublicMember{
 		Member:    pm.Member,
 		PublicKey: pm.PublicKey.Marshal(),
-	})
+	}
+}
+func (pm *JsonPublicMember) String() ([]byte, error) {
+	return json.Marshal(pm)
 }
 
 type JsonPrivateMember struct {
 	Member
-	PrivateKey string
+	PrivateKey string /* json:privatekey */
 }
 
-func (pm *PrivateMember) AsJson() ([]byte, error) {
-	return json.Marshal(JsonPrivateMember{
+func (pm *PrivateMember) AsJson() *JsonPrivateMember {
+	return &JsonPrivateMember{
 		Member:     pm.Member,
 		PrivateKey: pm.PrivateKey.Marshal(),
-	})
+	}
+}
+
+func (pm *JsonPrivateMember) String() ([]byte, error) {
+	return json.Marshal(pm)
+}
+
+type JsonPrivatePublicMember struct {
+	Member
+	PrivateKey *string
+	PublicKey  *string
 }
 
 func FromJson(str []byte) (*PrivateMember, *PublicMember, error) {
-	json.Unmarshal(str)
-	return nil, nil, nil
+	// pk := string("")
+	// pb := string("")
+	jppm := JsonPrivatePublicMember{
+		// PrivateKey: &pk,
+		// PublicKey:  &pb,
+	}
+	err := json.Unmarshal(str, &jppm)
+	if err != nil {
+		return nil, nil, err
+	}
+	if jppm.PrivateKey != nil {
+		pk, _, err := FromText(*jppm.PrivateKey)
+		if err != nil {
+			return nil, nil, err
+		}
+		if pk == nil {
+			return nil, nil, errors.New("we need a privatekey")
+		}
+		return &PrivateMember{
+			Member:     jppm.Member,
+			PrivateKey: *pk,
+		}, nil, nil
+	}
+	if jppm.PublicKey != nil {
+		_, pb, err := FromText(*jppm.PublicKey)
+		if err != nil {
+			return nil, nil, err
+		}
+		if pb == nil {
+			return nil, nil, errors.New("we need a publickey")
+		}
+		return nil, &PublicMember{
+			Member:    jppm.Member,
+			PublicKey: *pb,
+		}, nil
+	}
+	return nil, nil, errors.New("No Pub or Priv Key")
 }
 
 // // Create is used to Create a Pipeline

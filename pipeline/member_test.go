@@ -112,8 +112,15 @@ func TestPrivateMemberJson(t *testing.T) {
 			Device: "testDevice",
 		},
 	})
-	json, _ := pkm.AsJson()
-	t.Error(string(json))
+	json, _ := pkm.AsJson().String()
+	jpkm, _, err := FromJson(json)
+	if err != nil {
+		t.Error(err)
+	}
+	compareMember(&pkm.Member, &jpkm.Member, t)
+	if bytes.Compare(pkm.PrivateKey.Key.Raw[:], jpkm.PrivateKey.Key.Raw[:]) != 0 {
+		t.Error("keys not matching")
+	}
 }
 
 func TestPublicMemberJson(t *testing.T) {
@@ -124,6 +131,14 @@ func TestPublicMemberJson(t *testing.T) {
 			Device: "testDevice",
 		},
 	})
-	json, _ := pkm.Public().AsJson()
-	t.Error(string(json))
+	pubk := pkm.Public()
+	json, _ := pubk.AsJson().String()
+	_, jpkm, err := FromJson(json)
+	if err != nil {
+		t.Error(err)
+	}
+	compareMember(&pkm.Member, &jpkm.Member, t)
+	if bytes.Compare(pubk.PublicKey.Key.Raw[:], jpkm.PublicKey.Key.Raw[:]) != 0 {
+		t.Error("keys not matching")
+	}
 }
