@@ -1,11 +1,11 @@
-package pipeline
+package member
 
 import (
 	"encoding/json"
 	"errors"
 	"time"
 
-	"github.com/google/uuid"
+	"neckless.adviser.com/keys"
 )
 
 type MemberType string
@@ -25,8 +25,7 @@ type MemberArg struct {
 	Created    *time.Time `json:"created"`
 }
 
-type Member struct {
-	Id         string     `json:"id"`
+type MemberBase struct {
 	Type       MemberType `json:"type"`
 	Name       string     `json:"name"`
 	Device     string     `json:"device,omitempty"`
@@ -35,28 +34,39 @@ type Member struct {
 	Created    time.Time  `json:"created"`
 }
 
+type Member struct {
+	MemberBase
+	Id string
+}
+
+// type JsonMember struct {
+// 	MemberBase
+// 	Id string `json:"id"`
+// }
+
 type PrivateMemberArg struct {
 	Member     MemberArg
-	PrivateKey *PrivateKey
+	PrivateKey *keys.PrivateKey
 }
 
 type PrivateMember struct {
 	Member
-	PrivateKey PrivateKey
+	PrivateKey keys.PrivateKey
 }
 
 type PublicMember struct {
 	Member
-	PublicKey PublicKey
+	PublicKey keys.PublicKey
 }
 
 func NewMember(m *MemberArg) (*Member, error) {
 	ret := Member{}
-	if len(m.Id) == 0 {
-		ret.Id = uuid.New().String()
-	} else {
-		ret.Id = m.Id
-	}
+	ret.Id = m.Id
+	// if len(m.Id) == 0 {
+	// ret.Id = uuid.New().String()
+	// } else {
+	// ret.Id = m.Id
+	// }
 
 	ret.Type = m.Type
 	if len(m.Name) == 0 {
@@ -90,7 +100,7 @@ func MakePrivateMember(pm *PrivateMemberArg) (*PrivateMember, error) {
 	if err != nil {
 		return nil, err
 	}
-	pk, err := NewPrivateKey(pm.PrivateKey)
+	pk, err := keys.NewPrivateKey(pm.PrivateKey)
 	if err != nil {
 		return nil, err
 	}
@@ -119,12 +129,27 @@ type JsonPublicMember struct {
 	PublicKey string `json:"publicKey"`
 }
 
+// func (mb *Member) AsJson() *JsonMember {
+// 	return &JsonMember{
+// 		MemberBase: mb.MemberBase,
+// 		Id:         mb.Id.Id,
+// 	}
+// }
+
+// func (mb *JsonMember) AsMember() *Member {
+// 	return &Member{
+// 		MemberBase: mb.MemberBase,
+// 		Id: mb.I
+// 	}
+// }
+
 func (pm *PublicMember) AsJson() *JsonPublicMember {
 	return &JsonPublicMember{
 		Member:    pm.Member,
 		PublicKey: pm.PublicKey.Marshal(),
 	}
 }
+
 func (pm *JsonPublicMember) String() ([]byte, error) {
 	return json.Marshal(pm)
 }
@@ -145,6 +170,20 @@ func (pm *JsonPrivateMember) String() ([]byte, error) {
 	return json.Marshal(pm)
 }
 
+func (pm *JsonPrivateMember) AsPrivateMember() (*PrivateMember, error) {
+	pk, _, err := keys.FromText(pm.PrivateKey, pm.Id)
+	if err != nil {
+		return nil, err
+	}
+	if pk == nil {
+		return nil, errors.New("need to be an PK")
+	}
+	return &PrivateMember{
+		Member:     pm.Member,
+		PrivateKey: *pk,
+	}, nil
+}
+
 type JsonPrivatePublicMember struct {
 	Member
 	PrivateKey *string
@@ -163,7 +202,7 @@ func FromJson(str []byte) (*PrivateMember, *PublicMember, error) {
 		return nil, nil, err
 	}
 	if jppm.PrivateKey != nil {
-		pk, _, err := FromText(*jppm.PrivateKey)
+		pk, _, err := keys.FromText(*jppm.PrivateKey, jppm.Id)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -176,7 +215,7 @@ func FromJson(str []byte) (*PrivateMember, *PublicMember, error) {
 		}, nil, nil
 	}
 	if jppm.PublicKey != nil {
-		_, pb, err := FromText(*jppm.PublicKey)
+		_, pb, err := keys.FromText(*jppm.PublicKey, jppm.Id)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -203,7 +242,7 @@ func FromJson(str []byte) (*PrivateMember, *PublicMember, error) {
 // 		log.Fatal("can not marshal private to text")
 // 	}
 // 	pubKey := pk.Public()
-// 	pbTxt, err := pubKey.MarshalText()
+// 	pbTxt, err := pubbase.MarshalText()
 // 	if err != nil {
 // 		log.Fatal("can not marshal public to text")
 // 	}

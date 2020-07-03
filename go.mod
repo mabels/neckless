@@ -1,4 +1,4 @@
-module crazybee.adviser.com
+module neckless.adviser.com
 
 go 1.14
 

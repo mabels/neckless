@@ -1,8 +1,24 @@
-package pipeline
+package neckless
 
 import (
 	"time"
 )
+
+// // Export Key as PublicJWT respect Signing Key
+// // Create Neckless
+// neckless create [--file=neckless.private]
+// // Export Neckless Key
+// neckless export [--file=neckless.private]  --private
+// // Export Neckless Public
+// neckless export [--file=neckless.public]
+// // SetAddSecret to Neckless
+// neckless secret set [--file=neckless.public] --key= --value
+// // RemoveSecret to Neckless
+// neckless secret rm [--file=neckless.public] --key=
+// // ListSecret from Neckless with Key
+// neckless secret ls [--file=neckless.public]
+// // AddUser to Neckless
+// neckless user add [--file=neckless.public] --user=user.file --private=[id]
 
 // PipelineArgs Command Args
 // type  struct {

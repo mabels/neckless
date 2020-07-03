@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"crazybee.adviser.com/pipeline"
 	"github.com/google/uuid"
 	"github.com/peterbourgon/ff/v2/ffcli"
 )

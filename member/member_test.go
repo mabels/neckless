@@ -1,10 +1,12 @@
-package pipeline
+package member
 
 import (
 	"bytes"
 	"strings"
 	"testing"
 	"time"
+
+	"neckless.adviser.com/keys"
 )
 
 func TestMakePrivateMemberEmpty(t *testing.T) {
@@ -27,7 +29,7 @@ func TestMakePrivateMemberInitial(t *testing.T) {
 	if err != nil {
 		t.Error("there show no error")
 	}
-	if strings.Compare(string(pm.PrivateKey.Key.Style), string(Private)) != 0 {
+	if strings.Compare(string(pm.PrivateKey.Key.Style), string(keys.Private)) != 0 {
 		t.Error("there show no error")
 	}
 
@@ -96,7 +98,7 @@ func TestMakePublicFromPrivate(t *testing.T) {
 	})
 	pub := pkm.Public()
 	compareMember(&pkm.Member, &pub.Member, t)
-	if strings.Compare(string(pub.PublicKey.Key.Style), string(Public)) != 0 {
+	if strings.Compare(string(pub.PublicKey.Key.Style), string(keys.Public)) != 0 {
 		t.Error("not public")
 	}
 	if bytes.Compare(pub.PublicKey.Key.Raw[:], pkm.PrivateKey.Public().Key.Raw[:]) != 0 {
