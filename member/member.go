@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"neckless.adviser.com/keys"
+	"neckless.adviser.com/key"
 )
 
 type MemberType string
@@ -46,17 +46,17 @@ type Member struct {
 
 type PrivateMemberArg struct {
 	Member     MemberArg
-	PrivateKey *keys.PrivateKey
+	PrivateKey *key.PrivateKey
 }
 
 type PrivateMember struct {
 	Member
-	PrivateKey keys.PrivateKey
+	PrivateKey key.PrivateKey
 }
 
 type PublicMember struct {
 	Member
-	PublicKey keys.PublicKey
+	PublicKey key.PublicKey
 }
 
 func NewMember(m *MemberArg) (*Member, error) {
@@ -100,9 +100,14 @@ func MakePrivateMember(pm *PrivateMemberArg) (*PrivateMember, error) {
 	if err != nil {
 		return nil, err
 	}
-	pk, err := keys.NewPrivateKey(pm.PrivateKey)
+	pk, err := key.NewPrivateKey(pm.PrivateKey)
 	if err != nil {
 		return nil, err
+	}
+	if len(m.Id) > 0 {
+		pk.Key.Id = m.Id
+	} else {
+		m.Id = pk.Key.Id
 	}
 	return &PrivateMember{
 		Member:     *m,
@@ -171,7 +176,7 @@ func (pm *JsonPrivateMember) String() ([]byte, error) {
 }
 
 func (pm *JsonPrivateMember) AsPrivateMember() (*PrivateMember, error) {
-	pk, _, err := keys.FromText(pm.PrivateKey, pm.Id)
+	pk, _, err := key.FromText(pm.PrivateKey, pm.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +207,7 @@ func FromJson(str []byte) (*PrivateMember, *PublicMember, error) {
 		return nil, nil, err
 	}
 	if jppm.PrivateKey != nil {
-		pk, _, err := keys.FromText(*jppm.PrivateKey, jppm.Id)
+		pk, _, err := key.FromText(*jppm.PrivateKey, jppm.Id)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -215,7 +220,7 @@ func FromJson(str []byte) (*PrivateMember, *PublicMember, error) {
 		}, nil, nil
 	}
 	if jppm.PublicKey != nil {
-		_, pb, err := keys.FromText(*jppm.PublicKey, jppm.Id)
+		_, pb, err := key.FromText(*jppm.PublicKey, jppm.Id)
 		if err != nil {
 			return nil, nil, err
 		}

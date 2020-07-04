@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"neckless.adviser.com/keys"
+	"neckless.adviser.com/key"
 )
 
 func TestMakePrivateMemberEmpty(t *testing.T) {
@@ -29,7 +29,7 @@ func TestMakePrivateMemberInitial(t *testing.T) {
 	if err != nil {
 		t.Error("there show no error")
 	}
-	if strings.Compare(string(pm.PrivateKey.Key.Style), string(keys.Private)) != 0 {
+	if strings.Compare(string(pm.PrivateKey.Key.Style), string(key.Private)) != 0 {
 		t.Error("there show no error")
 	}
 
@@ -37,7 +37,7 @@ func TestMakePrivateMemberInitial(t *testing.T) {
 func compareMember(m1 *Member, m2 *Member, t *testing.T) {
 
 	if strings.Compare(m1.Id, m2.Id) != 0 {
-		t.Error("Id error")
+		t.Error("Id error", m1.Id, m2.Id)
 	}
 	if strings.Compare(string(m1.Type), string(m2.Type)) != 0 {
 		t.Error("Type error")
@@ -98,7 +98,7 @@ func TestMakePublicFromPrivate(t *testing.T) {
 	})
 	pub := pkm.Public()
 	compareMember(&pkm.Member, &pub.Member, t)
-	if strings.Compare(string(pub.PublicKey.Key.Style), string(keys.Public)) != 0 {
+	if strings.Compare(string(pub.PublicKey.Key.Style), string(key.Public)) != 0 {
 		t.Error("not public")
 	}
 	if bytes.Compare(pub.PublicKey.Key.Raw[:], pkm.PrivateKey.Public().Key.Raw[:]) != 0 {
@@ -115,6 +115,7 @@ func TestPrivateMemberJson(t *testing.T) {
 		},
 	})
 	json, _ := pkm.AsJson().String()
+	// fmt.Printf("TestPrivateMemberJson:%s\n", json)
 	jpkm, _, err := FromJson(json)
 	if err != nil {
 		t.Error(err)

@@ -7,7 +7,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"neckless.adviser.com/asymmetric"
-	"neckless.adviser.com/keys"
+	"neckless.adviser.com/key"
 	"neckless.adviser.com/symmetric"
 )
 
@@ -23,7 +23,7 @@ type ClosedPearlAttribute struct {
 type JWTokenPearlClaim string
 
 type CreatorOwners struct {
-	Creator keys.RawKey // public-key
+	Creator key.RawKey // public-key
 	Tokens  []JWTokenPearlClaim
 }
 
@@ -42,11 +42,11 @@ type JsonPearl struct {
 type CloseRequestPearl struct {
 	Type    string
 	Payload []byte
-	Signer  keys.PrivateKey
-	Owners  []keys.PublicKey
+	Signer  key.PrivateKey
+	Owners  []key.PublicKey
 }
 
-// func ownersToSeal(pks *map[string]keys.PublicKey) [][]byte {
+// func ownersToSeal(pks *map[string]key.PublicKey) [][]byte {
 // 	ret := make([][]byte, len(*pks))
 // 	for i := range *pks {
 // 		ret[i] = []byte(*pks[i].Marshal())
@@ -56,10 +56,10 @@ type CloseRequestPearl struct {
 
 type CloseContainer struct {
 	Checksum   []byte
-	PayloadKey *keys.RawKey
+	PayloadKey *key.RawKey
 }
 
-func createJWTPearlClaim(signer *keys.PrivateKey, pub *keys.PublicKey, cl *CloseContainer) (*JWTokenPearlClaim, error) {
+func createJWTPearlClaim(signer *key.PrivateKey, pub *key.PublicKey, cl *CloseContainer) (*JWTokenPearlClaim, error) {
 	privPubKey := asymmetric.CreateShared(&signer.Key.Raw, &pub.Key.Raw)
 	// fmt.Printf("Close:%x:%x=>%x\n", signer.Key.Raw, pub.Key.Raw, privPubKey)
 	sealedPwd, err := symmetric.Seal(&symmetric.SealRequest{
@@ -90,7 +90,7 @@ func createJWTPearlClaim(signer *keys.PrivateKey, pub *keys.PublicKey, cl *Close
 
 }
 
-func creatorOwners(pk *keys.PrivateKey, owners *[]keys.PublicKey, cl *CloseContainer) (*CreatorOwners, error) {
+func creatorOwners(pk *key.PrivateKey, owners *[]key.PublicKey, cl *CloseContainer) (*CreatorOwners, error) {
 	jwted := make([]JWTokenPearlClaim, len(*owners))
 	for i := range *owners {
 		jwt, err := createJWTPearlClaim(pk, &(*owners)[i], cl)
@@ -107,7 +107,7 @@ func creatorOwners(pk *keys.PrivateKey, owners *[]keys.PublicKey, cl *CloseConta
 
 // Close a pearl with the EncryptedPayload and Owners
 func Close(opa *CloseRequestPearl) (*Pearl, error) {
-	payloadKey, err := keys.CreateRandomKey()
+	payloadKey, err := key.CreateRandomKey()
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func Close(opa *CloseRequestPearl) (*Pearl, error) {
 	}, nil
 }
 
-func encryptPayloadKey(sk *keys.RawKey, csum []byte, b64 string) (*symmetric.OpenContainer, error) {
+func encryptPayloadKey(sk *key.RawKey, csum []byte, b64 string) (*symmetric.OpenContainer, error) {
 	encryptedPayloadKey, err := base64.StdEncoding.DecodeString(b64)
 	if err != nil {
 		return nil, err
@@ -150,7 +150,7 @@ type OpenPearl struct {
 	Claim   PearlClaim
 }
 
-func (pea *Pearl) findByKeyId(pk *keys.PrivateKey) (*keys.RawKey, *jwt.Token, *PearlClaim, bool) {
+func (pea *Pearl) findByKeyId(pk *key.PrivateKey) (*key.RawKey, *jwt.Token, *PearlClaim, bool) {
 	creatorPubKey := pea.Owners.Creator
 	for i := range pea.Owners.Tokens {
 		claims := PearlClaim{}
@@ -168,7 +168,7 @@ func (pea *Pearl) findByKeyId(pk *keys.PrivateKey) (*keys.RawKey, *jwt.Token, *P
 }
 
 // Close creates a pearl with the EncryptedPayload and Owners
-func Open(pk *keys.PrivateKey, pea *Pearl) (*OpenPearl, error) {
+func Open(pk *key.PrivateKey, pea *Pearl) (*OpenPearl, error) {
 	sharedKey, _, claim, ok := pea.findByKeyId(pk)
 	if !ok {
 		return nil, fmt.Errorf("id not found in owners:[%x]", pk.Key.Id)
@@ -181,7 +181,7 @@ func Open(pk *keys.PrivateKey, pea *Pearl) (*OpenPearl, error) {
 	if err != nil {
 		return nil, err
 	}
-	opc, err := symmetric.Open(keys.AsRawKey(payloadKey.Payload), &symmetric.SealedContainer{
+	opc, err := symmetric.Open(key.AsRawKey(payloadKey.Payload), &symmetric.SealedContainer{
 		Checksum: payloadChecksum,
 		Payload:  pea.Payload,
 	}, symmetric.Verify)
@@ -200,7 +200,7 @@ func Open(pk *keys.PrivateKey, pea *Pearl) (*OpenPearl, error) {
 	// if err != nil {
 	// 	return nil, err
 	// }
-	// _, pb, err := keys.FromText(claim.PublicKey)
+	// _, pb, err := key.FromText(claim.PublicKey)
 	// if err != nil {
 	// 	return nil, err
 	// }

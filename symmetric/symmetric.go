@@ -9,7 +9,7 @@ import (
 	"crypto/sha256"
 
 	"golang.org/x/crypto/chacha20poly1305"
-	"neckless.adviser.com/keys"
+	"neckless.adviser.com/key"
 )
 
 type KeyAndNonce struct {
@@ -50,8 +50,8 @@ type SealedContainer struct {
 }
 
 func keyFromSeed(seed [][]byte) ([]byte, []byte) {
-	randkey, _ := keys.CreateRandomKey()
-	randnonce, _ := keys.CreateRandomKey()
+	randkey, _ := key.CreateRandomKey()
+	randnonce, _ := key.CreateRandomKey()
 	key := sha256.Sum256(bytes.Join(append(seed, randkey[:]), []byte{}))
 	nonce := sha256.Sum256(bytes.Join(append(seed, randnonce[:]), []byte{}))
 	return key[:], nonce[:]
@@ -60,7 +60,7 @@ func keyFromSeed(seed [][]byte) ([]byte, []byte) {
 //	// key, nouce := keyFromSeed(seed)
 
 type SealRequest struct {
-	Key      keys.RawKey
+	Key      key.RawKey
 	Payload  []byte
 	Checksum []byte
 }
@@ -102,18 +102,18 @@ type OpenContainer struct {
 	Payload  []byte
 }
 
-func Verify(csum []byte, key *keys.RawKey, open *[]byte) bool {
+func Verify(csum []byte, key *key.RawKey, open *[]byte) bool {
 	data := append(*open, key[:]...)
 	// fmt.Printf("Verify:%x=>%x", csum, data)
 	tmp := sha256.Sum256(data)
 	return bytes.Equal(tmp[:], csum)
 }
 
-func SkipVerify(csum []byte, key *keys.RawKey, open *[]byte) bool {
+func SkipVerify(csum []byte, key *key.RawKey, open *[]byte) bool {
 	return true
 }
 
-func Open(key *keys.RawKey, sc *SealedContainer, verify func([]byte, *keys.RawKey, *[]byte) bool) (*OpenContainer, error) {
+func Open(key *key.RawKey, sc *SealedContainer, verify func([]byte, *key.RawKey, *[]byte) bool) (*OpenContainer, error) {
 	aead, err := chacha20poly1305.NewX(key[:])
 	if err != nil {
 		return nil, err
@@ -140,7 +140,7 @@ type Base64SealContainer struct {
 	Payload  string
 }
 
-func OpenBase64(key *keys.RawKey, pp *Base64SealContainer, verify func([]byte, *keys.RawKey, *[]byte) bool) (*OpenContainer, error) {
+func OpenBase64(key *key.RawKey, pp *Base64SealContainer, verify func([]byte, *key.RawKey, *[]byte) bool) (*OpenContainer, error) {
 	plain, err := base64.RawStdEncoding.DecodeString(pp.Payload)
 	if err != nil {
 		return nil, err

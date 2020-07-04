@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"neckless.adviser.com/keys"
+	"neckless.adviser.com/key"
 	"neckless.adviser.com/member"
 )
 
@@ -57,6 +57,7 @@ func TestCreate(t *testing.T) {
 func TestLs(t *testing.T) {
 	id := os.Process{}.Pid
 	fname := fmt.Sprintf("./test-%d/casket-test.%d.json", id, id)
+	os.RemoveAll(fname)
 	os.RemoveAll(path.Dir(fname))
 	_, t1, err := Create(CreateArg{
 		MemberArg: member.MemberArg{
@@ -85,7 +86,7 @@ func TestLs(t *testing.T) {
 		t.Error("no error expected", err)
 	}
 	if len(ks.Members) != 2 {
-		t.Error("len members not expected")
+		t.Error("len members not expected", len(ks.Members))
 	}
 	cnt := 0
 	for k := range ks.Members {
@@ -94,7 +95,7 @@ func TestLs(t *testing.T) {
 			strings.Compare(val.Name, t2.Name) == 0) {
 			t.Error("no right name", val.Name)
 		}
-		if strings.Compare(string(val.PrivateKey.Key.Style), string(keys.Private)) != 0 {
+		if strings.Compare(string(val.PrivateKey.Key.Style), string(key.Private)) != 0 {
 			t.Error("is not private Key")
 		}
 		if !(bytes.Compare(val.PrivateKey.Key.Raw[:], t1.PrivateKey.Key.Raw[:]) == 0 ||
@@ -104,15 +105,16 @@ func TestLs(t *testing.T) {
 		cnt++
 	}
 	if cnt != 2 {
-		t.Error("not cnt ok")
+		t.Error("not cnt ok:", cnt)
 	}
-	os.RemoveAll(fname)
-	os.RemoveAll(path.Dir(fname))
+	// os.RemoveAll(fname)
+	// os.RemoveAll(path.Dir(fname))
 }
 
 func TestRm(t *testing.T) {
 	id := os.Process{}.Pid
 	fname := fmt.Sprintf("./test-%d/casket-test.%d.json", id, id)
+	os.RemoveAll(fname)
 	os.RemoveAll(path.Dir(fname))
 	_, t1, err := Create(CreateArg{
 		MemberArg: member.MemberArg{
@@ -161,6 +163,6 @@ func TestRm(t *testing.T) {
 	if _, found := casket.Members[t2.Id]; !found {
 		t.Error("not found ")
 	}
-	os.RemoveAll(fname)
-	os.RemoveAll(path.Dir(fname))
+	// os.RemoveAll(fname)
+	// os.RemoveAll(path.Dir(fname))
 }

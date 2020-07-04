@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"neckless.adviser.com/keys"
+	"neckless.adviser.com/key"
 )
 
 type PublicMemberClaim struct {
@@ -12,7 +12,7 @@ type PublicMemberClaim struct {
 	jwt.StandardClaims
 }
 
-func MakePublicMemberJWT(signer *keys.PrivateKey, pm *PublicMember) (string, error) {
+func MakePublicMemberJWT(signer *key.PrivateKey, pm *PublicMember) (string, error) {
 	claims := &PublicMemberClaim{
 		JsonPublicMember: *pm.AsJson(),
 		StandardClaims: jwt.StandardClaims{
@@ -30,7 +30,7 @@ func MakePublicMemberJWT(signer *keys.PrivateKey, pm *PublicMember) (string, err
 	return tokenString, err
 }
 
-func VerifyJWT(pk *keys.PrivateKey, tknStr string) (*PublicMemberClaim, *jwt.Token, error) {
+func VerifyJWT(pk *key.PrivateKey, tknStr string) (*PublicMemberClaim, *jwt.Token, error) {
 	claims := PublicMemberClaim{}
 	token, err := jwt.ParseWithClaims(tknStr, &claims, func(token *jwt.Token) (interface{}, error) {
 		return pk.Key.Raw[:], nil

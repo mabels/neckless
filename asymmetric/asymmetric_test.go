@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"testing"
 
-	"neckless.adviser.com/keys"
+	"neckless.adviser.com/key"
 )
 
 func TestDeEnCryptPubKey(t *testing.T) {
-	alice, _ := keys.NewPrivateKey()
-	bob, _ := keys.NewPrivateKey()
+	alice, _ := key.NewPrivateKey()
+	bob, _ := key.NewPrivateKey()
 	buf := new(bytes.Buffer)
 	fmt.Fprint(buf, "Hello World")
 	aliceBob := CreateShared(&alice.Key.Raw, &bob.Public().Key.Raw)

@@ -65,8 +65,10 @@ func readcasket(fname string) (*Casket, error) {
 		if err != nil {
 			return nil, err
 		}
+		fmt.Printf("Ls:Key:%s\n", k)
 		members[k] = *pm
 	}
+	fmt.Printf("Ls:%d\n", len(members))
 	return &Casket{
 		CasketAttribute: jsonCasket.CasketAttribute,
 		Members:         members,

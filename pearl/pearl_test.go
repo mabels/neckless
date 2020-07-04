@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"neckless.adviser.com/keys"
+	"neckless.adviser.com/key"
 	"neckless.adviser.com/member"
 )
 
@@ -22,7 +22,7 @@ func TestPearl(t *testing.T) {
 			Name: "o2",
 		},
 	})
-	owners := []keys.PublicKey{}
+	owners := []key.PublicKey{}
 	owners = append(owners, o1.Public().PublicKey)
 	owners = append(owners, o2.Public().PublicKey)
 	// fmt.Printf("%x:%x\n", o1.Public().PublicKey.Key.Raw, o2.Public().PublicKey.Key.Raw)
