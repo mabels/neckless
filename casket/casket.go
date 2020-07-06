@@ -13,8 +13,8 @@ import (
 
 type CreateArg struct {
 	member.MemberArg
-	CasketDryRun bool    // if dryrun don't write
-	CasketFname  *string //
+	CasketDryRun *bool  // if dryrun don't write
+	CasketFname  string //
 }
 
 type CasketAttribute struct {
@@ -114,17 +114,17 @@ func Create(ca CreateArg) (*Casket, *member.PrivateMember, error) {
 		return nil, nil, err
 	}
 	var casket *Casket
-	if ca.CasketFname == nil {
+	if len(ca.CasketFname) == 0 {
 		casket, err = Ls()
 	} else {
-		casket, err = Ls(*ca.CasketFname)
+		casket, err = Ls(ca.CasketFname)
 	}
 	if err != nil {
 		return nil, nil, err
 	}
 	casket.Members[pk.Id] = *pk
 	casket.Updated = time.Now()
-	if !ca.CasketDryRun {
+	if ca.CasketDryRun != nil && !*ca.CasketDryRun {
 		err = writecasket(casket)
 		if err != nil {
 			return nil, nil, err

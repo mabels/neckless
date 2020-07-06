@@ -31,8 +31,10 @@ func TestPearl(t *testing.T) {
 	pearl, err := Close(&CloseRequestPearl{
 		Type:    "test",
 		Payload: []byte("Meno"),
-		Signer:  o1.PrivateKey,
-		Owners:  owners,
+		Owners: PearlOwner{
+			Signer: &o1.PrivateKey,
+			Owners: owners,
+		},
 	})
 	if err != nil {
 		t.Error("unexpected errro:", err)

@@ -2,7 +2,6 @@ package asymmetric
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 
 	"neckless.adviser.com/key"
@@ -11,8 +10,8 @@ import (
 func TestDeEnCryptPubKey(t *testing.T) {
 	alice, _ := key.NewPrivateKey()
 	bob, _ := key.NewPrivateKey()
-	buf := new(bytes.Buffer)
-	fmt.Fprint(buf, "Hello World")
+	// buf := new(bytes.Buffer)
+	// fmt.Fprint(buf, "Hello World")
 	aliceBob := CreateShared(&alice.Key.Raw, &bob.Public().Key.Raw)
 	bobAlice := CreateShared(&bob.Key.Raw, &alice.Public().Key.Raw)
 	// if bytes.Contains(crypt, buf.Bytes()) {

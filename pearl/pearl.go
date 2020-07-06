@@ -39,11 +39,15 @@ type JsonPearl struct {
 	// Owners  []JWTokenPearlClaim
 }
 
+type PearlOwner struct {
+	Signer *key.PrivateKey
+	Owners []key.PublicKey
+}
+
 type CloseRequestPearl struct {
 	Type    string
 	Payload []byte
-	Signer  key.PrivateKey
-	Owners  []key.PublicKey
+	Owners  PearlOwner
 }
 
 // func ownersToSeal(pks *map[string]key.PublicKey) [][]byte {
@@ -119,7 +123,7 @@ func Close(opa *CloseRequestPearl) (*Pearl, error) {
 	if err != nil {
 		return nil, err
 	}
-	co, err := creatorOwners(&opa.Signer, &opa.Owners, &CloseContainer{
+	co, err := creatorOwners(opa.Owners.Signer, &opa.Owners.Owners, &CloseContainer{
 		PayloadKey: payloadKey,
 		Checksum:   sealed.Checksum,
 	})
