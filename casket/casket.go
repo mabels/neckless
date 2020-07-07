@@ -13,8 +13,8 @@ import (
 
 type CreateArg struct {
 	member.MemberArg
-	CasketDryRun *bool  // if dryrun don't write
-	CasketFname  string //
+	DryRun bool    // if dryrun don't write
+	Fname  *string //
 }
 
 type CasketAttribute struct {
@@ -65,10 +65,10 @@ func readcasket(fname string) (*Casket, error) {
 		if err != nil {
 			return nil, err
 		}
-		fmt.Printf("Ls:Key:%s\n", k)
+		// fmt.Printf("Ls:Key:%s\n", k)
 		members[k] = *pm
 	}
-	fmt.Printf("Ls:%d\n", len(members))
+	// fmt.Printf("Ls:%d\n", len(members))
 	return &Casket{
 		CasketAttribute: jsonCasket.CasketAttribute,
 		Members:         members,
@@ -114,17 +114,17 @@ func Create(ca CreateArg) (*Casket, *member.PrivateMember, error) {
 		return nil, nil, err
 	}
 	var casket *Casket
-	if len(ca.CasketFname) == 0 {
+	if ca.Fname == nil || len(*ca.Fname) == 0 {
 		casket, err = Ls()
 	} else {
-		casket, err = Ls(ca.CasketFname)
+		casket, err = Ls(*ca.Fname)
 	}
 	if err != nil {
 		return nil, nil, err
 	}
 	casket.Members[pk.Id] = *pk
 	casket.Updated = time.Now()
-	if ca.CasketDryRun != nil && !*ca.CasketDryRun {
+	if !ca.DryRun {
 		err = writecasket(casket)
 		if err != nil {
 			return nil, nil, err

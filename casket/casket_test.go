@@ -21,7 +21,7 @@ func TestCreate(t *testing.T) {
 			Device: "TestDevice",
 			Type:   member.Person,
 		},
-		CasketDryRun: true,
+		DryRun: true,
 	})
 	if err != nil {
 		t.Error("no error expected", err)
@@ -65,7 +65,7 @@ func TestLs(t *testing.T) {
 			Device: "TestDevice",
 			Type:   member.Person,
 		},
-		CasketFname: &fname,
+		Fname: &fname,
 	})
 	if err != nil {
 		t.Error("create failed", err)
@@ -76,7 +76,7 @@ func TestLs(t *testing.T) {
 			Device: "TestDevice",
 			Type:   member.Person,
 		},
-		CasketFname: &fname,
+		Fname: &fname,
 	})
 	if err != nil {
 		t.Error("create failed", err)
@@ -122,7 +122,7 @@ func TestRm(t *testing.T) {
 			Device: "TestDevice",
 			Type:   member.Person,
 		},
-		CasketFname: &fname,
+		Fname: &fname,
 	})
 	if err != nil {
 		t.Error("create failed", err)
@@ -133,7 +133,7 @@ func TestRm(t *testing.T) {
 			Device: "TestDevice",
 			Type:   member.Person,
 		},
-		CasketFname: &fname,
+		Fname: &fname,
 	})
 	casket, _, err := Rm(RmArg{
 		Id:           t1.Id,

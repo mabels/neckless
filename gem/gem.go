@@ -1,0 +1,120 @@
+package gem
+
+import (
+	"encoding/json"
+	"strings"
+
+	"neckless.adviser.com/key"
+	"neckless.adviser.com/member"
+	"neckless.adviser.com/pearl"
+)
+
+type Gem struct {
+	PubKeys map[string]member.PublicMember
+}
+
+func Create(gems ...*member.PublicMember) *Gem {
+	gem := Gem{
+		PubKeys: map[string]member.PublicMember{},
+	}
+	return gem.Add(gems...)
+}
+
+func (gem *Gem) Add(gems ...*member.PublicMember) *Gem {
+	for i := range gems {
+		gem.PubKeys[gems[i].Id] = *gems[i]
+	}
+	return gem
+}
+
+func (gem *Gem) Rm(ids ...string) *Gem {
+	for i := range ids {
+		delete(gem.PubKeys, ids[i])
+	}
+	return gem
+}
+
+func (gem *Gem) Ls(ids ...string) []member.PublicMember {
+	mapIds := map[string]string{}
+	for i := range ids {
+		mapIds[ids[i]] = ids[i]
+	}
+	ret := []member.PublicMember{}
+	for i := range gem.PubKeys {
+		if len(mapIds) == 0 {
+			ret = append(ret, gem.PubKeys[i])
+		} else {
+			_, found := mapIds[gem.PubKeys[i].Id]
+			if found {
+				ret = append(ret, gem.PubKeys[i])
+			}
+		}
+	}
+	return ret
+}
+
+func (gem *Gem) LsByType(typ member.MemberType, ids ...string) []member.PublicMember {
+	m := gem.Ls(ids...)
+	out := []member.PublicMember{}
+	for i := range m {
+		if strings.Compare(string(typ), string(m[i].Type[:])) == 0 {
+			out = append(out, m[i])
+		}
+	}
+	return out
+}
+
+type JsonGem struct {
+	PubKeys []member.JsonPublicMember
+}
+
+func (kvp *Gem) AsJson() *JsonGem {
+	pubks := make([]member.JsonPublicMember, len(kvp.PubKeys))
+	idx := 0
+	for i := range kvp.PubKeys {
+		member := kvp.PubKeys[i]
+		pubks[idx] = *member.AsJson()
+		idx++
+	}
+	return &JsonGem{
+		PubKeys: pubks,
+	}
+}
+
+func (gem *Gem) ClosePearl(owners *pearl.PearlOwner) (*pearl.Pearl, error) {
+	jsonStr, err := json.Marshal(gem.AsJson())
+	if err != nil {
+		return nil, err
+	}
+	return pearl.Close(&pearl.CloseRequestPearl{
+		Type:    "Gem",
+		Payload: jsonStr,
+		Owners:  *owners,
+	})
+}
+
+func FromJson(jsStr []byte) (*Gem, error) {
+	jsGem := JsonGem{}
+	err := json.Unmarshal(jsStr, &jsGem)
+	if err != nil {
+		return nil, err
+	}
+	gem := Create()
+	// kvp.Tags = uniqStrings(kvp.Tags)
+	for i := range jsGem.PubKeys {
+		key, err := member.JsToPublicMember(&jsGem.PubKeys[i])
+		if err != nil {
+			return nil, err
+		}
+		gem.PubKeys[key.Id] = *key
+	}
+	return gem, nil
+}
+
+func OpenPearl(pk *key.PrivateKey, prl *pearl.Pearl) (*Gem, error) {
+	op, err := pearl.Open(pk, prl)
+	if err != nil {
+		return nil, err
+	}
+	return FromJson(op.Payload)
+}

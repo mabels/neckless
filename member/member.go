@@ -195,6 +195,34 @@ type JsonPrivatePublicMember struct {
 	PublicKey  *string
 }
 
+func JsToPublicMember(jspub *JsonPublicMember) (*PublicMember, error) {
+	_, pb, err := key.FromText(jspub.PublicKey, jspub.Id)
+	if err != nil {
+		return nil, err
+	}
+	if pb == nil {
+		return nil, errors.New("we need a publickey")
+	}
+	return &PublicMember{
+		Member:    jspub.Member,
+		PublicKey: *pb,
+	}, nil
+}
+
+func JsToPrivateMember(jspriv *JsonPrivateMember) (*PrivateMember, error) {
+	pk, _, err := key.FromText(jspriv.PrivateKey, jspriv.Id)
+	if err != nil {
+		return nil, err
+	}
+	if pk == nil {
+		return nil, errors.New("we need a privatekey")
+	}
+	return &PrivateMember{
+		Member:     jspriv.Member,
+		PrivateKey: *pk,
+	}, nil
+}
+
 func FromJson(str []byte) (*PrivateMember, *PublicMember, error) {
 	// pk := string("")
 	// pb := string("")
@@ -207,30 +235,24 @@ func FromJson(str []byte) (*PrivateMember, *PublicMember, error) {
 		return nil, nil, err
 	}
 	if jppm.PrivateKey != nil {
-		pk, _, err := key.FromText(*jppm.PrivateKey, jppm.Id)
+		privk, err := JsToPrivateMember(&JsonPrivateMember{
+			Member:     jppm.Member,
+			PrivateKey: *jppm.PrivateKey,
+		})
 		if err != nil {
 			return nil, nil, err
 		}
-		if pk == nil {
-			return nil, nil, errors.New("we need a privatekey")
-		}
-		return &PrivateMember{
-			Member:     jppm.Member,
-			PrivateKey: *pk,
-		}, nil, nil
+		return privk, nil, nil
 	}
 	if jppm.PublicKey != nil {
-		_, pb, err := key.FromText(*jppm.PublicKey, jppm.Id)
+		pubk, err := JsToPublicMember(&JsonPublicMember{
+			Member:    jppm.Member,
+			PublicKey: *jppm.PublicKey,
+		})
 		if err != nil {
 			return nil, nil, err
 		}
-		if pb == nil {
-			return nil, nil, errors.New("we need a publickey")
-		}
-		return nil, &PublicMember{
-			Member:    jppm.Member,
-			PublicKey: *pb,
-		}, nil
+		return nil, pubk, nil
 	}
 	return nil, nil, errors.New("No Pub or Priv Key")
 }
