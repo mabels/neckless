@@ -167,8 +167,8 @@ func (kvp *KVPearl) ClosePearl(owners *pearl.PearlOwner) (*pearl.Pearl, error) {
 	})
 }
 
-func OpenPearl(pk *key.PrivateKey, prl *pearl.Pearl) (*KVPearl, error) {
-	op, err := pearl.Open(pk, prl)
+func OpenPearl(pks []*key.PrivateKey, prl *pearl.Pearl) (*KVPearl, error) {
+	op, err := pearl.Open(pks, prl)
 	if err != nil {
 		return nil, err
 	}

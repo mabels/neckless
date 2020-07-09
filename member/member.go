@@ -36,7 +36,7 @@ type MemberBase struct {
 
 type Member struct {
 	MemberBase
-	Id string
+	Id string `json:"id"`
 }
 
 // type JsonMember struct {
@@ -130,6 +130,7 @@ func MakePublicMember(pm *PublicMember) (*PublicMember, error) {
 }
 
 type JsonPublicMember struct {
+	Clazz string `json:"clazz"`
 	Member
 	PublicKey string `json:"publicKey"`
 }
@@ -150,6 +151,7 @@ type JsonPublicMember struct {
 
 func (pm *PublicMember) AsJson() *JsonPublicMember {
 	return &JsonPublicMember{
+		Clazz:     "JsonPublicMember",
 		Member:    pm.Member,
 		PublicKey: pm.PublicKey.Marshal(),
 	}
@@ -160,12 +162,14 @@ func (pm *JsonPublicMember) String() ([]byte, error) {
 }
 
 type JsonPrivateMember struct {
+	Clazz string `json:"clazz"`
 	Member
-	PrivateKey string /* json:privatekey */
+	PrivateKey string `json:"privatekey"`
 }
 
 func (pm *PrivateMember) AsJson() *JsonPrivateMember {
 	return &JsonPrivateMember{
+		Clazz:      "JsonPrivateMember",
 		Member:     pm.Member,
 		PrivateKey: pm.PrivateKey.Marshal(),
 	}
@@ -189,10 +193,61 @@ func (pm *JsonPrivateMember) AsPrivateMember() (*PrivateMember, error) {
 	}, nil
 }
 
+func ToJsonPrivateMember(pkms ...*PrivateMember) []*JsonPrivateMember {
+	ret := make([]*JsonPrivateMember, len(pkms))
+	for i := range pkms {
+		ret[i] = pkms[i].AsJson()
+	}
+	return ret
+}
+
+func ToJsonPublicMember(pkms ...*PrivateMember) []*JsonPublicMember {
+	ret := make([]*JsonPublicMember, len(pkms))
+	for i := range pkms {
+		ret[i] = pkms[i].Public().AsJson()
+	}
+	return ret
+}
+
 type JsonPrivatePublicMember struct {
 	Member
 	PrivateKey *string
 	PublicKey  *string
+}
+
+func FilterById(pkms []*PrivateMember, ids ...string) []*PrivateMember {
+	ret := []*PrivateMember{}
+	mids := map[string](struct{}){}
+	for i := range ids {
+		mids[ids[i]] = struct{}{}
+	}
+	for i := range pkms {
+		pkm := pkms[i]
+		_, found := mids[pkm.Id]
+		if len(mids) == 0 || found {
+			ret = append(ret, pkm)
+		}
+	}
+	return ret
+}
+
+func FilterByType(pkms []*PrivateMember, typs ...MemberType) []*PrivateMember {
+	ret := []*PrivateMember{}
+	mtyps := map[MemberType](struct{}){}
+	for i := range typs {
+		mtyps[typs[i]] = struct{}{}
+	}
+	if len(typs) == 0 {
+		mtyps[Person] = struct{}{}
+	}
+	for i := range pkms {
+		pkm := pkms[i]
+		_, found := mtyps[pkm.Type]
+		if found {
+			ret = append(ret, pkm)
+		}
+	}
+	return ret
 }
 
 func JsToPublicMember(jspub *JsonPublicMember) (*PublicMember, error) {
@@ -255,6 +310,22 @@ func FromJson(str []byte) (*PrivateMember, *PublicMember, error) {
 		return nil, pubk, nil
 	}
 	return nil, nil, errors.New("No Pub or Priv Key")
+}
+
+func ToPrivateKeys(pkms []*PrivateMember) []*key.PrivateKey {
+	out := make([]*key.PrivateKey, len(pkms))
+	for i := range pkms {
+		out[i] = &pkms[i].PrivateKey
+	}
+	return out
+}
+
+func ToPublicKeys(pkms []*PublicMember) []*key.PublicKey {
+	out := make([]*key.PublicKey, len(pkms))
+	for i := range pkms {
+		out[i] = &pkms[i].PublicKey
+	}
+	return out
 }
 
 // // Create is used to Create a Pipeline

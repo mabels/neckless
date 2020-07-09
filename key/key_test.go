@@ -119,7 +119,7 @@ func TestFromPrivateSerialize(t *testing.T) {
 	inpk, _ := NewPrivateKey()
 	pk, pb, err := FromText(inpk.Marshal(), inpk.Public().Key.Id)
 	if err != nil {
-		t.Error("expecting error")
+		t.Error("expecting error", err)
 	}
 	if pb != nil {
 		t.Error("expecting error")

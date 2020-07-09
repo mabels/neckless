@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -176,28 +175,29 @@ func (k *PrivateKey) Public() *PublicKey {
 // MarshalText create a String of the Private Key
 func (k *PrivateKey) Marshal() string {
 	buf := new(bytes.Buffer)
-	fmt.Fprintf(buf, `privkey:%x`, k.Key.Raw)
+	fmt.Fprintf(buf, `privkey:%s`, k.Key.Raw.Marshal())
 	return buf.String()
 }
 
+func (k *RawKey) Marshal() string {
+	return base64.StdEncoding.EncodeToString(k[:])
+}
+
 func (k *PublicKey) Marshal() string {
-	buf := new(bytes.Buffer)
-	fmt.Fprintf(buf, `%x`, k.Key.Raw)
-	return buf.String()
+	return k.Key.Raw.Marshal()
 }
 
 func fromText(pkstr string) (*RawKey, error) {
 	ret := RawKey{}
-	if len(pkstr) < len(ret)*2 {
-		return &ret, errors.New("To Short")
+	dc, err := base64.StdEncoding.DecodeString(pkstr)
+	if err != nil {
+		return nil, err
 	}
-	for i := range ret[:] {
-		val, err := strconv.ParseUint(string(pkstr[(i*2):(i*2)+2]), 16, 8)
-		if err != nil {
-			return &ret, err
-		}
-		ret[i] = byte(val)
-
+	if len(dc) != len(RawKey{}) {
+		return nil, errors.New("this is not a rawkey")
+	}
+	for i := range dc {
+		ret[i] = dc[i]
 	}
 	return &ret, nil
 }

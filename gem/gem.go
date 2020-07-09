@@ -53,12 +53,12 @@ func (gem *Gem) Ls(ids ...string) []member.PublicMember {
 	return ret
 }
 
-func (gem *Gem) LsByType(typ member.MemberType, ids ...string) []member.PublicMember {
+func (gem *Gem) LsByType(typ member.MemberType, ids ...string) []*member.PublicMember {
 	m := gem.Ls(ids...)
-	out := []member.PublicMember{}
+	out := []*member.PublicMember{}
 	for i := range m {
 		if strings.Compare(string(typ), string(m[i].Type[:])) == 0 {
-			out = append(out, m[i])
+			out = append(out, &m[i])
 		}
 	}
 	return out
@@ -81,13 +81,23 @@ func (kvp *Gem) AsJson() *JsonGem {
 	}
 }
 
+func ToJsonGems(gs ...*Gem) []*JsonGem {
+	ret := make([]*JsonGem, len(gs))
+	for i := range gs {
+		ret[i] = gs[i].AsJson()
+	}
+	return ret
+}
+
+const Type = "Gem"
+
 func (gem *Gem) ClosePearl(owners *pearl.PearlOwner) (*pearl.Pearl, error) {
 	jsonStr, err := json.Marshal(gem.AsJson())
 	if err != nil {
 		return nil, err
 	}
 	return pearl.Close(&pearl.CloseRequestPearl{
-		Type:    "Gem",
+		Type:    Type,
 		Payload: jsonStr,
 		Owners:  *owners,
 	})
@@ -111,8 +121,8 @@ func FromJson(jsStr []byte) (*Gem, error) {
 	return gem, nil
 }
 
-func OpenPearl(pk *key.PrivateKey, prl *pearl.Pearl) (*Gem, error) {
-	op, err := pearl.Open(pk, prl)
+func OpenPearl(pks []*key.PrivateKey, prl *pearl.Pearl) (*Gem, error) {
+	op, err := pearl.Open(pks, prl)
 	if err != nil {
 		return nil, err
 	}

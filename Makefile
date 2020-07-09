@@ -7,5 +7,6 @@ test:
 	go test neckless.adviser.com/pearl
 	go test neckless.adviser.com/kvpearl
 	go test neckless.adviser.com/gem
+	go test neckless.adviser.com/neckless
 
 

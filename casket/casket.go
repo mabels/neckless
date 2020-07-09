@@ -25,7 +25,7 @@ type CasketAttribute struct {
 
 type Casket struct {
 	CasketAttribute
-	Members map[string]member.PrivateMember
+	Members map[string](*member.PrivateMember)
 }
 
 func getcasketFilename(fnames []string) (string, error) {
@@ -58,7 +58,7 @@ func readcasket(fname string) (*Casket, error) {
 	} else {
 		err = nil
 	}
-	members := map[string]member.PrivateMember{}
+	members := map[string]*member.PrivateMember{}
 	for k := range jsonCasket.Members {
 		jspm := jsonCasket.Members[k]
 		pm, err := jspm.AsPrivateMember()
@@ -66,7 +66,7 @@ func readcasket(fname string) (*Casket, error) {
 			return nil, err
 		}
 		// fmt.Printf("Ls:Key:%s\n", k)
-		members[k] = *pm
+		members[k] = pm
 	}
 	// fmt.Printf("Ls:%d\n", len(members))
 	return &Casket{
@@ -80,17 +80,20 @@ type JsonCasket struct {
 	CasketAttribute
 }
 
-func writecasket(casket *Casket) error {
+func (casket *Casket) AsJson() *JsonCasket {
 	jsonMembers := map[string]member.JsonPrivateMember{}
 	for i := range casket.Members {
 		val := casket.Members[i]
 		jsonMembers[i] = *val.AsJson()
 	}
-	jsCasket := JsonCasket{
+	return &JsonCasket{
 		CasketAttribute: casket.CasketAttribute,
 		Members:         jsonMembers,
 	}
-	jsstr, err := json.Marshal(jsCasket)
+}
+
+func writecasket(casket *Casket) error {
+	jsstr, err := json.MarshalIndent(casket.AsJson(), "", "  ")
 	if err != nil {
 		return err
 	}
@@ -122,7 +125,7 @@ func Create(ca CreateArg) (*Casket, *member.PrivateMember, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	casket.Members[pk.Id] = *pk
+	casket.Members[pk.Id] = pk
 	casket.Updated = time.Now()
 	if !ca.DryRun {
 		err = writecasket(casket)
@@ -143,33 +146,48 @@ func Ls(fnames ...string) (*Casket, error) {
 	return readcasket(fname)
 }
 
+func (c *Casket) AsPrivateMembers() []*member.PrivateMember {
+	ret := make([]*member.PrivateMember, len(c.Members))
+	idx := 0
+	for i := range c.Members {
+		ret[idx] = c.Members[i]
+		idx++
+	}
+	return ret
+}
+
 type RmArg struct {
-	Id           string
-	CasketDryRun bool    // if dryrun don't write
-	CasketFname  *string //
+	Ids    []string
+	DryRun bool    // if dryrun don't write
+	Fname  *string //
 }
 
 // UseCase Delete Key from casket
 // neckless casket rm <id>
-func Rm(rmarg RmArg) (*Casket, *member.PrivateMember, error) {
+func Rm(rmarg RmArg) (*Casket, []*member.PrivateMember, error) {
 	var ks *Casket
 	var err error
-	if rmarg.CasketFname != nil {
-		ks, err = Ls(*rmarg.CasketFname)
+	if rmarg.Fname != nil {
+		ks, err = Ls(*rmarg.Fname)
 	} else {
 		ks, err = Ls()
 	}
 	if err != nil {
 		return nil, nil, err
 	}
-	pk, ok := ks.Members[rmarg.Id]
-	if ok {
-		delete(ks.Members, rmarg.Id)
+	out := []*member.PrivateMember{}
+	for i := range rmarg.Ids {
+		id := rmarg.Ids[i]
+		pk, ok := ks.Members[id]
+		if ok {
+			delete(ks.Members, id)
+			out = append(out, pk)
+		}
 	}
-	if !rmarg.CasketDryRun {
+	if !rmarg.DryRun {
 		if err = writecasket(ks); err != nil {
 			return nil, nil, err
 		}
 	}
-	return ks, &pk, nil
+	return ks, out, nil
 }

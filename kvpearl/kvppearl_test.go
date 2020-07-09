@@ -185,12 +185,12 @@ func TestPearl(t *testing.T) {
 	pk := key.MakePrivateKey(rk)
 	prl, err := c.ClosePearl(&pearl.PearlOwner{
 		Signer: pk,
-		Owners: []key.PublicKey{*pk.Public()},
+		Owners: []*key.PublicKey{pk.Public()},
 	})
 	if err != nil {
 		t.Error("unexpeced error:", err)
 	}
-	kvp, err := OpenPearl(pk, prl)
+	kvp, err := OpenPearl([]*key.PrivateKey{pk}, prl)
 	if err != nil {
 		t.Error("unexpeced error:", err)
 	}

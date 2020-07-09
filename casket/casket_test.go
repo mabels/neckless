@@ -135,13 +135,16 @@ func TestRm(t *testing.T) {
 		},
 		Fname: &fname,
 	})
-	casket, _, err := Rm(RmArg{
-		Id:           t1.Id,
-		CasketFname:  &fname,
-		CasketDryRun: true,
+	casket, pks, err := Rm(RmArg{
+		Ids:    []string{t1.Id, "doof"},
+		Fname:  &fname,
+		DryRun: true,
 	})
 	if err != nil {
 		t.Error("expect no error", err)
+	}
+	if len(pks) != 1 {
+		t.Error("not expected pks")
 	}
 	if len(casket.Members) != 1 {
 		t.Error("not expect len")
@@ -150,8 +153,8 @@ func TestRm(t *testing.T) {
 		t.Error("not found ")
 	}
 	_, _, err = Rm(RmArg{
-		Id:          t1.Id,
-		CasketFname: &fname,
+		Ids:   []string{t1.Id, "bloed"},
+		Fname: &fname,
 	})
 	casket, err = Ls(fname)
 	if err != nil {
