@@ -2,6 +2,7 @@ package gem
 
 import (
 	"encoding/json"
+	"sort"
 	"strings"
 
 	"neckless.adviser.com/key"
@@ -10,19 +11,20 @@ import (
 )
 
 type Gem struct {
-	PubKeys map[string]member.PublicMember
+	PubKeys map[string]*member.PublicMember
+	Pearl   *pearl.OpenPearl
 }
 
 func Create(gems ...*member.PublicMember) *Gem {
 	gem := Gem{
-		PubKeys: map[string]member.PublicMember{},
+		PubKeys: map[string]*member.PublicMember{},
 	}
 	return gem.Add(gems...)
 }
 
 func (gem *Gem) Add(gems ...*member.PublicMember) *Gem {
 	for i := range gems {
-		gem.PubKeys[gems[i].Id] = *gems[i]
+		gem.PubKeys[gems[i].Id] = gems[i]
 	}
 	return gem
 }
@@ -34,12 +36,12 @@ func (gem *Gem) Rm(ids ...string) *Gem {
 	return gem
 }
 
-func (gem *Gem) Ls(ids ...string) []member.PublicMember {
+func (gem *Gem) Ls(ids ...string) []*member.PublicMember {
 	mapIds := map[string]string{}
 	for i := range ids {
 		mapIds[ids[i]] = ids[i]
 	}
-	ret := []member.PublicMember{}
+	ret := []*member.PublicMember{}
 	for i := range gem.PubKeys {
 		if len(mapIds) == 0 {
 			ret = append(ret, gem.PubKeys[i])
@@ -58,24 +60,28 @@ func (gem *Gem) LsByType(typ member.MemberType, ids ...string) []*member.PublicM
 	out := []*member.PublicMember{}
 	for i := range m {
 		if strings.Compare(string(typ), string(m[i].Type[:])) == 0 {
-			out = append(out, &m[i])
+			out = append(out, m[i])
 		}
 	}
 	return out
 }
 
 type JsonGem struct {
-	PubKeys []member.JsonPublicMember
+	PubKeys []*member.JsonPublicMember
 }
 
 func (kvp *Gem) AsJson() *JsonGem {
-	pubks := make([]member.JsonPublicMember, len(kvp.PubKeys))
+	pubks := make([]*member.JsonPublicMember, len(kvp.PubKeys))
 	idx := 0
 	for i := range kvp.PubKeys {
 		member := kvp.PubKeys[i]
-		pubks[idx] = *member.AsJson()
+		pubks[idx] = member.AsJson()
 		idx++
 	}
+	sort.Sort(&member.JsonPublicMemberSorter{
+		Values: pubks,
+		By:     member.JsonPublicMemberValueBy,
+	})
 	return &JsonGem{
 		PubKeys: pubks,
 	}
@@ -112,11 +118,11 @@ func FromJson(jsStr []byte) (*Gem, error) {
 	gem := Create()
 	// kvp.Tags = uniqStrings(kvp.Tags)
 	for i := range jsGem.PubKeys {
-		key, err := member.JsToPublicMember(&jsGem.PubKeys[i])
+		key, err := member.JsToPublicMember(jsGem.PubKeys[i])
 		if err != nil {
 			return nil, err
 		}
-		gem.PubKeys[key.Id] = *key
+		gem.PubKeys[key.Id] = key
 	}
 	return gem, nil
 }
@@ -126,5 +132,10 @@ func OpenPearl(pks []*key.PrivateKey, prl *pearl.Pearl) (*Gem, error) {
 	if err != nil {
 		return nil, err
 	}
-	return FromJson(op.Payload)
+	gem, err := FromJson(op.Payload)
+	if err != nil {
+		return nil, err
+	}
+	gem.Pearl = op
+	return gem, err
 }

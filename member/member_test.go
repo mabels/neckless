@@ -2,6 +2,7 @@ package member
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -143,5 +144,78 @@ func TestPublicMemberJson(t *testing.T) {
 	compareMember(&pkm.Member, &jpkm.Member, t)
 	if bytes.Compare(pubk.PublicKey.Key.Raw[:], jpkm.PublicKey.Key.Raw[:]) != 0 {
 		t.Error("keys not matching")
+	}
+}
+
+func TestFilterById(t *testing.T) {
+	lst := []*PrivateMember{}
+	for i := 0; i < 10; i++ {
+		person, _ := MakePrivateMember(&PrivateMemberArg{
+			Member: MemberArg{
+				Type: Person,
+				Name: fmt.Sprintf("testPerson%d", i),
+			},
+		})
+		lst = append(lst, person)
+		device, _ := MakePrivateMember(&PrivateMemberArg{
+			Member: MemberArg{
+				Type: Device,
+				Name: fmt.Sprintf("testDevice%d", i),
+			},
+		})
+		lst = append(lst, device)
+	}
+	if len(FilterById(lst)) != len(lst) {
+		t.Error("Filter by nothing")
+	}
+	if len(FilterById(lst, []string{}...)) != len(lst) {
+		t.Error("Filter by nothing")
+	}
+	if len(FilterById(lst)) != len(lst) {
+		t.Error("Filter by nothing")
+	}
+	if len(FilterById(lst, []string{"darf nix passieren"}...)) != 0 {
+		t.Error("Filter by nothing")
+	}
+	if len(FilterById(lst, lst[0].Id, lst[3].Id, "garnix")) != 2 {
+		t.Error("Filter by nothing")
+	}
+}
+func TestFilterByType(t *testing.T) {
+	lst := []*PrivateMember{}
+	for i := 0; i < 10; i++ {
+		person, _ := MakePrivateMember(&PrivateMemberArg{
+			Member: MemberArg{
+				Type: Person,
+				Name: fmt.Sprintf("testPerson%d", i),
+			},
+		})
+		lst = append(lst, person)
+		device, _ := MakePrivateMember(&PrivateMemberArg{
+			Member: MemberArg{
+				Type: Device,
+				Name: fmt.Sprintf("testDevice%d", i),
+			},
+		})
+		lst = append(lst, device)
+	}
+	if len(FilterByType(lst)) != len(lst) {
+		t.Error("Filter by nothing")
+	}
+	mtyps := make([]MemberType, 0)
+	if len(FilterByType(lst, mtyps...)) != len(lst) {
+		t.Error("Filter by nothing")
+	}
+	if len(FilterByType(lst, Person)) != len(lst)/2 {
+		t.Error("Filter by nothing")
+	}
+	if len(FilterByType(lst, Device)) != len(lst)/2 {
+		t.Error("Filter by nothing")
+	}
+	if len(FilterByType(lst, Device, Person)) != len(lst) {
+		t.Error("Filter by nothing")
+	}
+	if len(FilterByType(lst, Person, Device)) != len(lst) {
+		t.Error("Filter by nothing")
 	}
 }

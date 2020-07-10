@@ -3,19 +3,16 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 
 	"github.com/peterbourgon/ff/v2/ffcli"
-	"neckless.adviser.com/casket"
 	"neckless.adviser.com/gem"
 	"neckless.adviser.com/member"
-	"neckless.adviser.com/neckless"
+	"neckless.adviser.com/necklace"
 	"neckless.adviser.com/pearl"
 )
 
@@ -36,6 +33,11 @@ type GemAddArgs struct {
 	Device   *bool
 	Person   *bool
 	KeyValue *bool
+	ToKeyIds arrayFlags
+}
+type GemLsArgs struct {
+	Device *bool
+	Person *bool
 }
 
 type GemArgs struct {
@@ -43,9 +45,26 @@ type GemArgs struct {
 	CasketFname string
 	PrivKeyIds  arrayFlags
 	Add         GemAddArgs
+	Ls          GemLsArgs
 }
 
-func updateGem(myGem *gem.Gem, pkms []*member.PrivateMember, jpms []member.JsonPublicMember) (*pearl.Pearl, error) {
+func GetGems(pkms []*member.PrivateMember, nl *necklace.Necklace) ([]*gem.Gem, []error) {
+	closedGems := nl.FilterByType(gem.Type)
+	out := []*gem.Gem{}
+	errs := []error{}
+	for i := range closedGems {
+		tmp := closedGems[i]
+		openGem, err := gem.OpenPearl(member.ToPrivateKeys(pkms), tmp)
+		if err != nil {
+			errs = append(errs, err)
+		} else {
+			out = append(out, openGem)
+		}
+	}
+	return out, errs
+}
+
+func updateGem(myGem *gem.Gem, pkms []*member.PrivateMember, jpms []member.JsonPublicMember, toIds ...string) (*pearl.Pearl, error) {
 	// pms := make([]*member.PublicMember, len(jpms))
 	for i := range jpms {
 		pm, err := member.JsToPublicMember(&jpms[i])
@@ -58,9 +77,15 @@ func updateGem(myGem *gem.Gem, pkms []*member.PrivateMember, jpms []member.JsonP
 	for j := range pkms {
 		myGem.Add(pkms[j].Public())
 	}
+	var pms []*member.PublicMember
+	if len(toIds) > 0 {
+		pms = myGem.Ls(toIds...)
+	} else {
+		pms = myGem.LsByType(member.Person)
+	}
 	mo := pearl.PearlOwner{
 		Signer: &pkms[0].PrivateKey,
-		Owners: member.ToPublicKeys(myGem.LsByType(member.Person)),
+		Owners: member.ToPublicKeys(pms),
 	}
 	p, err := myGem.ClosePearl(&mo)
 	if err != nil {
@@ -69,12 +94,13 @@ func updateGem(myGem *gem.Gem, pkms []*member.PrivateMember, jpms []member.JsonP
 	return p, nil
 }
 
-func gemAddArgs(arg *GemArgs) *ffcli.Command {
+func gemAddArgs(arg *NecklessArgs) *ffcli.Command {
 	flags := flag.NewFlagSet("gem.add", flag.ExitOnError)
 	// homeDir := os.Getenv("HOME")
-	flags.StringVar(&arg.Add.PubFile, "pubFile", "stdin", "the pubMemberFile to add")
-	arg.Add.Person = flags.Bool("person", false, "select person keys")
-	arg.Add.Device = flags.Bool("device", false, "select device keys")
+	flags.StringVar(&arg.Gems.Add.PubFile, "pubFile", "stdin", "the pubMemberFile to add")
+	arg.Gems.Add.Person = flags.Bool("person", false, "select person keys")
+	arg.Gems.Add.Device = flags.Bool("device", false, "select device keys")
+	flags.Var(&arg.Gems.Add.ToKeyIds, "toKeyId", "the neckless file")
 
 	return &ffcli.Command{
 		Name:       "add",
@@ -87,77 +113,61 @@ func gemAddArgs(arg *GemArgs) *ffcli.Command {
 		FlagSet:     flags,
 		Subcommands: []*ffcli.Command{},
 		Exec: func(context.Context, []string) error {
-			casket, err := casket.Ls(arg.CasketFname)
+			pkms, err := GetPkms(GetPkmsArgs{
+				casketFname: arg.Gems.CasketFname,
+				privIds:     arg.Gems.PrivKeyIds,
+				person:      *arg.Gems.Add.Person,
+				device:      *arg.Gems.Add.Device})
 			if err != nil {
-				log.Fatal(err)
-				return nil
-			}
-			mtyps := []member.MemberType{}
-			if *arg.Add.Person {
-				mtyps = append(mtyps, member.Person)
-			}
-			if *arg.Add.Device {
-				mtyps = append(mtyps, member.Device)
-			}
-			if len(mtyps) == 0 {
-				mtyps = append(mtyps, member.Person)
-			}
-			pkms := member.FilterByType(member.FilterById(casket.AsPrivateMembers(), arg.PrivKeyIds...), mtyps...)
-			if len(pkms) == 0 {
-				log.Fatal(errors.New("you need a private key"))
+				return err
 			}
 			var jsStr []byte
-			if strings.Compare(arg.Add.PubFile, "stdin") == 0 {
+			if strings.Compare(arg.Gems.Add.PubFile, "stdin") == 0 {
 				jsStr, err = ioutil.ReadAll(os.Stdin)
 			} else {
-				jsStr, err = ioutil.ReadFile(arg.Add.PubFile)
+				jsStr, err = ioutil.ReadFile(arg.Gems.Add.PubFile)
 			}
 			if err != nil {
-				log.Fatal(err)
-				return nil
+				return err
 			}
+			// fmt.Fprintln(arg.Nio.err, "-1:", string(jsStr))
 			pubMembers := []member.JsonPublicMember{}
-			err = json.Unmarshal(jsStr, &pubMembers)
-			if err != nil {
-				log.Fatal(err)
-				return nil
+			if len(jsStr) != 0 {
+				err = json.Unmarshal(jsStr, &pubMembers)
+				if err != nil {
+					return err
+				}
 			}
-			nl := neckless.GetAndOpen(arg.Fname)
-			gems := nl.FilterByType(gem.Type)
+			// fmt.Fprintln(arg.Nio.err, "-2")
+			nl, _ := necklace.GetAndOpen(arg.Gems.Fname)
+			// fmt.Fprintln(arg.Nio.err, "-3")
+			gems, _ := GetGems(pkms, &nl)
 			for i := range gems {
-				tmp := gems[i]
-				myGem, err := gem.OpenPearl(member.ToPrivateKeys(pkms), tmp)
+				prl, err := updateGem(gems[i], pkms, pubMembers, arg.Gems.Add.ToKeyIds...)
 				if err != nil {
-					log.Fatal(err)
-					return nil
+					return err
 				}
-				prl, err := updateGem(myGem, pkms, pubMembers)
-				if err != nil {
-					log.Fatal(err)
-					return nil
-				}
-				nl.Reset(prl, gems[i].FingerPrint)
+				nl.Reset(prl, gems[i].Pearl.Closed.FingerPrint)
 			}
 			if len(gems) == 0 {
 				myGem := gem.Create()
 				prl, err := updateGem(myGem, pkms, pubMembers)
 				if err != nil {
-					log.Fatal(err)
-					return nil
+					return err
 				}
 				nl.Reset(prl)
 			}
-			nl.Save(arg.Fname)
+			nl.Save(arg.Gems.Fname)
 			jsStr, err = json.MarshalIndent(pubMembers, "", "  ")
-			fmt.Println(string(jsStr))
-			return nil
+			fmt.Fprintln(arg.Nio.out, string(jsStr))
+			return err
 		},
 	}
 }
-func gemRmArgs(arg *GemArgs) *ffcli.Command {
+func gemRmArgs(arg *NecklessArgs) *ffcli.Command {
 	flags := flag.NewFlagSet("gem.rm", flag.ExitOnError)
 	// homeDir := os.Getenv("HOME")
-	flags.StringVar(&arg.Fname, "file", ".neckless", "the neckless file")
+	flags.StringVar(&arg.Gems.Fname, "file", ".neckless", "the neckless file")
 
 	return &ffcli.Command{
 		Name:       "rm",
@@ -169,11 +179,39 @@ func gemRmArgs(arg *GemArgs) *ffcli.Command {
 	    `),
 		FlagSet:     flags,
 		Subcommands: []*ffcli.Command{},
+		Exec: func(_ context.Context, args []string) error {
+			pkms, err := GetPkms(GetPkmsArgs{
+				casketFname: arg.Gems.CasketFname,
+				privIds:     arg.Gems.PrivKeyIds})
+			nl, _ := necklace.GetAndOpen(arg.Gems.Fname)
+			gems, _ := GetGems(pkms, &nl)
+			// fmt.Fprintln(arg.Nio.err, pkms[0].Id)
+			myGems := []*gem.JsonGem{}
+			for i := range gems {
+				myGem := gems[i]
+				myGem.Rm(args...)
+				mo := pearl.PearlOwner{
+					Signer: &pkms[0].PrivateKey,
+					Owners: member.ToPublicKeys(myGem.LsByType(member.Person)),
+				}
+				p, err := myGem.ClosePearl(&mo)
+				if err != nil {
+					return err
+				}
+				nl.Reset(p, myGem.Pearl.Closed.FingerPrint)
+				myGems = append(myGems, myGem.AsJson())
+			}
+			nl.Save(arg.Gems.Fname)
+			jsStr, err := json.MarshalIndent(myGems, "", "  ")
+			fmt.Fprintln(arg.Nio.out, string(jsStr))
+			return err
+		},
 	}
 }
-func gemLsArgs(arg *GemArgs) *ffcli.Command {
+func gemLsArgs(arg *NecklessArgs) *ffcli.Command {
 	flags := flag.NewFlagSet("gem.ls", flag.ExitOnError)
-	// homeDir := os.Getenv("HOME")
+	arg.Gems.Ls.Person = flags.Bool("person", false, "select person keys")
+	arg.Gems.Ls.Device = flags.Bool("device", false, "select device keys")
 
 	return &ffcli.Command{
 		Name:       "ls",
@@ -186,57 +224,36 @@ func gemLsArgs(arg *GemArgs) *ffcli.Command {
 		FlagSet:     flags,
 		Subcommands: []*ffcli.Command{},
 		Exec: func(context.Context, []string) error {
-			casket, err := casket.Ls(arg.CasketFname)
+			pkms, err := GetPkms(GetPkmsArgs{
+				casketFname: arg.Gems.CasketFname,
+				privIds:     arg.Gems.PrivKeyIds,
+				person:      *arg.Gems.Ls.Person,
+				device:      *arg.Gems.Ls.Device})
 			if err != nil {
-				log.Fatal(err)
-				return nil
+				return err
 			}
-			mtyps := []member.MemberType{}
-			if *arg.Add.Person {
-				mtyps = append(mtyps, member.Person)
-			}
-			if *arg.Add.Device {
-				mtyps = append(mtyps, member.Device)
-			}
-			if len(mtyps) == 0 {
-				mtyps = append(mtyps, member.Person)
-			}
-			pkms := member.FilterByType(member.FilterById(casket.AsPrivateMembers(), arg.PrivKeyIds...), mtyps...)
-			if len(pkms) == 0 {
-				log.Fatal(errors.New("you need a private key"))
-			}
-			nl := neckless.GetAndOpen(arg.Fname)
-			gems := nl.FilterByType(gem.Type)
-			out := []*gem.Gem{}
-			for i := range gems {
-				tmp := gems[i]
-				openGem, err := gem.OpenPearl(member.ToPrivateKeys(pkms), tmp)
-				if err != nil {
-					log.Fatal(err)
-					return nil
-				}
-				out = append(out, openGem)
-			}
-			jsStr, err := json.MarshalIndent(gem.ToJsonGems(out...), "", "  ")
+			nl, _ := necklace.GetAndOpen(arg.Gems.Fname)
+			fmt.Fprintln(arg.Nio.err, pkms[0].Id)
+			gems, _ := GetGems(pkms, &nl)
+			jsStr, err := json.MarshalIndent(gem.ToJsonGems(gems...), "", "  ")
 			if err != nil {
-				log.Fatal(err)
-				return nil
+				return err
 			}
-			fmt.Println(string(jsStr))
+			fmt.Fprintln(arg.Nio.out, string(jsStr))
 			return nil
 		},
 	}
 }
 
-func gemArgs(arg *GemArgs) *ffcli.Command {
+func gemArgs(arg *NecklessArgs) *ffcli.Command {
 	flags := flag.NewFlagSet("gem", flag.ExitOnError)
 	// homeDir := os.Getenv("HOME")
-	flags.StringVar(&arg.Fname, "file", ".neckless", "the neckless file")
+	flags.StringVar(&arg.Gems.Fname, "file", ".neckless", "the neckless file")
 	homeDir := os.Getenv("HOME")
-	flags.StringVar(&arg.CasketFname, "casketFile",
+	flags.StringVar(&arg.Gems.CasketFname, "casketFile",
 		fmt.Sprintf("%s/.neckless/casket.json", homeDir), "filename of the casket")
-	arg.PrivKeyIds = arrayFlags{}
-	flags.Var(&arg.PrivKeyIds, "privkeyid", "the neckless file")
+	arg.Gems.PrivKeyIds = arrayFlags{}
+	flags.Var(&arg.Gems.PrivKeyIds, "privkeyid", "the neckless file")
 
 	return &ffcli.Command{
 		Name:       "gem",
@@ -252,5 +269,6 @@ func gemArgs(arg *GemArgs) *ffcli.Command {
 			gemRmArgs(arg),
 			gemLsArgs(arg),
 		},
+		Exec: func(context.Context, []string) error { return flag.ErrHelp },
 	}
 }

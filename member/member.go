@@ -3,6 +3,7 @@ package member
 import (
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	"neckless.adviser.com/key"
@@ -135,6 +136,30 @@ type JsonPublicMember struct {
 	PublicKey string `json:"publicKey"`
 }
 
+func JsonPublicMemberValueBy(p1, p2 *JsonPublicMember) bool {
+	return strings.Compare(p1.Member.Id, p2.Member.Id) < 0
+}
+
+type JsonPublicMemberSorter struct {
+	Values [](*JsonPublicMember)
+	By     func(p1, p2 *JsonPublicMember) bool // Closure used in the Less method.
+}
+
+// Len is part of sort.Interface.
+func (s *JsonPublicMemberSorter) Len() int {
+	return len(s.Values)
+}
+
+// Swap is part of sort.Interface.
+func (s *JsonPublicMemberSorter) Swap(i, j int) {
+	s.Values[i], s.Values[j] = s.Values[j], s.Values[i]
+}
+
+// Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
+func (s *JsonPublicMemberSorter) Less(i, j int) bool {
+	return JsonPublicMemberValueBy(s.Values[i], s.Values[j])
+}
+
 // func (mb *Member) AsJson() *JsonMember {
 // 	return &JsonMember{
 // 		MemberBase: mb.MemberBase,
@@ -224,6 +249,7 @@ func FilterById(pkms []*PrivateMember, ids ...string) []*PrivateMember {
 	for i := range pkms {
 		pkm := pkms[i]
 		_, found := mids[pkm.Id]
+		// fmt.Println(pkm.Id, ids)
 		if len(mids) == 0 || found {
 			ret = append(ret, pkm)
 		}
@@ -237,13 +263,10 @@ func FilterByType(pkms []*PrivateMember, typs ...MemberType) []*PrivateMember {
 	for i := range typs {
 		mtyps[typs[i]] = struct{}{}
 	}
-	if len(typs) == 0 {
-		mtyps[Person] = struct{}{}
-	}
 	for i := range pkms {
 		pkm := pkms[i]
 		_, found := mtyps[pkm.Type]
-		if found {
+		if len(mtyps) == 0 || found {
 			ret = append(ret, pkm)
 		}
 	}

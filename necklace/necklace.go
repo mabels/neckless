@@ -1,49 +1,49 @@
-package neckless
+package necklace
 
 import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"strings"
 
 	"neckless.adviser.com/pearl"
 )
 
-type jsonClosedNeckless []pearl.JsonPearl
+type jsonClosedNecklace []pearl.JsonPearl
 
-type Neckless struct {
+type Necklace struct {
 	FileName string
 	Pearls   []*pearl.Pearl
 }
 
-func GetAndOpen(fname string) Neckless {
+func GetAndOpen(fname string) (Necklace, []error) {
+	warns := []error{}
 	dat, err := ioutil.ReadFile(fname)
-	nl := Neckless{
+	nl := Necklace{
 		FileName: fname,
 		Pearls:   []*pearl.Pearl{},
 	}
 	if err == nil {
-		jsn := jsonClosedNeckless{}
+		jsn := jsonClosedNecklace{}
 		err := json.Unmarshal(dat, &jsn)
 		if err != nil {
-			log.Println(err)
+			warns = append(warns, err)
 		}
 		for i := range jsn {
 			my, err := jsn[i].FromJson()
 			if err != nil {
-				log.Println(err)
+				warns = append(warns, err)
 			} else {
 				nl.Pearls = append(nl.Pearls, my)
 			}
 		}
 	} else {
-		log.Println(err)
+		warns = append(warns, err)
 	}
-	return nl
+	return nl, warns
 }
 
-func (nl *Neckless) Reset(p *pearl.Pearl, updateFprs ...[]byte) *Neckless {
+func (nl *Necklace) Reset(p *pearl.Pearl, updateFprs ...[]byte) *Necklace {
 	foundIt := [][]byte{}
 	mapFpr := map[string]struct{}{}
 	mapFpr[fmt.Sprintf("%x", p.FingerPrint)] = struct{}{}
@@ -52,21 +52,18 @@ func (nl *Neckless) Reset(p *pearl.Pearl, updateFprs ...[]byte) *Neckless {
 	}
 	for i := range nl.Pearls {
 		_, found := mapFpr[fmt.Sprintf("%x", nl.Pearls[i].FingerPrint)]
-		fmt.Println(found, fmt.Sprintf("%x", nl.Pearls[i].FingerPrint))
+		// fmt.Println(found, fmt.Sprintf("%x", nl.Pearls[i].FingerPrint))
 		if found {
 			foundIt = append(foundIt, nl.Pearls[i].FingerPrint)
 		}
 	}
-	fmt.Println(p.FingerPrint, foundIt)
-	if len(foundIt) == 0 {
-		nl.Pearls = append(nl.Pearls, p)
-	} else if len(foundIt) > 1 {
-		nl.Rm(foundIt[1:]...)
-	}
+	// fmt.Println(p.FingerPrint, foundIt)
+	nl.Rm(foundIt...)
+	nl.Pearls = append(nl.Pearls, p)
 	return nl
 }
 
-func (nl *Neckless) Rm(fprs ...[]byte) *Neckless {
+func (nl *Necklace) Rm(fprs ...[]byte) *Necklace {
 	founds := []int{}
 	mapFpr := map[string]struct{}{}
 	for i := range fprs {
@@ -85,7 +82,7 @@ func (nl *Neckless) Rm(fprs ...[]byte) *Neckless {
 	return nl
 }
 
-func (nl *Neckless) Save(fnames ...string) ([]byte, error) {
+func (nl *Necklace) Save(fnames ...string) ([]byte, error) {
 	out := make([]*pearl.JsonPearl, len(nl.Pearls))
 	for i := range nl.Pearls {
 		my := nl.Pearls[i]
@@ -104,7 +101,7 @@ func (nl *Neckless) Save(fnames ...string) ([]byte, error) {
 	return jsStr, nil
 }
 
-func (nl *Neckless) FilterByType(typ string) []*pearl.Pearl {
+func (nl *Necklace) FilterByType(typ string) []*pearl.Pearl {
 	out := []*pearl.Pearl{}
 	for i := range nl.Pearls {
 		if strings.Compare(nl.Pearls[i].Type, typ) == 0 {
@@ -115,8 +112,8 @@ func (nl *Neckless) FilterByType(typ string) []*pearl.Pearl {
 }
 
 // 	out := []*pearl.OpenPearl{}
-// 	for i := range closedNeckless {
-// 		closedPearl := closedNeckless[i]
+// 	for i := range closedNecklace {
+// 		closedPearl := closedNecklace[i]
 // 		for j := range pks {
 // 			pk := pks[j]
 // 			opearl, err := pearl.Open(pk, closedPearl)

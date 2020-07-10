@@ -268,7 +268,7 @@ type OpenPearl struct {
 	Claim   PearlClaim
 }
 
-func (pea *Pearl) findByKeyId(pk *key.PrivateKey) (*key.RawKey, *jwt.Token, *PearlClaim, bool) {
+func (pea *Pearl) tryOpenWithKey(pk *key.PrivateKey) (*key.RawKey, *jwt.Token, *PearlClaim, bool) {
 	creatorPubKey := pea.Owners.Creator
 	for i := range pea.Owners.Tokens {
 		claims := PearlClaim{}
@@ -295,11 +295,11 @@ func Open(pks []*key.PrivateKey, pea *Pearl) (*OpenPearl, error) {
 		}
 		errs = append(errs, err.Error())
 	}
-	return nil, errors.New(fmt.Sprintf("can't open this pearl:%s:[%s]", pea.FingerPrint, strings.Join(errs, "],[")))
+	return nil, errors.New(fmt.Sprintf("can't open this pearl:%x:[%s]", pea.FingerPrint, strings.Join(errs, "],[")))
 }
 
 func OpenOne(pk *key.PrivateKey, pea *Pearl) (*OpenPearl, error) {
-	sharedKey, _, claim, ok := pea.findByKeyId(pk)
+	sharedKey, _, claim, ok := pea.tryOpenWithKey(pk)
 	if !ok {
 		return nil, fmt.Errorf("id not found in owners:[%x]", pk.Key.Id)
 	}

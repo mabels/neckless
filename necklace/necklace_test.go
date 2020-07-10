@@ -1,4 +1,4 @@
-package neckless
+package necklace
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 
 func TestGetAndOpenEmpty(t *testing.T) {
 	fname := uuid.New().String()
-	nl := GetAndOpen(fname)
+	nl, _ := GetAndOpen(fname)
 	if len(nl.Pearls) != 0 {
 		t.Error("should not happend")
 	}
@@ -22,7 +22,7 @@ func TestGetAndOpenEmpty(t *testing.T) {
 }
 
 func TestClose(t *testing.T) {
-	nl := GetAndOpen(uuid.New().String())
+	nl, _ := GetAndOpen(uuid.New().String())
 	js, err := nl.Save()
 	if err != nil {
 		t.Error("should not happend", err)
@@ -33,9 +33,9 @@ func TestClose(t *testing.T) {
 }
 
 func TestFileSideEffect(t *testing.T) {
-	nl := GetAndOpen(uuid.New().String())
+	nl, _ := GetAndOpen(uuid.New().String())
 	nl.Save(nl.FileName)
-	nl = GetAndOpen(nl.FileName)
+	nl, _ = GetAndOpen(nl.FileName)
 	if len(nl.Pearls) != 0 {
 		t.Error("illegal len")
 	}
@@ -46,13 +46,13 @@ func TestFileSideEffect(t *testing.T) {
 		FingerPrint: []byte("Id2"),
 	})
 	nl.Save(nl.FileName)
-	nl = GetAndOpen(nl.FileName)
+	nl, _ = GetAndOpen(nl.FileName)
 	if len(nl.Pearls) != 2 {
 		t.Error("illegal len", nl)
 	}
 	nl.Rm([]byte("Id2"))
 	nl.Save(nl.FileName)
-	nl = GetAndOpen(nl.FileName)
+	nl, _ = GetAndOpen(nl.FileName)
 	if len(nl.Pearls) != 1 {
 		t.Error("illegal len")
 	}
@@ -60,7 +60,7 @@ func TestFileSideEffect(t *testing.T) {
 }
 
 func TestSet(t *testing.T) {
-	nl := GetAndOpen(uuid.New().String())
+	nl, _ := GetAndOpen(uuid.New().String())
 	if len(nl.Pearls) != 0 {
 		t.Error("not the right len")
 	}
@@ -86,6 +86,14 @@ func TestSet(t *testing.T) {
 	nl.Reset(&pearl.Pearl{
 		FingerPrint: []byte("Id9"),
 	}, []byte("Id1"))
+
+	if len(nl.Pearls) != 2 {
+		t.Error("not the right len", nl.Pearls)
+	}
+
+	nl.Reset(&pearl.Pearl{
+		FingerPrint: []byte("Id1"),
+	}, []byte("Id9"))
 
 	if len(nl.Pearls) != 2 {
 		t.Error("not the right len", nl.Pearls)
