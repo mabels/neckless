@@ -12,6 +12,16 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - platform: ubuntu-latest
+            path_name: neckless
+            bin_name: neckless-linux
+          - platform: macos-latest
+            path_name: neckless
+            bin_name: neckless-mac
+          - platform: windows-latest
+            path_name: neckless.exe
+            bin_name: neckless-win.exe
     runs-on: ${{ matrix.platform }}
     steps:
       - name: Checkout code
@@ -27,9 +37,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
           tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          release_name: Release ${{ github.ref }}-${{ matrix.bin_name }}
           body: |
-            Changes in this Release
+            Changes in this Release 
             - First Change
             - Second Change
           draft: false
@@ -41,6 +51,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: ./neckless
-          asset_name: linux-x86_64-neckless
+          asset_path: ./${{ matrix.path_name }}
+          asset_name: ${{ matrix.bin_name }}
           asset_content_type: application/golang
