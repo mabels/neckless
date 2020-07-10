@@ -24,7 +24,6 @@ jobs:
             - Second Change
           draft: false
           prerelease: false
-    steps:
       - name: Build Release
         strategy:
           matrix:
