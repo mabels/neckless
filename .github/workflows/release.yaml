@@ -40,7 +40,29 @@ jobs:
         - platform: windows-latest
           path_name: neckless.exe
           bin_name: neckless-win.exe
-        runs-on: ${{ matrix.platform }}
+      runs-on: ${{ matrix.platform }}
+# The workflow is not valid. .github/workflows/release.yaml (Line: 43, Col:
+# 18): Unrecognized named-value: 'matrix'. Located at position 1 within
+# expression: matrix.platform,.github/workflows/release.yaml (Line: 43,
+# Col: 18): Unexpected value '${{ matrix.platform }}'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Build project 
+        run: |
+          make
+      - name: Upload Release Asset
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          asset_path: ./${{ matrix.path_name }}
+          asset_name: ${{ matrix.bin_name }}
+          asset_content_type: application/golang
+
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
