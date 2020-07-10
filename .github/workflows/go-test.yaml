@@ -20,3 +20,4 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - run: make test
+      - run: make build
