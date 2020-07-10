@@ -16,6 +16,7 @@ jobs:
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
@@ -25,7 +26,7 @@ jobs:
             - Second Change
           draft: false
           prerelease: false
-        run: node -e "require('@actions/core').setOutput('upload_url', '${{ steps.create_release.outputs.upload_url }}')"
+        # run: node -e "require('@actions/core').setOutput('upload_url', '${{ steps.create_release.outputs.upload_url }}')"
   build-release:
     name: Build Release
     strategy:
@@ -50,16 +51,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build project 
+        id: build_project
         run: |
           make
           env
+          node -e "require('@actions/core').exportVariable('upload_url', process.env.UPLOAD_URL')"
       - name: Upload Release Asset
         id: upload-release-asset 
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          upload_url: ${{ steps.build_project.outputs.upload_url }} 
           asset_path: ./${{ matrix.path_name }}
           asset_name: ${{ matrix.bin_name }}
           asset_content_type: application/golang
