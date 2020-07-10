@@ -40,7 +40,7 @@ jobs:
         - platform: windows-latest
           path_name: neckless.exe
           bin_name: neckless-win.exe
-      runs-on: ${{ matrix.platform }}
+    runs-on: ${{ matrix.platform }}
 # The workflow is not valid. .github/workflows/release.yaml (Line: 43, Col:
 # 18): Unrecognized named-value: 'matrix'. Located at position 1 within
 # expression: matrix.platform,.github/workflows/release.yaml (Line: 43,
