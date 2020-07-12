@@ -20,7 +20,7 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
           body: |
-            Changes in this Release 
+            Changes in this Release
             - First Change
             - Second Change
           draft: false
@@ -38,18 +38,18 @@ jobs:
     name: Build Release
     strategy:
       matrix:
-        platform: [ubuntu-latest] 
+        #platform: [ubuntu-latest]
         # , macos-latest, windows-latest]
         include:
         - platform: ubuntu-latest
           path_name: neckless
           bin_name: neckless-linux
-        - platform: macos-latest
-          path_name: neckless
-          bin_name: neckless-mac
-        - platform: windows-latest
-          path_name: neckless.exe
-          bin_name: neckless-win.exe
+        #- platform: macos-latest
+        #  path_name: neckless
+        #  bin_name: neckless-mac
+        #- platform: windows-latest
+        #  path_name: neckless.exe
+        #  bin_name: neckless-win.exe
     runs-on: ${{ matrix.platform }}
 # The workflow is not valid. .github/workflows/release.yaml (Line: 43, Col:
 # 18): Unrecognized named-value: 'matrix'. Located at position 1 within
@@ -57,6 +57,7 @@ jobs:
 # Col: 18): Unexpected value '${{ matrix.platform }}'
     steps:
       - name: Download upload_url.env
+        id: upload_url
         uses: actions/download-artifact@v1
         with:
           name: upload_url
@@ -64,21 +65,25 @@ jobs:
         run: |
           find . -type f -ls
           source ./upload_url/upload_url.env
+          cat ./upload_url/upload_url.env
           export UPLOAD_URL
+          echo $UPLOAD_URL
+          node -e "require('@actions/core').setOutput('upload_url', process.env.UPLOAD_URL)"
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Build project 
+      - name: Build project
         id: build_project
         run: |
           make
+          echo "[${{ steps.upload_url.outputs.upload_url }}]"
           env | sort
       - name: Upload Release Asset
-        id: upload-release-asset 
+        id: upload-release-asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ env.UPLOAD_URL }} 
+          upload_url: ${{ steps.upload_url.outputs.upload_url }}
           asset_path: ./${{ matrix.path_name }}
           asset_name: ${{ matrix.bin_name }}
           asset_content_type: application/golang
