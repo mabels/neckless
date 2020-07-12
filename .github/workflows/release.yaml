@@ -91,7 +91,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ env.UPLOAD_URL }}
-          asset_path: ./${{ matrix.path_name }}
+          asset_path: ./${{ matrix.bin_name }}
           asset_name: ${{ matrix.bin_name }}
           asset_content_type: application/golang
 
