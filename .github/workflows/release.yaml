@@ -36,6 +36,7 @@ jobs:
 
   build-release:
     name: Build Release
+    needs: create-release
     strategy:
       matrix:
         #platform: [ubuntu-latest]
