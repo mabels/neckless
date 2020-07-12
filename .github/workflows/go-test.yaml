@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.platform }
+    runs-on: ${{ matrix.platform }}
     strategy:
       matrix:
         include:
