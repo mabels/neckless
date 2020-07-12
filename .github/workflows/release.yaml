@@ -27,7 +27,10 @@ jobs:
           prerelease: false
       - shell: bash
         run: |
-          echo UPLOAD_URL=${{ steps.create_release.outputs.upload_url }} > upload_url.env
+          echo UPLOAD_URL=${{ toJson(steps.create_release.outputs.upload_url) }} > upload_url.env
+          echo "========"
+          cat upload_url.env
+          echo "========"
       - name: Upload upload_url.env
         uses: actions/upload-artifact@v1
         with:
@@ -66,10 +69,14 @@ jobs:
         run: |
           find . -type f -ls
           source ./upload_url/upload_url.env
+          echo "========"
           cat ./upload_url/upload_url.env
+          echo "========"
           export UPLOAD_URL
+          echo "========"
           echo $UPLOAD_URL
-          node -e "require('@actions/core').setOutput('upload_url', process.env.UPLOAD_URL)"
+          echo "========"
+          node -e "require('@actions/core').setOutput('upload_url', process.env.UPLOAD_URL)" || true
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build project
