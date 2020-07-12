@@ -8,10 +8,14 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.platform }
     strategy:
       matrix:
-        go: [ '1.13', '1.14' ]
+        include:
+          - platform: ubuntu-latest
+            go: [ '1.14' ]
+            path_name: neckless
+            bin_name: neckless-linux"
     name: Go ${{ matrix.go }} sample
     steps:
       - uses: actions/checkout@v2
