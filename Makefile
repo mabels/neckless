@@ -1,6 +1,7 @@
+BIN_NAME ?= "neckless"
 all: test build
 build:
-	go build -ldflags "-s -w" neckless.adviser.com/cmd/neckless
+	go build -ldflags "-s -w" -o $(BIN_NAME) neckless.adviser.com/cmd/neckless
 
 test:
 	go test neckless.adviser.com/key

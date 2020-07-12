@@ -13,7 +13,7 @@ jobs:
       matrix:
         include:
           - platform: ubuntu-latest
-            go: [ '1.14' ]
+            go: '1.14'
             path_name: neckless
             bin_name: neckless-linux"
     name: Go ${{ matrix.go }} sample
@@ -24,4 +24,4 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - run: make test
-      - run: make build
+      - run: make build BIN_NAME=${{ matrix.bin_name }}
