@@ -48,12 +48,12 @@ jobs:
         - platform: ubuntu-latest
           path_name: neckless
           bin_name: neckless-linux
-        #- platform: macos-latest
-        #  path_name: neckless
-        #  bin_name: neckless-mac
-        #- platform: windows-latest
-        #  path_name: neckless.exe
-        #  bin_name: neckless-win.exe
+        - platform: macos-latest
+          path_name: neckless
+          bin_name: neckless-mac
+        - platform: windows-latest
+          path_name: neckless.exe
+          bin_name: neckless-win.exe
     runs-on: ${{ matrix.platform }}
 # The workflow is not valid. .github/workflows/release.yaml (Line: 43, Col:
 # 18): Unrecognized named-value: 'matrix'. Located at position 1 within
@@ -83,9 +83,7 @@ jobs:
       - name: Build project
         id: build_project
         run: |
-          make
-          echo "[${{ env.UPLOAD_URL }}]"
-          env | sort
+          make build BIN_NAME=${{ matrix.bin_name }}
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1

@@ -24,7 +24,7 @@ jobs:
             go: '1.14'
             path_name: neckless.exe
             bin_name: neckless-win.exe
-    name: Go ${{ matrix.go }} sample
+    name: Build Go ${{ matrix.go }} ${{ matrix.platform }} neckless
     steps:
       - uses: actions/checkout@v2
       - name: Setup go
