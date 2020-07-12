@@ -76,14 +76,15 @@ jobs:
           echo "========"
           echo $UPLOAD_URL
           echo "========"
-          node -e "require('@actions/core').setOutput('upload_url', process.env.UPLOAD_URL)" || true
+          echo "::set-env name=UPLOAD_URL::$UPLOAD_URL"
+      #   node -e "require('@actions/core').setOutput('upload_url', process.env.UPLOAD_URL)" || true
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build project
         id: build_project
         run: |
           make
-          echo "[${{ steps.upload_url.outputs.upload_url }}]"
+          echo "[${{ env.UPLOAD_URL }}]"
           env | sort
       - name: Upload Release Asset
         id: upload-release-asset
@@ -91,7 +92,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.upload_url.outputs.upload_url }}
+          upload_url: ${{ env.UPLOAD_URL }}
           asset_path: ./${{ matrix.path_name }}
           asset_name: ${{ matrix.bin_name }}
           asset_content_type: application/golang
