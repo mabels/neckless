@@ -80,11 +80,11 @@ type JsonCasket struct {
 	CasketAttribute
 }
 
-func (casket *Casket) AsJson() *JsonCasket {
+func (casket *Casket) AsJSON() *JsonCasket {
 	jsonMembers := map[string]member.JsonPrivateMember{}
 	for i := range casket.Members {
 		val := casket.Members[i]
-		jsonMembers[i] = *val.AsJson()
+		jsonMembers[i] = *val.AsJSON()
 	}
 	return &JsonCasket{
 		CasketAttribute: casket.CasketAttribute,
@@ -93,7 +93,7 @@ func (casket *Casket) AsJson() *JsonCasket {
 }
 
 func writecasket(casket *Casket) error {
-	jsstr, err := json.MarshalIndent(casket.AsJson(), "", "  ")
+	jsstr, err := json.MarshalIndent(casket.AsJSON(), "", "  ")
 	if err != nil {
 		return err
 	}

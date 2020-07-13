@@ -74,7 +74,7 @@ func toKey(i []byte) RawKey {
 	return ret
 }
 
-func (k *KeyType) AsJson() *JsonKeyType {
+func (k *KeyType) AsJSON() *JsonKeyType {
 	return &JsonKeyType{
 		Id:    k.Id,
 		Style: k.Style,

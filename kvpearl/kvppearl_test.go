@@ -168,7 +168,7 @@ func TestJson(t *testing.T) {
 	var jo *JsonKVPearl
 	var prev *JsonKVPearl = nil
 	for i := 0; i < 100; i++ {
-		jo = c.AsJson()
+		jo = c.AsJSON()
 		if len(jo.Keys) != 3 {
 			t.Error("we need something to sort")
 		}
@@ -182,19 +182,19 @@ func TestJson(t *testing.T) {
 		prev = jo
 	}
 
-	jsonStr, err := json.Marshal(c.AsJson())
+	jsonStr, err := json.Marshal(c.AsJSON())
 	if err != nil {
 		t.Error("should not ", err)
 	}
 
 	// t.Error(c, string(jsonStr))
-	kvp, err := FromJson(jsonStr)
+	kvp, err := FromJSON(jsonStr)
 	if err != nil {
 		t.Error("should not ", err)
 	}
 	compareKVPearl(t, kvp)
 
-	// func FromJson(jsStr []byte) (*KVPearl, error) {
+	// func FromJSON(jsStr []byte) (*KVPearl, error) {
 }
 
 func TestPearl(t *testing.T) {
@@ -428,7 +428,7 @@ func TestMerge(t *testing.T) {
 		Create().Set(testTime(), "K1", "1V1", "TEST").Set(testTime(), "K1", "V4", "WURST", "TEST").Set(testTime(), "K2", "1VV").Set(testTime(), "K3", "SehrGeheim"),
 		Create().Set(testTime(), "K6", "1V1").Set(testTime(), "K7", "V4").Set(testTime(), "K8", "1VV").Set(testTime(), "K1", "SehrGeheim"),
 	}
-	kvp := Merge(kvps, []string{}, []string{}).AsJson()
+	kvp := Merge(kvps, []string{}, []string{}).AsJSON()
 	// js, _ := json.MarshalIndent(kvp, "", "  ")
 	if strings.Compare(kvp.Keys[0].Values[0].Value, "SehrGeheim") != 0 {
 		t.Error("failed order")

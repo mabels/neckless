@@ -22,7 +22,7 @@ type JsonKeyAndNonce struct {
 	Nouce string
 }
 
-func (my *KeyAndNonce) AsJson() *JsonKeyAndNonce {
+func (my *KeyAndNonce) AsJSON() *JsonKeyAndNonce {
 	return &JsonKeyAndNonce{
 		Key:   base64.StdEncoding.EncodeToString(my.Key),
 		Nouce: base64.StdEncoding.EncodeToString(my.Nouce),

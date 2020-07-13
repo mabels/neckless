@@ -16,34 +16,39 @@ import (
 	"neckless.adviser.com/symmetric"
 )
 
+// PearlClaim is the enhanced structure to the jwt.StandardClaims
 type PearlClaim struct {
 	PayloadChecksum          string `json:"pcs"`
 	EncryptedPayloadPassword string `json:"epp"`
 	jwt.StandardClaims
 }
 
-type ClosedPearlAttribute struct {
-}
-
+// JWTokenPearlClaim the Claim encoded as a JWT-Token string
 type JWTokenPearlClaim string
 
+// CreatorOwners is the collection with Creators publickey and the JWT-Tokens
+// sign and encrypted
 type CreatorOwners struct {
 	Creator key.PublicKey // public-key
 	Tokens  []JWTokenPearlClaim
 }
 
-type JsonCreatorOwners struct {
+// JSONCreatorOwners is the json representation of the CreatorOwners
+type JSONCreatorOwners struct {
 	Creator string
 	Tokens  []JWTokenPearlClaim
 }
 
-func (co *CreatorOwners) AsJson() *JsonCreatorOwners {
-	return &JsonCreatorOwners{
+// AsJSON converts a CreatorOwners into the Json representation
+func (co *CreatorOwners) AsJSON() *JSONCreatorOwners {
+	return &JSONCreatorOwners{
 		Creator: co.Creator.Marshal(),
 		Tokens:  co.Tokens,
 	}
 }
-func (jcp *JsonCreatorOwners) FromJson() (*CreatorOwners, error) {
+
+// FromJSON converts from Json to CreatorOwners
+func (jcp *JSONCreatorOwners) FromJSON() (*CreatorOwners, error) {
 	_, creator, err := key.FromText(jcp.Creator, fmt.Sprintf("SYN-%s", uuid.New().String()))
 	if err != nil {
 		return nil, err
@@ -57,6 +62,7 @@ func (jcp *JsonCreatorOwners) FromJson() (*CreatorOwners, error) {
 	}, nil
 }
 
+// Pearl describes an Pearl which is part of an Necklace
 type Pearl struct {
 	FingerPrint []byte
 	Type        string
@@ -64,29 +70,31 @@ type Pearl struct {
 	Owners      CreatorOwners
 }
 
-type JsonPearl struct {
+// JSONPearl is the Json representation of a Pearl
+type JSONPearl struct {
 	FingerPrint string
 	Type        string
 	Payload     string // base64
-	Owners      JsonCreatorOwners
+	Owners      JSONCreatorOwners
 }
 
-func (p *Pearl) AsJson() *JsonPearl {
-	return &JsonPearl{
+// AsJSON converts a Pearl to a JSONPearl
+func (p *Pearl) AsJSON() *JSONPearl {
+	return &JSONPearl{
 		FingerPrint: base64.StdEncoding.EncodeToString(p.FingerPrint),
 		Type:        p.Type,
 		Payload:     base64.StdEncoding.EncodeToString(p.Payload),
-		Owners:      *p.Owners.AsJson(),
+		Owners:      *p.Owners.AsJSON(),
 	}
 }
 
-type CalcFingerPrint struct {
+type argCalcFingerPrint struct {
 	Signer  *key.PublicKey
 	Payload []byte
 	Type    string
 }
 
-func calcFingerprint(cfp *CalcFingerPrint) ([]byte, error) {
+func calcFingerprint(cfp *argCalcFingerPrint) ([]byte, error) {
 	sum := sha256.New()
 	_, err := sum.Write([]byte(cfp.Type))
 	if err != nil {
@@ -104,7 +112,7 @@ func calcFingerprint(cfp *CalcFingerPrint) ([]byte, error) {
 }
 
 func setFingerprint(cr *CloseRequestPearl, p *Pearl) (*Pearl, error) {
-	sum, err := calcFingerprint(&CalcFingerPrint{
+	sum, err := calcFingerprint(&argCalcFingerPrint{
 		Signer:  cr.Owners.Signer.Public(),
 		Payload: cr.Payload,
 		Type:    cr.Type,
@@ -117,7 +125,7 @@ func setFingerprint(cr *CloseRequestPearl, p *Pearl) (*Pearl, error) {
 }
 
 func checkFingerprint(p *OpenPearl) (*OpenPearl, error) {
-	sum, err := calcFingerprint(&CalcFingerPrint{
+	sum, err := calcFingerprint(&argCalcFingerPrint{
 		Type:    p.Closed.Type,
 		Signer:  &p.Closed.Owners.Creator,
 		Payload: p.Payload,
@@ -131,7 +139,8 @@ func checkFingerprint(p *OpenPearl) (*OpenPearl, error) {
 	return p, nil
 }
 
-func (jp *JsonPearl) FromJson() (*Pearl, error) {
+// FromJSON converts a json pearl to a Pearl
+func (jp *JSONPearl) FromJSON() (*Pearl, error) {
 	payload, err := base64.StdEncoding.DecodeString(jp.Payload)
 	if err != nil {
 		return nil, err
@@ -140,7 +149,7 @@ func (jp *JsonPearl) FromJson() (*Pearl, error) {
 	if err != nil {
 		return nil, err
 	}
-	owners, err := jp.Owners.FromJson()
+	owners, err := jp.Owners.FromJSON()
 	if err != nil {
 		return nil, err
 	}
@@ -163,14 +172,6 @@ type CloseRequestPearl struct {
 	Payload []byte
 	Owners  PearlOwner
 }
-
-// func ownersToSeal(pks *map[string]key.PublicKey) [][]byte {
-// 	ret := make([][]byte, len(*pks))
-// 	for i := range *pks {
-// 		ret[i] = []byte(*pks[i].Marshal())
-// 	}
-// 	return ret
-// }
 
 type CloseContainer struct {
 	Checksum   []byte
@@ -324,19 +325,4 @@ func OpenOne(pk *key.PrivateKey, pea *Pearl) (*OpenPearl, error) {
 		Claim:   *claim,
 	})
 
-	// chkSum, err :=  base64.StdEncoding.DecodeString(claim.PayloadChecksum)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// _, pb, err := key.FromText(claim.PublicKey)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if pb == nil {
-	// 	return nil, errors.New("no public key provided")
-	// }
-
-	// if bytes.Equal(chkSum, sha256.Sum256())
-
-	// return nil
 }

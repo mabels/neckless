@@ -120,18 +120,18 @@ func TestJsonPearl(t *testing.T) {
 		t.Error("unexpected errro:", err)
 	}
 
-	str, err := json.MarshalIndent(pearl.AsJson(), "", "  ")
+	str, err := json.MarshalIndent(pearl.AsJSON(), "", "  ")
 	if err != nil {
 		t.Error("json should work", err)
 	}
 
-	jsbackPearl := &JsonPearl{}
+	jsbackPearl := &JSONPearl{}
 	json.Unmarshal(str, &jsbackPearl)
 	// t.Error(string(str))
 	// t.Error(jsbackPearl)
 	// data, err := json.Marshal(pearl)
 	// t.Error(string(data))
-	backPearl, err := jsbackPearl.FromJson()
+	backPearl, err := jsbackPearl.FromJSON()
 	if err != nil {
 		t.Error("fromjson should not error", err)
 	}

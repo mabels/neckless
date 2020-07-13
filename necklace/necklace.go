@@ -9,14 +9,16 @@ import (
 	"neckless.adviser.com/pearl"
 )
 
-type jsonClosedNecklace []pearl.JsonPearl
+type jsonClosedNecklace []pearl.JSONPearl
 
+// Necklace is a chain of Pearls
 type Necklace struct {
 	FileName string
 	Pearls   []*pearl.Pearl
 }
 
-func GetAndOpen(fname string) (Necklace, []error) {
+// Read reads a Necklace
+func Read(fname string) (Necklace, []error) {
 	warns := []error{}
 	dat, err := ioutil.ReadFile(fname)
 	nl := Necklace{
@@ -30,7 +32,7 @@ func GetAndOpen(fname string) (Necklace, []error) {
 			warns = append(warns, err)
 		}
 		for i := range jsn {
-			my, err := jsn[i].FromJson()
+			my, err := jsn[i].FromJSON()
 			if err != nil {
 				warns = append(warns, err)
 			} else {
@@ -43,6 +45,8 @@ func GetAndOpen(fname string) (Necklace, []error) {
 	return nl, warns
 }
 
+// Reset Set or Add a Pearl to the Necklace. UpdateFprs enables
+// to replace an existing Pearl in a Necklace Chain
 func (nl *Necklace) Reset(p *pearl.Pearl, updateFprs ...[]byte) *Necklace {
 	foundIt := [][]byte{}
 	mapFpr := map[string]struct{}{}
@@ -63,6 +67,7 @@ func (nl *Necklace) Reset(p *pearl.Pearl, updateFprs ...[]byte) *Necklace {
 	return nl
 }
 
+// Rm removes Pearls from an Necklace
 func (nl *Necklace) Rm(fprs ...[]byte) *Necklace {
 	founds := []int{}
 	mapFpr := map[string]struct{}{}
@@ -82,11 +87,13 @@ func (nl *Necklace) Rm(fprs ...[]byte) *Necklace {
 	return nl
 }
 
+// Save saves a Neckless to the given filename. If no file is provide
+// it won't right any file
 func (nl *Necklace) Save(fnames ...string) ([]byte, error) {
-	out := make([]*pearl.JsonPearl, len(nl.Pearls))
+	out := make([]*pearl.JSONPearl, len(nl.Pearls))
 	for i := range nl.Pearls {
 		my := nl.Pearls[i]
-		out[i] = my.AsJson()
+		out[i] = my.AsJSON()
 	}
 	jsStr, err := json.MarshalIndent(out, "", "  ")
 	if err != nil {
@@ -101,6 +108,8 @@ func (nl *Necklace) Save(fnames ...string) ([]byte, error) {
 	return jsStr, nil
 }
 
+// FilterByType filters out of the Necklace with corresponding type
+// to a chain of Pearls
 func (nl *Necklace) FilterByType(typ string) []*pearl.Pearl {
 	out := []*pearl.Pearl{}
 	for i := range nl.Pearls {
@@ -110,18 +119,3 @@ func (nl *Necklace) FilterByType(typ string) []*pearl.Pearl {
 	}
 	return out
 }
-
-// 	out := []*pearl.OpenPearl{}
-// 	for i := range closedNecklace {
-// 		closedPearl := closedNecklace[i]
-// 		for j := range pks {
-// 			pk := pks[j]
-// 			opearl, err := pearl.Open(pk, closedPearl)
-// 			if err == nil {
-// 				out = append(out, opearl)
-// 				break
-// 			}
-// 		}
-// 	}
-// 	return out
-// }

@@ -14,7 +14,7 @@ type PublicMemberClaim struct {
 
 func MakePublicMemberJWT(signer *key.PrivateKey, pm *PublicMember) (string, error) {
 	claims := &PublicMemberClaim{
-		JsonPublicMember: *pm.AsJson(),
+		JsonPublicMember: *pm.AsJSON(),
 		StandardClaims: jwt.StandardClaims{
 			// In JWT, the expiry time is expressed as unix milliseconds
 			ExpiresAt: pm.ValidUntil.Unix(),

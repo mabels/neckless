@@ -79,10 +79,10 @@ func (s *JsonKVPearlSorter) Less(i, j int) bool {
 	return s.By(s.Values[i], s.Values[j])
 }
 
-func AsJson(kvps []*KVPearl) []*JsonKVPearl {
+func AsJSON(kvps []*KVPearl) []*JsonKVPearl {
 	out := make([]*JsonKVPearl, len(kvps))
 	for i := range kvps {
-		out[i] = kvps[i].AsJson()
+		out[i] = kvps[i].AsJSON()
 	}
 	sort.Sort(&JsonKVPearlSorter{
 		Values: out,
@@ -188,7 +188,7 @@ func (kvp *KVPearl) Set(order time.Time, keyVal string, val string, tags ...stri
 	return kvp
 }
 
-func FromJson(jsStr []byte) (*KVPearl, error) {
+func FromJSON(jsStr []byte) (*KVPearl, error) {
 	jskvp := JsonKVPearl{}
 	err := json.Unmarshal(jsStr, &jskvp)
 	if err != nil {
@@ -226,7 +226,7 @@ func (s *ValueSorter) Less(i, j int) bool {
 	return s.values[i].Order.UnixNano() > s.values[j].Order.UnixNano()
 }
 
-func (kvp *KVPearl) AsJson() *JsonKVPearl {
+func (kvp *KVPearl) AsJSON() *JsonKVPearl {
 	keys := KeySorter{}
 	for i := range kvp.Keys {
 		key := kvp.Keys[i]
@@ -251,7 +251,7 @@ func (kvp *KVPearl) AsJson() *JsonKVPearl {
 const Type = "KVPearl"
 
 func (kvp *KVPearl) ClosePearl(owners *pearl.PearlOwner) (*pearl.Pearl, error) {
-	jsonStr, err := json.Marshal(kvp.AsJson())
+	jsonStr, err := json.Marshal(kvp.AsJSON())
 	if err != nil {
 		return nil, err
 	}
@@ -267,7 +267,7 @@ func OpenPearl(pks []*key.PrivateKey, prl *pearl.Pearl) (*KVPearl, error) {
 	if err != nil {
 		return nil, err
 	}
-	kvp, err := FromJson(op.Payload)
+	kvp, err := FromJSON(op.Payload)
 	if err != nil {
 		return nil, err
 	}

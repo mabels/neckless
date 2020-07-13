@@ -94,7 +94,7 @@ func updateGem(myGem *gem.Gem, pkms []*member.PrivateMember, jpms []member.JsonP
 	return p, nil
 }
 
-func gemAddArgs(arg *NecklessArgs) *ffcli.Command {
+func gemAddCmd(arg *NecklessArgs) *ffcli.Command {
 	flags := flag.NewFlagSet("gem.add", flag.ExitOnError)
 	// homeDir := os.Getenv("HOME")
 	flags.StringVar(&arg.Gems.Add.PubFile, "pubFile", "stdin", "the pubMemberFile to add")
@@ -139,7 +139,7 @@ func gemAddArgs(arg *NecklessArgs) *ffcli.Command {
 				}
 			}
 			// fmt.Fprintln(arg.Nio.err, "-2")
-			nl, _ := necklace.GetAndOpen(arg.Gems.Fname)
+			nl, _ := necklace.Read(arg.Gems.Fname)
 			// fmt.Fprintln(arg.Nio.err, "-3")
 			gems, _ := GetGems(pkms, &nl)
 			for i := range gems {
@@ -164,7 +164,7 @@ func gemAddArgs(arg *NecklessArgs) *ffcli.Command {
 		},
 	}
 }
-func gemRmArgs(arg *NecklessArgs) *ffcli.Command {
+func gemRmCmd(arg *NecklessArgs) *ffcli.Command {
 	flags := flag.NewFlagSet("gem.rm", flag.ExitOnError)
 	// homeDir := os.Getenv("HOME")
 	flags.StringVar(&arg.Gems.Fname, "file", ".neckless", "the neckless file")
@@ -183,7 +183,7 @@ func gemRmArgs(arg *NecklessArgs) *ffcli.Command {
 			pkms, err := GetPkms(GetPkmsArgs{
 				casketFname: arg.Gems.CasketFname,
 				privIds:     arg.Gems.PrivKeyIds})
-			nl, _ := necklace.GetAndOpen(arg.Gems.Fname)
+			nl, _ := necklace.Read(arg.Gems.Fname)
 			gems, _ := GetGems(pkms, &nl)
 			// fmt.Fprintln(arg.Nio.err, pkms[0].Id)
 			myGems := []*gem.JsonGem{}
@@ -199,7 +199,7 @@ func gemRmArgs(arg *NecklessArgs) *ffcli.Command {
 					return err
 				}
 				nl.Reset(p, myGem.Pearl.Closed.FingerPrint)
-				myGems = append(myGems, myGem.AsJson())
+				myGems = append(myGems, myGem.AsJSON())
 			}
 			nl.Save(arg.Gems.Fname)
 			jsStr, err := json.MarshalIndent(myGems, "", "  ")
@@ -208,7 +208,7 @@ func gemRmArgs(arg *NecklessArgs) *ffcli.Command {
 		},
 	}
 }
-func gemLsArgs(arg *NecklessArgs) *ffcli.Command {
+func gemLsCmd(arg *NecklessArgs) *ffcli.Command {
 	flags := flag.NewFlagSet("gem.ls", flag.ExitOnError)
 	arg.Gems.Ls.Person = flags.Bool("person", false, "select person keys")
 	arg.Gems.Ls.Device = flags.Bool("device", false, "select device keys")
@@ -232,7 +232,7 @@ func gemLsArgs(arg *NecklessArgs) *ffcli.Command {
 			if err != nil {
 				return err
 			}
-			nl, _ := necklace.GetAndOpen(arg.Gems.Fname)
+			nl, _ := necklace.Read(arg.Gems.Fname)
 			fmt.Fprintln(arg.Nio.err, pkms[0].Id)
 			gems, _ := GetGems(pkms, &nl)
 			jsStr, err := json.MarshalIndent(gem.ToJsonGems(gems...), "", "  ")
@@ -245,7 +245,7 @@ func gemLsArgs(arg *NecklessArgs) *ffcli.Command {
 	}
 }
 
-func gemArgs(arg *NecklessArgs) *ffcli.Command {
+func gemCmd(arg *NecklessArgs) *ffcli.Command {
 	flags := flag.NewFlagSet("gem", flag.ExitOnError)
 	// homeDir := os.Getenv("HOME")
 	flags.StringVar(&arg.Gems.Fname, "file", ".neckless", "the neckless file")
@@ -265,9 +265,9 @@ func gemArgs(arg *NecklessArgs) *ffcli.Command {
 	    `),
 		FlagSet: flags,
 		Subcommands: []*ffcli.Command{
-			gemAddArgs(arg),
-			gemRmArgs(arg),
-			gemLsArgs(arg),
+			gemAddCmd(arg),
+			gemRmCmd(arg),
+			gemLsCmd(arg),
 		},
 		Exec: func(context.Context, []string) error { return flag.ErrHelp },
 	}

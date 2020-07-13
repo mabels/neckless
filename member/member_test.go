@@ -115,9 +115,9 @@ func TestPrivateMemberJson(t *testing.T) {
 			Device: "testDevice",
 		},
 	})
-	json, _ := pkm.AsJson().String()
+	json, _ := pkm.AsJSON().String()
 	// fmt.Printf("TestPrivateMemberJson:%s\n", json)
-	jpkm, _, err := FromJson(json)
+	jpkm, _, err := FromJSON(json)
 	if err != nil {
 		t.Error(err)
 	}
@@ -136,8 +136,8 @@ func TestPublicMemberJson(t *testing.T) {
 		},
 	})
 	pubk := pkm.Public()
-	json, _ := pubk.AsJson().String()
-	_, jpkm, err := FromJson(json)
+	json, _ := pubk.AsJSON().String()
+	_, jpkm, err := FromJSON(json)
 	if err != nil {
 		t.Error(err)
 	}

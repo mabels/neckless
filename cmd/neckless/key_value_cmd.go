@@ -65,12 +65,12 @@ func kvAddCmd(arg *NecklessArgs) *ffcli.Command {
 			for i := range errs {
 				fmt.Fprintln(arg.Nio.err, errs[i])
 			}
-			jsStr, err := json.MarshalIndent(kvp.AsJson(), "", "  ")
+			jsStr, err := json.MarshalIndent(kvp.AsJSON(), "", "  ")
 			if err != nil {
 				return err
 			}
 			fmt.Fprintln(arg.Nio.out, string(jsStr))
-			nl, _ := necklace.GetAndOpen(arg.Kvs.Fname)
+			nl, _ := necklace.Read(arg.Kvs.Fname)
 			pkms, err := GetPkms(GetPkmsArgs{
 				casketFname: arg.Kvs.CasketFname,
 				privIds:     arg.Kvs.PrivKeyIds,
@@ -117,7 +117,7 @@ func kvLsCmd(arg *NecklessArgs) *ffcli.Command {
 		FlagSet:     flags,
 		Subcommands: []*ffcli.Command{},
 		Exec: func(_ context.Context, args []string) error {
-			nl, _ := necklace.GetAndOpen(arg.Kvs.Fname)
+			nl, _ := necklace.Read(arg.Kvs.Fname)
 			closedKvps := nl.FilterByType(kvpearl.Type)
 			pkms, err := GetPkms(GetPkmsArgs{
 				casketFname: arg.Kvs.CasketFname,
@@ -143,7 +143,7 @@ func kvLsCmd(arg *NecklessArgs) *ffcli.Command {
 			}
 			keys := args
 			tags := []string{}
-			out := kvpearl.Merge(kvps, keys, tags).AsJson()
+			out := kvpearl.Merge(kvps, keys, tags).AsJSON()
 			err = nil
 			// var err error
 			if *arg.Kvs.Ls.json {
@@ -198,7 +198,7 @@ func kvRmCmd(arg *NecklessArgs) *ffcli.Command {
 	}
 }
 
-func keyValueArgs(arg *NecklessArgs) *ffcli.Command {
+func keyValueCmd(arg *NecklessArgs) *ffcli.Command {
 	flags := flag.NewFlagSet("kv", flag.ExitOnError)
 	// homeDir := os.Getenv("HOME")
 	flags.StringVar(&arg.Kvs.Fname, "file", ".neckless", "the neckless file")

@@ -70,12 +70,12 @@ type JsonGem struct {
 	PubKeys []*member.JsonPublicMember
 }
 
-func (kvp *Gem) AsJson() *JsonGem {
+func (kvp *Gem) AsJSON() *JsonGem {
 	pubks := make([]*member.JsonPublicMember, len(kvp.PubKeys))
 	idx := 0
 	for i := range kvp.PubKeys {
 		member := kvp.PubKeys[i]
-		pubks[idx] = member.AsJson()
+		pubks[idx] = member.AsJSON()
 		idx++
 	}
 	sort.Sort(&member.JsonPublicMemberSorter{
@@ -90,7 +90,7 @@ func (kvp *Gem) AsJson() *JsonGem {
 func ToJsonGems(gs ...*Gem) []*JsonGem {
 	ret := make([]*JsonGem, len(gs))
 	for i := range gs {
-		ret[i] = gs[i].AsJson()
+		ret[i] = gs[i].AsJSON()
 	}
 	return ret
 }
@@ -98,7 +98,7 @@ func ToJsonGems(gs ...*Gem) []*JsonGem {
 const Type = "Gem"
 
 func (gem *Gem) ClosePearl(owners *pearl.PearlOwner) (*pearl.Pearl, error) {
-	jsonStr, err := json.Marshal(gem.AsJson())
+	jsonStr, err := json.Marshal(gem.AsJSON())
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (gem *Gem) ClosePearl(owners *pearl.PearlOwner) (*pearl.Pearl, error) {
 	})
 }
 
-func FromJson(jsStr []byte) (*Gem, error) {
+func FromJSON(jsStr []byte) (*Gem, error) {
 	jsGem := JsonGem{}
 	err := json.Unmarshal(jsStr, &jsGem)
 	if err != nil {
@@ -132,7 +132,7 @@ func OpenPearl(pks []*key.PrivateKey, prl *pearl.Pearl) (*Gem, error) {
 	if err != nil {
 		return nil, err
 	}
-	gem, err := FromJson(op.Payload)
+	gem, err := FromJSON(op.Payload)
 	if err != nil {
 		return nil, err
 	}

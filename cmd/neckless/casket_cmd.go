@@ -102,7 +102,7 @@ func GetPkms(a GetPkmsArgs) ([]*member.PrivateMember, error) {
 	return pkms, nil
 }
 
-func casketCreateArgs(arg *NecklessArgs) *ffcli.Command {
+func casketCreateCmd(arg *NecklessArgs) *ffcli.Command {
 	flags := flag.NewFlagSet("create", flag.ExitOnError)
 	defaultName := uuid.New().String()
 	flags.StringVar(&arg.Casket.create.Name, "name", defaultName, "name of the key")
@@ -144,14 +144,14 @@ func casketCreateArgs(arg *NecklessArgs) *ffcli.Command {
 				log.Fatal(err)
 				return nil
 			}
-			js, err := json.MarshalIndent(pk.AsJson(), "", "  ")
+			js, err := json.MarshalIndent(pk.AsJSON(), "", "  ")
 			fmt.Fprintln(arg.Nio.out, string(js))
 			return nil
 		},
 	}
 }
 
-func casketGetArgs(arg *NecklessArgs) *ffcli.Command {
+func casketGetCmd(arg *NecklessArgs) *ffcli.Command {
 	flags := flag.NewFlagSet("get", flag.ExitOnError)
 	flags.StringVar(&arg.Casket.get.PubFile, "outFile", "", "filename to write")
 	arg.Casket.get.PrivateKey = flags.Bool("privateKey", false, "set export to private key")
@@ -250,14 +250,14 @@ func casketGetArgs(arg *NecklessArgs) *ffcli.Command {
 // 			if err != nil {
 // 				log.Fatal(err)
 // 			}
-// 			js, err := json.MarshalIndent(c.AsJson(), "", "  ")
+// 			js, err := json.MarshalIndent(c.AsJSON(), "", "  ")
 // 			fmt.Fprintln(arg.Nio.out, string(js))
 // 			return nil
 // 		},
 // 	}
 // }
 
-func casketRmArgs(arg *NecklessArgs) *ffcli.Command {
+func casketRmCmd(arg *NecklessArgs) *ffcli.Command {
 	flags := flag.NewFlagSet("rm", flag.ExitOnError)
 	arg.Casket.rm.DryRun = flags.Bool("dryRun", false, "set the dryrun flag")
 	return &ffcli.Command{
@@ -280,7 +280,7 @@ func casketRmArgs(arg *NecklessArgs) *ffcli.Command {
 			}
 			out := make([]*member.JsonPrivateMember, len(pks))
 			for i := range pks {
-				out[i] = pks[i].AsJson()
+				out[i] = pks[i].AsJSON()
 			}
 			js, err := json.MarshalIndent(out, "", "  ")
 			if err != nil {
@@ -291,7 +291,7 @@ func casketRmArgs(arg *NecklessArgs) *ffcli.Command {
 		},
 	}
 }
-func casketArgs(arg *NecklessArgs) *ffcli.Command {
+func casketCmd(arg *NecklessArgs) *ffcli.Command {
 	flags := flag.NewFlagSet("casket", flag.ExitOnError)
 	homeDir := os.Getenv("HOME")
 	flags.StringVar(&arg.Casket.Fname, "file",
@@ -319,9 +319,9 @@ func casketArgs(arg *NecklessArgs) *ffcli.Command {
 	    `),
 		FlagSet: flags,
 		Subcommands: []*ffcli.Command{
-			casketCreateArgs(arg),
-			casketGetArgs(arg),
-			casketRmArgs(arg),
+			casketCreateCmd(arg),
+			casketGetCmd(arg),
+			casketRmCmd(arg),
 		},
 		Exec: func(context.Context, []string) error { return flag.ErrHelp },
 		/*

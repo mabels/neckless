@@ -177,8 +177,8 @@ func TestJson(t *testing.T) {
 		},
 	})
 	gem := Create(pk1.Public(), pk2.Public())
-	str, _ := json.Marshal(gem.AsJson())
-	back, err := FromJson(str)
+	str, _ := json.Marshal(gem.AsJSON())
+	back, err := FromJSON(str)
 	if err != nil {
 		t.Error("not expected")
 	}

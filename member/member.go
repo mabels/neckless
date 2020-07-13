@@ -160,7 +160,7 @@ func (s *JsonPublicMemberSorter) Less(i, j int) bool {
 	return JsonPublicMemberValueBy(s.Values[i], s.Values[j])
 }
 
-// func (mb *Member) AsJson() *JsonMember {
+// func (mb *Member) AsJSON() *JsonMember {
 // 	return &JsonMember{
 // 		MemberBase: mb.MemberBase,
 // 		Id:         mb.Id.Id,
@@ -174,7 +174,7 @@ func (s *JsonPublicMemberSorter) Less(i, j int) bool {
 // 	}
 // }
 
-func (pm *PublicMember) AsJson() *JsonPublicMember {
+func (pm *PublicMember) AsJSON() *JsonPublicMember {
 	return &JsonPublicMember{
 		Clazz:     "JsonPublicMember",
 		Member:    pm.Member,
@@ -192,7 +192,7 @@ type JsonPrivateMember struct {
 	PrivateKey string `json:"privatekey"`
 }
 
-func (pm *PrivateMember) AsJson() *JsonPrivateMember {
+func (pm *PrivateMember) AsJSON() *JsonPrivateMember {
 	return &JsonPrivateMember{
 		Clazz:      "JsonPrivateMember",
 		Member:     pm.Member,
@@ -221,7 +221,7 @@ func (pm *JsonPrivateMember) AsPrivateMember() (*PrivateMember, error) {
 func ToJsonPrivateMember(pkms ...*PrivateMember) []*JsonPrivateMember {
 	ret := make([]*JsonPrivateMember, len(pkms))
 	for i := range pkms {
-		ret[i] = pkms[i].AsJson()
+		ret[i] = pkms[i].AsJSON()
 	}
 	return ret
 }
@@ -229,7 +229,7 @@ func ToJsonPrivateMember(pkms ...*PrivateMember) []*JsonPrivateMember {
 func ToJsonPublicMember(pkms ...*PrivateMember) []*JsonPublicMember {
 	ret := make([]*JsonPublicMember, len(pkms))
 	for i := range pkms {
-		ret[i] = pkms[i].Public().AsJson()
+		ret[i] = pkms[i].Public().AsJSON()
 	}
 	return ret
 }
@@ -301,7 +301,7 @@ func JsToPrivateMember(jspriv *JsonPrivateMember) (*PrivateMember, error) {
 	}, nil
 }
 
-func FromJson(str []byte) (*PrivateMember, *PublicMember, error) {
+func FromJSON(str []byte) (*PrivateMember, *PublicMember, error) {
 	// pk := string("")
 	// pb := string("")
 	jppm := JsonPrivatePublicMember{
