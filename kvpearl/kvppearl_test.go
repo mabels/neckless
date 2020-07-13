@@ -3,6 +3,7 @@ package kvpearl
 import (
 	"bytes"
 	"encoding/json"
+	"math"
 	"sort"
 	"strings"
 	"testing"
@@ -12,11 +13,12 @@ import (
 	"neckless.adviser.com/pearl"
 )
 
-var TestTime int64 = 4711
+var TestTime int64 = time.Now().UnixNano()
 
 func testTime() time.Time {
 	TestTime++
-	return time.Unix(TestTime, TestTime)
+	n10e9 := int64(math.Pow10(9))
+	return time.Unix(TestTime/n10e9, TestTime%n10e9)
 }
 
 func TestUniqStrings(t *testing.T) {
@@ -332,124 +334,126 @@ func TestGetTags(t *testing.T) {
 }
 
 func TestParse(t *testing.T) {
-	kvp := Create()
-	_, err := kvp.Parse("")
-	if err == nil {
-		t.Error("no error not allowed")
-	}
-	_, err = kvp.Parse("mmm")
-	if err == nil {
-		t.Error("no error not allowed")
-	}
-	_, err = kvp.Parse("mmm=")
-	if err != nil {
-		t.Error("no error not allowed")
-	}
-	_, err = kvp.Parse("mmm=ooo")
-	if err != nil {
-		t.Error("no error not allowed", err)
-	}
-	if strings.Compare(kvp.Keys["mmm"].Key, "mmm") != 0 {
-		t.Error("no error not allowed")
-	}
-	// ooo and empty
-	if len(kvp.Keys["mmm"].Values) != 2 {
-		t.Error("no error not allowed")
-	}
-	if len(kvp.Keys["mmm"].Values[0].Tags) != 0 {
-		t.Error("no error not allowed", kvp.Keys["mmm"].Values[0], len(kvp.Keys["mmm"].Values[0].Tags))
-	}
-	if strings.Compare(kvp.Keys["mmm"].Values[0].Value, "ooo") != 0 {
-		t.Error("no error not allowed")
-	}
-	_, err = kvp.Parse("mmm=ooo[")
-	if err != nil {
-		t.Error("no error not allowed", err)
-	}
-	if strings.Compare(kvp.Keys["mmm"].Values[0].Value, "ooo[") != 0 {
-		t.Error("no error not allowed", err, kvp.Keys["mmm"].Values)
-	}
-	_, err = kvp.Parse("mmm=ooo[vv")
-	if err != nil {
-		t.Error("no error not allowed", err)
-	}
-	if strings.Compare(kvp.Keys["mmm"].Values[0].Value, "ooo[vv") != 0 {
-		t.Error("no error not allowed", err, kvp.Keys["mmm"].Values)
-	}
+	for i := 0; i < 100; i++ {
+		kvp := Create()
+		_, err := kvp.Parse("")
+		if err == nil {
+			t.Error("no error not allowed")
+		}
+		_, err = kvp.Parse("mmm")
+		if err == nil {
+			t.Error("no error not allowed")
+		}
+		_, err = kvp.Parse("mmm=")
+		if err != nil {
+			t.Error("no error not allowed")
+		}
+		_, err = kvp.Parse("mmm=ooo")
+		if err != nil {
+			t.Error("no error not allowed", err)
+		}
+		if strings.Compare(kvp.Keys["mmm"].Key, "mmm") != 0 {
+			t.Error("no error not allowed")
+		}
+		// ooo and empty
+		if len(kvp.Keys["mmm"].Values) != 2 {
+			t.Error("no error not allowed")
+		}
+		if len(kvp.Keys["mmm"].Values[0].Tags) != 0 {
+			t.Error("no error not allowed", kvp.Keys["mmm"].Values[0], len(kvp.Keys["mmm"].Values[0].Tags))
+		}
+		if strings.Compare(kvp.Keys["mmm"].Values[0].Value, "ooo") != 0 {
+			t.Error("no error not allowed")
+		}
+		_, err = kvp.Parse("mmm=ooo[")
+		if err != nil {
+			t.Error("no error not allowed", err)
+		}
+		if strings.Compare(kvp.Keys["mmm"].Values[0].Value, "ooo[") != 0 {
+			t.Error("no error not allowed", err, kvp.Keys["mmm"].Values)
+		}
+		_, err = kvp.Parse("mmm=ooo[vv")
+		if err != nil {
+			t.Error("no error not allowed", err)
+		}
+		if strings.Compare(kvp.Keys["mmm"].Values[0].Value, "ooo[vv") != 0 {
+			t.Error("no error not allowed", err, kvp.Keys["mmm"].Values)
+		}
 
-	_, err = kvp.Parse("mmm=ooo]vv")
-	if err != nil {
-		t.Error("no error not allowed", err)
-	}
-	if strings.Compare(kvp.Keys["mmm"].Values[0].Value, "ooo]vv") != 0 {
-		t.Error("no error not allowed", err, kvp.Keys["mmm"].Values)
-	}
+		_, err = kvp.Parse("mmm=ooo]vv")
+		if err != nil {
+			t.Error("no error not allowed", err)
+		}
+		if strings.Compare(kvp.Keys["mmm"].Values[0].Value, "ooo]vv") != 0 {
+			t.Error("no error not allowed", err, kvp.Keys["mmm"].Values)
+		}
 
-	_, err = kvp.Parse("mmm=yyy[]")
-	if err != nil {
-		t.Error("no error not allowed", err)
-	}
-	if strings.Compare(kvp.Keys["mmm"].Values[0].Value, "yyy") != 0 {
-		t.Error("no error not allowed")
-	}
-	if len(kvp.Keys["mmm"].Values[0].Tags) != 0 {
-		t.Error("no error not allowed")
-	}
+		_, err = kvp.Parse("mmm=yyy[]")
+		if err != nil {
+			t.Error("no error not allowed", err)
+		}
+		if strings.Compare(kvp.Keys["mmm"].Values[0].Value, "yyy") != 0 {
+			t.Error("no error not allowed")
+		}
+		if len(kvp.Keys["mmm"].Values[0].Tags) != 0 {
+			t.Error("no error not allowed")
+		}
 
-	_, err = kvp.Parse("mmm=uuu[AA]")
-	if err != nil {
-		t.Error("no error not allowed", err)
-	}
-	if strings.Compare(kvp.Keys["mmm"].Values[0].Value, "uuu") != 0 {
-		t.Error("no error not allowed")
-	}
-	if strings.Compare(kvp.Keys["mmm"].Values[0].Tags[0], "AA") != 0 {
-		t.Error("no error not allowed")
-	}
-	_, err = kvp.Parse("mmm=rrr[AA,BB]")
-	if err != nil {
-		t.Error("no error not allowed", err)
-	}
-	if strings.Compare(kvp.Keys["mmm"].Values[0].Value, "rrr") != 0 {
-		t.Error("no error not allowed")
-	}
-	if strings.Compare(kvp.Keys["mmm"].Values[0].Tags[0], "AA") != 0 {
-		t.Error("no error not allowed")
-	}
-	if strings.Compare(kvp.Keys["mmm"].Values[0].Tags[1], "BB") != 0 {
-		t.Error("no error not allowed")
-	}
-	_, err = kvp.Parse("mmm=sss[AA,,BB,]")
-	if err != nil {
-		t.Error("no error not allowed", err)
-	}
-	if strings.Compare(kvp.Keys["mmm"].Values[0].Value, "sss") != 0 {
-		t.Error("no error not allowed")
-	}
-	if strings.Compare(kvp.Keys["mmm"].Values[0].Tags[0], "AA") != 0 {
-		t.Error("no error not allowed")
-	}
-	if strings.Compare(kvp.Keys["mmm"].Values[0].Tags[1], "BB") != 0 {
-		t.Error("no error not allowed")
-	}
-	if len(kvp.Keys["mmm"].Values[0].Tags) != 2 {
-		t.Error("no error not allowed", kvp.Keys["mmm"].Values[0].Tags)
-	}
-	_, err = kvp.Parse("mmm=zzz,AA,,BB,")
-	if err != nil {
-		t.Error("no error not allowed", err)
-	}
-	if strings.Compare(kvp.Keys["mmm"].Values[0].Value, "zzz") != 0 {
-		t.Error("no error not allowed")
-	}
-	if strings.Compare(kvp.Keys["mmm"].Values[0].Tags[0], "AA") != 0 {
-		t.Error("no error not allowed")
-	}
-	if strings.Compare(kvp.Keys["mmm"].Values[0].Tags[1], "BB") != 0 {
-		t.Error("no error not allowed")
-	}
-	if len(kvp.Keys["mmm"].Values[0].Tags) != 2 {
-		t.Error("no error not allowed", kvp.Keys["mmm"].Values[0].Tags)
+		_, err = kvp.Parse("mmm=uuu[AA]")
+		if err != nil {
+			t.Error("no error not allowed", err)
+		}
+		if strings.Compare(kvp.Keys["mmm"].Values[0].Value, "uuu") != 0 {
+			t.Error("no error not allowed")
+		}
+		if strings.Compare(kvp.Keys["mmm"].Values[0].Tags[0], "AA") != 0 {
+			t.Error("no error not allowed")
+		}
+		_, err = kvp.Parse("mmm=rrr[AA,BB]")
+		if err != nil {
+			t.Error("no error not allowed", err)
+		}
+		if strings.Compare(kvp.Keys["mmm"].Values[0].Value, "rrr") != 0 {
+			t.Error("no error not allowed")
+		}
+		if strings.Compare(kvp.Keys["mmm"].Values[0].Tags[0], "AA") != 0 {
+			t.Error("no error not allowed")
+		}
+		if strings.Compare(kvp.Keys["mmm"].Values[0].Tags[1], "BB") != 0 {
+			t.Error("no error not allowed")
+		}
+		_, err = kvp.Parse("mmm=sss[AA,,BB,]")
+		if err != nil {
+			t.Error("no error not allowed", err)
+		}
+		if strings.Compare(kvp.Keys["mmm"].Values[0].Value, "sss") != 0 {
+			t.Error("no error not allowed")
+		}
+		if strings.Compare(kvp.Keys["mmm"].Values[0].Tags[0], "AA") != 0 {
+			t.Error("no error not allowed")
+		}
+		if strings.Compare(kvp.Keys["mmm"].Values[0].Tags[1], "BB") != 0 {
+			t.Error("no error not allowed")
+		}
+		if len(kvp.Keys["mmm"].Values[0].Tags) != 2 {
+			t.Error("no error not allowed", kvp.Keys["mmm"].Values[0].Tags)
+		}
+		_, err = kvp.Parse("mmm=zzz,AA,,BB,")
+		if err != nil {
+			t.Error("no error not allowed", err)
+		}
+		if strings.Compare(kvp.Keys["mmm"].Values[0].Value, "zzz") != 0 {
+			t.Error("no error not allowed")
+		}
+		if strings.Compare(kvp.Keys["mmm"].Values[0].Tags[0], "AA") != 0 {
+			t.Error("no error not allowed")
+		}
+		if strings.Compare(kvp.Keys["mmm"].Values[0].Tags[1], "BB") != 0 {
+			t.Error("no error not allowed")
+		}
+		if len(kvp.Keys["mmm"].Values[0].Tags) != 2 {
+			t.Error("no error not allowed", kvp.Keys["mmm"].Values[0].Tags)
+		}
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"sort"
 	"strings"
@@ -45,6 +46,7 @@ type KVPearl struct {
 	// Tags []string
 	Keys    map[string](*Key)
 	Created time.Time
+	Seq     int64            `json:"-"` // windows timer is not good enough
 	Pearl   *pearl.OpenPearl `json:"-"`
 }
 
@@ -183,7 +185,11 @@ func (kvp *KVPearl) Set(order time.Time, keyVal string, val string, tags ...stri
 	} else {
 		// fmt.Println("Found-Set=>", kvp, key, keyVal, val, tags)
 	}
-	key.setValue(order, val, tags)
+	kvp.Seq = (kvp.Seq + 41) % 4839231 // do not think
+	n10e9 := int64(math.Pow10(9))
+	tickedOrder := time.Unix(order.UnixNano()/n10e9, (order.UnixNano()%n10e9)+kvp.Seq)
+	// fmt.Printf("XXXXX:%d:%d:%d:%d:%d\n", kvp.Seq, order.UnixNano(), order.UnixNano()/n10e9, order.UnixNano()%n10e9, tickedOrder.UnixNano())
+	key.setValue(tickedOrder, val, tags)
 	// fmt.Println("Post-Set-Values", kvp, key, len(key.Values))
 	return kvp
 }
