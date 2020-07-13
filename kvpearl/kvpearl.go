@@ -400,7 +400,31 @@ func (kvps *KVPearls) Get(name string, tags ...string) *KeyValue {
 }
 
 func (kv *KVPearl) Parse(arg string) (*KVPearl, error) {
-	argRegex := regexp.MustCompile(`^([^=]+)=([^\[]+)(\[([^\]]*)\])*$`)
+	kvp, err := kv.parseBrackets(arg)
+	if err != nil {
+		kvp, err = kv.parseComma(arg)
+	}
+	return kvp, err
+}
+
+func (kv *KVPearl) parseComma(arg string) (*KVPearl, error) {
+	isKeyValue := regexp.MustCompile(`^([^=]+)=(.*)$`)
+	split := isKeyValue.FindStringSubmatch(arg)
+	if len(split) != 3 {
+		return nil, errors.New("found no key value")
+	}
+
+	commas := strings.Split(split[2], ",")
+	if len(commas) == 1 {
+		kv.Set(time.Now(), split[1], commas[0])
+	} else {
+		kv.Set(time.Now(), split[1], commas[0], commas[1:]...)
+	}
+	return kv, nil
+}
+
+func (kv *KVPearl) parseBrackets(arg string) (*KVPearl, error) {
+	argRegex := regexp.MustCompile(`^([^=]+)=([^\[]+)(\[([^\]]*)\])$`)
 	split := argRegex.FindStringSubmatch(arg)
 	if len(split) != 5 {
 		return nil, errors.New(fmt.Sprintf("no matching kv:[%s]", arg))
