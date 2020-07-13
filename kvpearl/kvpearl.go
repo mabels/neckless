@@ -436,7 +436,22 @@ func Merge(kvps []*KVPearl, keys []string, tags []string) *KVPearl {
 			_, found := mapKeys[key.Key]
 			if len(keys) == 0 || found {
 				for k := range key.Values {
-					kvp.Set(key.Values[k].Order, key.Key, key.Values[k].Value, key.Values[k].Tags...)
+					value := key.Values[k]
+					if len(mapTags) == 0 {
+						kvp.Set(value.Order, key.Key, value.Value, value.Tags...)
+					} else {
+						if len(value.Tags) == 0 {
+							kvp.Set(value.Order, key.Key, value.Value, value.Tags...)
+						}
+						found := false
+						for t := range value.Tags {
+							_, myFound := mapTags[value.Tags[t]]
+							found = found || myFound
+						}
+						if found {
+							kvp.Set(value.Order, key.Key, value.Value, value.Tags...)
+						}
+					}
 				}
 			}
 		}

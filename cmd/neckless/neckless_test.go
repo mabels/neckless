@@ -136,7 +136,7 @@ func TestKvs(t *testing.T) {
 		t.Error("there should be an error")
 	}
 	if len(nio.out.Bytes()) != 0 {
-		t.Error("should be empty")
+		t.Error("should be empty", nio.out.String())
 	}
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add M=1 M=2")
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add N=4711 M=3")
@@ -159,10 +159,22 @@ func TestKvs(t *testing.T) {
 		t.Error("not N")
 	}
 
-	// t.Error(string(nio.out.Bytes()))
-
+	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add YU=1[T1]")
+	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add YU=2[T2]")
+	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls -tag T1 YU")
+	if strings.Compare(strings.TrimSpace(nio.out.String()), "YU=\"1\"") != 0 {
+		t.Error("not expected", nio.out.String())
+	}
+	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls -tag T2 YU")
+	if strings.Compare(strings.TrimSpace(nio.out.String()), "YU=\"2\"") != 0 {
+		t.Error("not expected", nio.out.String())
+	}
+	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add YU=22[T2]")
+	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls -tag T2 YU")
+	if strings.Compare(strings.TrimSpace(nio.out.String()), "YU=\"22\"") != 0 {
+		t.Error("not expected", nio.out.String())
+	}
 	nio.out.String() // make the compiler happy
-
 }
 
 // gem add -file User1

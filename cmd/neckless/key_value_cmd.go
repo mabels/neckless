@@ -21,6 +21,7 @@ type KeyValueLsArgs struct {
 	keyValue   *bool
 	shKeyValue *bool
 	onlyValue  *bool
+	tags       arrayFlags
 }
 
 type KeyValueArgs struct {
@@ -106,6 +107,7 @@ func kvLsCmd(arg *NecklessArgs) *ffcli.Command {
 	arg.Kvs.Ls.keyValue = flags.Bool("keyValue", true, "select device keys")
 	arg.Kvs.Ls.onlyValue = flags.Bool("onlyValue", false, "select device keys")
 	arg.Kvs.Ls.shKeyValue = flags.Bool("shKeyValue", false, "select device keys")
+	flags.Var(&arg.Kvs.Ls.tags, "tag", "list of tags to filter")
 	return &ffcli.Command{
 		Name:       "ls",
 		ShortUsage: "manage a key value secrets",
@@ -142,7 +144,8 @@ func kvLsCmd(arg *NecklessArgs) *ffcli.Command {
 				}
 			}
 			keys := args
-			tags := []string{}
+			tags := arg.Kvs.Ls.tags
+			// fmt.Fprintf(arg.Nio.out, "# %s\n", strings.Join(tags, ","))
 			out := kvpearl.Merge(kvps, keys, tags).AsJSON()
 			err = nil
 			// var err error
