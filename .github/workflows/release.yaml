@@ -45,6 +45,9 @@ jobs:
         #platform: [ubuntu-latest]
         # , macos-latest, windows-latest]
         include:
+        - platform: ARM64
+          path_name: neckless
+          bin_name: neckless-linux-arm64
         - platform: ubuntu-latest
           path_name: neckless
           bin_name: neckless-linux
