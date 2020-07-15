@@ -12,6 +12,10 @@ jobs:
     strategy:
       matrix:
         include:
+          - platform: ARM64
+            go: '1.14'
+            path_name: neckless
+            bin_name: neckless-linux-arm64
           - platform: ubuntu-latest
             go: '1.14'
             path_name: neckless
