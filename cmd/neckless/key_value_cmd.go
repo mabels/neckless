@@ -203,8 +203,8 @@ func kvRmCmd(arg *NecklessArgs) *ffcli.Command {
 
 func keyValueCmd(arg *NecklessArgs) *ffcli.Command {
 	flags := flag.NewFlagSet("kv", flag.ExitOnError)
-	// homeDir := os.Getenv("HOME")
-	flags.StringVar(&arg.Kvs.Fname, "file", ".neckless", "the neckless file")
+	necklessFile := findFile(".neckless")
+	flags.StringVar(&arg.Kvs.Fname, "file", necklessFile, "the neckless file")
 	homeDir := os.Getenv("HOME")
 	flags.StringVar(&arg.Kvs.CasketFname, "casketFile",
 		fmt.Sprintf("%s/.neckless/casket.json", homeDir), "filename of the casket")

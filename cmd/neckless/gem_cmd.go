@@ -166,8 +166,6 @@ func gemAddCmd(arg *NecklessArgs) *ffcli.Command {
 }
 func gemRmCmd(arg *NecklessArgs) *ffcli.Command {
 	flags := flag.NewFlagSet("gem.rm", flag.ExitOnError)
-	// homeDir := os.Getenv("HOME")
-	flags.StringVar(&arg.Gems.Fname, "file", ".neckless", "the neckless file")
 
 	return &ffcli.Command{
 		Name:       "rm",
@@ -248,7 +246,8 @@ func gemLsCmd(arg *NecklessArgs) *ffcli.Command {
 func gemCmd(arg *NecklessArgs) *ffcli.Command {
 	flags := flag.NewFlagSet("gem", flag.ExitOnError)
 	// homeDir := os.Getenv("HOME")
-	flags.StringVar(&arg.Gems.Fname, "file", ".neckless", "the neckless file")
+	necklessFile := findFile(".neckless")
+	flags.StringVar(&arg.Gems.Fname, "file", necklessFile, "the neckless file")
 	homeDir := os.Getenv("HOME")
 	flags.StringVar(&arg.Gems.CasketFname, "casketFile",
 		fmt.Sprintf("%s/.neckless/casket.json", homeDir), "filename of the casket")
