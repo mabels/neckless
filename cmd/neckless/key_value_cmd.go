@@ -20,6 +20,7 @@ type KeyValueLsArgs struct {
 	json       *bool
 	keyValue   *bool
 	shKeyValue *bool
+	ghAddMask  *bool
 	onlyValue  *bool
 	tags       arrayFlags
 }
@@ -107,6 +108,7 @@ func kvLsCmd(arg *NecklessArgs) *ffcli.Command {
 	arg.Kvs.Ls.keyValue = flags.Bool("keyValue", true, "select device keys")
 	arg.Kvs.Ls.onlyValue = flags.Bool("onlyValue", false, "select device keys")
 	arg.Kvs.Ls.shKeyValue = flags.Bool("shKeyValue", false, "select device keys")
+	arg.Kvs.Ls.ghAddMask = flags.Bool("ghAddMask", false, "set Value as github mask")
 	flags.Var(&arg.Kvs.Ls.tags, "tag", "list of tags to filter")
 	return &ffcli.Command{
 		Name:       "ls",
@@ -153,25 +155,24 @@ func kvLsCmd(arg *NecklessArgs) *ffcli.Command {
 				var jsStr []byte
 				jsStr, err = json.MarshalIndent(out, "", "  ")
 				fmt.Fprintln(arg.Nio.out, string(jsStr))
-			} else if *arg.Kvs.Ls.shKeyValue {
-				for i := range out.Keys {
-					key := out.Keys[i]
-					var v []byte
-					v, err = json.Marshal(key.Values[0].Value)
-					fmt.Fprintf(arg.Nio.out, "%s=%s\nexport %s\n", key.Key, string(v), key.Key)
-				}
 			} else if *arg.Kvs.Ls.onlyValue {
 				for i := range out.Keys {
 					key := out.Keys[i]
 					fmt.Fprintf(arg.Nio.out, "%s\n", key.Values[0].Value)
 				}
 				err = nil
-			} else if *arg.Kvs.Ls.keyValue {
+			} else {
 				for i := range out.Keys {
 					key := out.Keys[i]
 					var v []byte
 					v, err = json.Marshal(key.Values[0].Value)
 					fmt.Fprintf(arg.Nio.out, "%s=%s\n", key.Key, string(v))
+					if *arg.Kvs.Ls.shKeyValue {
+						fmt.Fprintf(arg.Nio.out, "export %s\n", key.Key)
+					}
+					if *arg.Kvs.Ls.ghAddMask {
+						fmt.Fprintf(arg.Nio.out, "echo ::add-mask::%s\n", out.Keys[i].Values[0].Value)
+					}
 				}
 			}
 			// fmt.Fprintf(arg.Nio.err, "XXXX:%d", len(out.Keys))
