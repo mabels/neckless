@@ -22,11 +22,12 @@ type NecklessIO struct {
 	err *bytes.Buffer
 }
 type NecklessArgs struct {
-	Version string
-	Nio     NecklessIO
-	Casket  CasketArgs
-	Kvs     KeyValueArgs
-	Gems    GemArgs
+	GitCommit string
+	Version   string
+	Nio       NecklessIO
+	Casket    CasketArgs
+	Kvs       KeyValueArgs
+	Gems      GemArgs
 }
 
 func versionCmd(arg *NecklessArgs) *ffcli.Command {
@@ -36,7 +37,7 @@ func versionCmd(arg *NecklessArgs) *ffcli.Command {
 		ShortHelp:  "print version help",
 		LongHelp:   strings.TrimSpace("print version help"),
 		Exec: func(context.Context, []string) error {
-			fmt.Fprintf(arg.Nio.out, "Version: %s\n", arg.Version)
+			fmt.Fprintf(arg.Nio.out, "Version: %s:%s\n", arg.Version, arg.GitCommit)
 			return nil
 		},
 	}
@@ -77,6 +78,7 @@ func buildArgs(osArgs []string, args *NecklessArgs) (*ffcli.Command, error) {
 // }
 
 var GitCommit string
+var Version string
 
 func main() {
 	nio := NecklessIO{
@@ -85,8 +87,9 @@ func main() {
 		err: new(bytes.Buffer),
 	}
 	args := NecklessArgs{
-		Version: GitCommit,
-		Nio:     nio,
+		GitCommit: GitCommit,
+		Version:   Version,
+		Nio:       nio,
 	}
 	_, err := buildArgs(os.Args[1:], &args)
 	// fmt.Println("xxxx", nio.out.String())

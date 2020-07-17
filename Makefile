@@ -1,7 +1,10 @@
 BIN_NAME ?= "neckless"
+VERSION=$(shell git describe --tags HEAD)
+GITCOMMIT=$(shell git rev-list -1 HEAD)
 all: test build
 build:
-	go build -ldflags "-s -w -X main.GitCommit=$(shell git rev-list -1 HEAD)" -o $(BIN_NAME) neckless.adviser.com/cmd/neckless
+	go build -ldflags "-s -w -X main.Version=$(VERSION) -X main.GitCommit=$(GITCOMMIT)" -o $(BIN_NAME) neckless.adviser.com/cmd/neckless
+	$(PWD)/$(BIN_NAME) version
 
 test:
 	go test neckless.adviser.com/key

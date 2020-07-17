@@ -35,5 +35,14 @@ jobs:
         uses: actions/setup-go@v1
         with:
           go-version: ${{ matrix.go }}
-      - run: make test
-      - run: make build BIN_NAME=${{ matrix.bin_name }}
+      - run: |
+          make test
+          make build BIN_NAME=${{ matrix.bin_name }}
+          if [ $(uname -p) = "x86_64"]
+          then
+            echo $GITHUB_TOKEN | docker login docker.pkg.github.com/ -u mabels --password-stdin
+            VERSION=$(shell git describe --tags HEAD)
+            GITCOMMIT=$(shell git rev-list -1 HEAD)
+            docker build -n docker.pkg.github.com//mabels/neckless/{{ matrix.bin_name }}:$GITCOMMIT .
+            docker push docker.pkg.github.com//mabels/neckless/{{ matrix.bin_name }}:$GITCOMMIT
+          fi
