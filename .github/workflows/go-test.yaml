@@ -40,7 +40,7 @@ jobs:
           make build BIN_NAME=${{ matrix.bin_name }}
       - env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: ${{ matrix.os == "linux" }}
+        if: ${{ matrix.os == 'linux' }}
         run: |
           env
           echo $GITHUB_TOKEN | docker login docker.pkg.github.com/ -u mabels --password-stdin
