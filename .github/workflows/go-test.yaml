@@ -20,14 +20,14 @@ jobs:
             go: '1.14'
             path_name: neckless
             bin_name: neckless-linux
-          - platform: macos-latest
-            go: '1.14'
-            path_name: neckless
-            bin_name: neckless-macos
-          - platform: windows-latest
-            go: '1.14'
-            path_name: neckless.exe
-            bin_name: neckless-win.exe
+          # - platform: macos-latest
+          #   go: '1.14'
+          #   path_name: neckless
+          #   bin_name: neckless-macos
+          # - platform: windows-latest
+          #   go: '1.14'
+          #   path_name: neckless.exe
+          #   bin_name: neckless-win.exe
     name: Build Go ${{ matrix.go }} ${{ matrix.platform }} neckless
     steps:
       - uses: actions/checkout@v2
@@ -42,9 +42,8 @@ jobs:
       - env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         name: Build Docker for ${{ matrix.os }}
-        if: ${{ matrix.os == 'linux' }}
+        if: ${{ matrix.platform == 'ubuntu-latest' }}
         run: |
-          env
           echo $GITHUB_TOKEN | docker login docker.pkg.github.com/ -u mabels --password-stdin
           VERSION=$(shell git describe --tags HEAD)
           GITCOMMIT=$(shell git rev-list -1 HEAD)
