@@ -45,7 +45,7 @@ jobs:
         if: ${{ matrix.platform == 'ubuntu-latest' }}
         run: |
           echo $GITHUB_TOKEN | docker login docker.pkg.github.com/ -u mabels --password-stdin
-          VERSION=$(shell git describe --tags HEAD)
-          GITCOMMIT=$(shell git rev-list -1 HEAD)
+          GITCOMMIT=$(git rev-list -1 HEAD)
+          echo Docker build $GITCOMMIT
           docker build -n docker.pkg.github.com//mabels/neckless/{{ matrix.bin_name }}:$GITCOMMIT .
           docker push docker.pkg.github.com//mabels/neckless/{{ matrix.bin_name }}:$GITCOMMIT
