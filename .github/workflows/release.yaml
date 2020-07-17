@@ -92,7 +92,7 @@ jobs:
       - name: Build project
         id: build_project
         run: |
-          make build BIN_NAME=${{ matrix.bin_name }} VERSION=${{ github.ref }}
+          make build BIN_NAME=${{ matrix.bin_name }} VERSION=$(basename ${{ github.ref }})
 
       - name: Upload Release Asset
         id: upload-release-asset

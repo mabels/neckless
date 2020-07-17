@@ -162,16 +162,21 @@ func kvLsCmd(arg *NecklessArgs) *ffcli.Command {
 				}
 				err = nil
 			} else {
+				eol := "\n"
+				if *arg.Kvs.Ls.shKeyValue {
+					eol = ";\n"
+				}
 				for i := range out.Keys {
 					key := out.Keys[i]
 					var v []byte
 					v, err = json.Marshal(key.Values[0].Value)
-					fmt.Fprintf(arg.Nio.out, "%s=%s\n", key.Key, string(v))
+
+					fmt.Fprintf(arg.Nio.out, "%s=%s%s", key.Key, string(v), eol)
 					if *arg.Kvs.Ls.shKeyValue {
-						fmt.Fprintf(arg.Nio.out, "export %s\n", key.Key)
+						fmt.Fprintf(arg.Nio.out, "export %s%s", key.Key, eol)
 					}
 					if *arg.Kvs.Ls.ghAddMask {
-						fmt.Fprintf(arg.Nio.out, "echo ::add-mask::%s\n", out.Keys[i].Values[0].Value)
+						fmt.Fprintf(arg.Nio.out, "echo ::add-mask::%s%s", out.Keys[i].Values[0].Value, eol)
 					}
 				}
 			}
