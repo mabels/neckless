@@ -31,14 +31,17 @@ jobs:
     name: Build Go ${{ matrix.go }} ${{ matrix.platform }} neckless
     steps:
       - uses: actions/checkout@v2
+
       - name: Setup go
         uses: actions/setup-go@v1
         with:
           go-version: ${{ matrix.go }}
+
       - name: Build Plain Executable for ${{ matrix.os }}
         run: |
           make test
           make build BIN_NAME=${{ matrix.bin_name }}
+
       # - env:
       #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       #   name: Build Docker for ${{ matrix.os }}
