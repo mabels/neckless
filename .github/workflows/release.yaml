@@ -57,10 +57,10 @@ jobs:
           path_name: neckless
           go: '1.14'
           bin_name: neckless-mac
-        - platform: windows-latest
-          path_name: neckless.exe
-          go: '1.14'
-          bin_name: neckless-win.exe
+        # - platform: windows-latest
+        #   path_name: neckless.exe
+        #   go: '1.14'
+        #   bin_name: neckless-win.exe
     runs-on: ${{ matrix.platform }}
 # The workflow is not valid. .github/workflows/release.yaml (Line: 43, Col:
 # 18): Unrecognized named-value: 'matrix'. Located at position 1 within
@@ -95,7 +95,7 @@ jobs:
         id: build_project
         run: |
           make build BIN_NAME=${{ matrix.bin_name }}
-          if [ $(uname -p) = "x86_64"]
+          if [ $(uname -p) = "x86_64" ]
           then
             echo $GITHUB_TOKEN | docker login docker.pkg.github.com/ -u mabels --password-stdin
             VERSION=$(shell git describe --tags HEAD)
