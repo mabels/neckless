@@ -47,15 +47,19 @@ jobs:
         include:
         - platform: ARM64
           path_name: neckless
+          go: '1.14'
           bin_name: neckless-linux-arm64
         - platform: ubuntu-latest
           path_name: neckless
+          go: '1.14'
           bin_name: neckless-linux
         - platform: macos-latest
           path_name: neckless
+          go: '1.14'
           bin_name: neckless-mac
         - platform: windows-latest
           path_name: neckless.exe
+          go: '1.14'
           bin_name: neckless-win.exe
     runs-on: ${{ matrix.platform }}
 # The workflow is not valid. .github/workflows/release.yaml (Line: 43, Col:
@@ -83,6 +87,10 @@ jobs:
       #   node -e "require('@actions/core').setOutput('upload_url', process.env.UPLOAD_URL)" || true
       - name: Checkout code
         uses: actions/checkout@v2
+      - name: Setup go
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go }}
       - name: Build project
         id: build_project
         run: |
