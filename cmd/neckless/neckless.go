@@ -28,6 +28,7 @@ type NecklessArgs struct {
 	Casket    CasketArgs
 	Kvs       KeyValueArgs
 	Gems      GemArgs
+	Gpg       GpgArgs
 }
 
 func versionCmd(arg *NecklessArgs) *ffcli.Command {
@@ -60,6 +61,7 @@ func buildArgs(osArgs []string, args *NecklessArgs) (*ffcli.Command, error) {
 			casketCmd(args),
 			gemCmd(args),
 			keyValueCmd(args),
+			gpgCmd(args),
 		},
 		FlagSet: rootFlags,
 		Exec:    func(context.Context, []string) error { return flag.ErrHelp },
