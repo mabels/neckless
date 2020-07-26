@@ -1,39 +1,37 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 
-	"github.com/peterbourgon/ff/v2/ffcli"
+	"github.com/spf13/cobra"
 	"neckless.adviser.com/gem"
 	"neckless.adviser.com/member"
 	"neckless.adviser.com/necklace"
 	"neckless.adviser.com/pearl"
 )
 
-type arrayFlags []string
+// type arrayFlags []string
 
-func (i *arrayFlags) String() string {
-	// change this, this is just can example to satisfy the interface
-	return strings.Join(*i, ",")
-}
+// func (i *arrayFlags) String() string {
+// 	// change this, this is just can example to satisfy the interface
+// 	return strings.Join(*i, ",")
+// }
 
-func (i *arrayFlags) Set(value string) error {
-	*i = append(*i, strings.TrimSpace(value))
-	return nil
-}
+// func (i *arrayFlags) Set(value string) error {
+// 	*i = append(*i, strings.TrimSpace(value))
+// 	return nil
+// }
 
 type GemAddArgs struct {
 	PubFile  string
 	Device   *bool
 	Person   *bool
 	KeyValue *bool
-	ToKeyIds arrayFlags
+	ToKeyIds []string
 }
 type GemLsArgs struct {
 	Device *bool
@@ -43,7 +41,7 @@ type GemLsArgs struct {
 type GemArgs struct {
 	Fname       string
 	CasketFname string
-	PrivKeyIds  arrayFlags
+	PrivKeyIds  []string
 	Add         GemAddArgs
 	Ls          GemLsArgs
 }
@@ -94,25 +92,16 @@ func updateGem(myGem *gem.Gem, pkms []*member.PrivateMember, jpms []member.JsonP
 	return p, nil
 }
 
-func gemAddCmd(arg *NecklessArgs) *ffcli.Command {
-	flags := flag.NewFlagSet("gem.add", flag.ExitOnError)
-	// homeDir := os.Getenv("HOME")
-	flags.StringVar(&arg.Gems.Add.PubFile, "pubFile", "stdin", "the pubMemberFile to add")
-	arg.Gems.Add.Person = flags.Bool("person", false, "select person keys")
-	arg.Gems.Add.Device = flags.Bool("device", false, "select device keys")
-	flags.Var(&arg.Gems.Add.ToKeyIds, "toKeyId", "the neckless file")
+func gemAddCmd(arg *NecklessArgs) *cobra.Command {
 
-	return &ffcli.Command{
-		Name:       "add",
-		ShortUsage: "manage a gem stone in neckless",
-		ShortHelp:  "manage gem stone",
+	cmd := &cobra.Command{
+		Use:   "add",
+		Short: "manage a gem stone in neckless",
 
-		LongHelp: strings.TrimSpace(`
+		Long: strings.TrimSpace(`
 	    This command is used to create and add user to the pipeline secret
 	    `),
-		FlagSet:     flags,
-		Subcommands: []*ffcli.Command{},
-		Exec: func(context.Context, []string) error {
+		RunE: func(*cobra.Command, []string) error {
 			pkms, err := GetPkms(GetPkmsArgs{
 				casketFname: arg.Gems.CasketFname,
 				privIds:     arg.Gems.PrivKeyIds,
@@ -163,21 +152,24 @@ func gemAddCmd(arg *NecklessArgs) *ffcli.Command {
 			return err
 		},
 	}
+	flags := cmd.PersistentFlags()
+	// homeDir := os.Getenv("HOME")
+	flags.StringVar(&arg.Gems.Add.PubFile, "pubFile", "stdin", "the pubMemberFile to add")
+	arg.Gems.Add.Person = flags.Bool("person", false, "select person keys")
+	arg.Gems.Add.Device = flags.Bool("device", false, "select device keys")
+	flags.StringSliceVar(&arg.Gems.Add.ToKeyIds, "toKeyId", []string{}, "the neckless file")
+
+	return cmd
 }
-func gemRmCmd(arg *NecklessArgs) *ffcli.Command {
-	flags := flag.NewFlagSet("gem.rm", flag.ExitOnError)
+func gemRmCmd(arg *NecklessArgs) *cobra.Command {
+	return &cobra.Command{
+		Use:   "rm",
+		Short: "manage a gem stone in neckless",
 
-	return &ffcli.Command{
-		Name:       "rm",
-		ShortUsage: "manage a gem stone in neckless",
-		ShortHelp:  "manage gem stone",
-
-		LongHelp: strings.TrimSpace(`
+		Long: strings.TrimSpace(`
 	    This command is used to create and add user to the pipeline secret
 	    `),
-		FlagSet:     flags,
-		Subcommands: []*ffcli.Command{},
-		Exec: func(_ context.Context, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			pkms, err := GetPkms(GetPkmsArgs{
 				casketFname: arg.Gems.CasketFname,
 				privIds:     arg.Gems.PrivKeyIds})
@@ -206,22 +198,15 @@ func gemRmCmd(arg *NecklessArgs) *ffcli.Command {
 		},
 	}
 }
-func gemLsCmd(arg *NecklessArgs) *ffcli.Command {
-	flags := flag.NewFlagSet("gem.ls", flag.ExitOnError)
-	arg.Gems.Ls.Person = flags.Bool("person", false, "select person keys")
-	arg.Gems.Ls.Device = flags.Bool("device", false, "select device keys")
+func gemLsCmd(arg *NecklessArgs) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "ls",
+		Short: "manage a gem stone in neckless",
 
-	return &ffcli.Command{
-		Name:       "ls",
-		ShortUsage: "manage a gem stone in neckless",
-		ShortHelp:  "manage gem stone",
-
-		LongHelp: strings.TrimSpace(`
+		Long: strings.TrimSpace(`
 	    This command is used to create and add user to the pipeline secret
 	    `),
-		FlagSet:     flags,
-		Subcommands: []*ffcli.Command{},
-		Exec: func(context.Context, []string) error {
+		RunE: func(*cobra.Command, []string) error {
 			pkms, err := GetPkms(GetPkmsArgs{
 				casketFname: arg.Gems.CasketFname,
 				privIds:     arg.Gems.PrivKeyIds,
@@ -231,7 +216,7 @@ func gemLsCmd(arg *NecklessArgs) *ffcli.Command {
 				return err
 			}
 			nl, _ := necklace.Read(arg.Gems.Fname)
-			fmt.Fprintln(arg.Nio.err, pkms[0].Id)
+			// fmt.Fprintln(arg.Nio.err, pkms[0].Id)
 			gems, _ := GetGems(pkms, &nl)
 			jsStr, err := json.MarshalIndent(gem.ToJsonGems(gems...), "", "  ")
 			if err != nil {
@@ -241,33 +226,31 @@ func gemLsCmd(arg *NecklessArgs) *ffcli.Command {
 			return nil
 		},
 	}
+	flags := cmd.PersistentFlags()
+	arg.Gems.Ls.Person = flags.Bool("person", false, "select person keys")
+	arg.Gems.Ls.Device = flags.Bool("device", false, "select device keys")
+	return cmd
 }
 
-func gemCmd(arg *NecklessArgs) *ffcli.Command {
-	flags := flag.NewFlagSet("gem", flag.ExitOnError)
+func gemCmd(arg *NecklessArgs) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "gem",
+		Short: "manage a gem stone in neckless",
+
+		Long: strings.TrimSpace(`
+	    This command is used to create and add user to the pipeline secret
+	    `),
+	}
+	cmd.AddCommand(gemAddCmd(arg), gemRmCmd(arg), gemLsCmd(arg))
+
+	flags := cmd.PersistentFlags()
 	// homeDir := os.Getenv("HOME")
 	necklessFile := findFile(".neckless")
 	flags.StringVar(&arg.Gems.Fname, "file", necklessFile, "the neckless file")
 	homeDir := os.Getenv("HOME")
 	flags.StringVar(&arg.Gems.CasketFname, "casketFile",
 		fmt.Sprintf("%s/.neckless/casket.json", homeDir), "filename of the casket")
-	arg.Gems.PrivKeyIds = arrayFlags{}
-	flags.Var(&arg.Gems.PrivKeyIds, "privkeyid", "the neckless file")
-
-	return &ffcli.Command{
-		Name:       "gem",
-		ShortUsage: "manage a gem stone in neckless",
-		ShortHelp:  "manage gem stone",
-
-		LongHelp: strings.TrimSpace(`
-	    This command is used to create and add user to the pipeline secret
-	    `),
-		FlagSet: flags,
-		Subcommands: []*ffcli.Command{
-			gemAddCmd(arg),
-			gemRmCmd(arg),
-			gemLsCmd(arg),
-		},
-		Exec: func(context.Context, []string) error { return flag.ErrHelp },
-	}
+	// arg.Gems.PrivKeyIds = arrayFlags{}
+	flags.StringSliceVar(&arg.Gems.PrivKeyIds, "privkeyid", []string{}, "the neckless file")
+	return cmd
 }

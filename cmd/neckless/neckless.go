@@ -3,13 +3,14 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"context"
-	"flag"
 	"fmt"
+	"io"
+	"log"
 	"os"
+	"path"
 	"strings"
 
-	"github.com/peterbourgon/ff/v2/ffcli"
+	"github.com/spf13/cobra"
 )
 
 // CrazyBeeArgs Toplevel Command Args
@@ -31,47 +32,85 @@ type NecklessArgs struct {
 	Gpg       GpgArgs
 }
 
-func versionCmd(arg *NecklessArgs) *ffcli.Command {
-	return &ffcli.Command{
-		Name:       "version",
-		ShortUsage: "version",
-		ShortHelp:  "print version help",
-		LongHelp:   strings.TrimSpace("print version help"),
-		Exec: func(context.Context, []string) error {
+func versionStr(args *NecklessArgs) string {
+	return fmt.Sprintf("Version: %s:%s\n", args.Version, args.GitCommit)
+}
+
+func versionCmd(arg *NecklessArgs) *cobra.Command {
+	return &cobra.Command{
+		Use:   "version",
+		Short: "version",
+		Long:  strings.TrimSpace(`print version`),
+		Args:  cobra.MinimumNArgs(0),
+		RunE: func(*cobra.Command, []string) error {
 			fmt.Fprintf(arg.Nio.out, "Version: %s:%s\n", arg.Version, arg.GitCommit)
 			return nil
 		},
 	}
 }
 
-func buildArgs(osArgs []string, args *NecklessArgs) (*ffcli.Command, error) {
+func buildArgs(osArgs []string, args *NecklessArgs) (*cobra.Command, error) {
 	// fmt.Println(osArgs)
-	rootFlags := flag.NewFlagSet("neckless", flag.ExitOnError)
-	rootFlags.SetOutput(args.Nio.err)
-	// fmt.Fprintf(args.Nio.err, "kfkdkfkfd\n")
-	// args.Nio.err.Write([]byte("menox"))
-	// rootFlags.Output().Write([]byte("meno"))
-	rootCmd := &ffcli.Command{
-		Name:       "neckless",
-		ShortUsage: "neckless subcommand [flags]",
-		ShortHelp:  "neckless short help",
-		LongHelp:   strings.TrimSpace("neckless long help"),
-		Subcommands: []*ffcli.Command{
-			versionCmd(args),
-			casketCmd(args),
-			gemCmd(args),
-			keyValueCmd(args),
-			gpgCmd(args),
-		},
-		FlagSet: rootFlags,
-		Exec:    func(context.Context, []string) error { return flag.ErrHelp },
-	}
-
-	err := rootCmd.ParseAndRun(context.Background(), osArgs)
-	// // fmt.Printf(">>>>>", osArgs)
-	// if  err != nil && err != flag.ErrHelp {
-	// 	fmt.Fprintln(args.Nio.err, err)
+	// rootFlags := flag.NewFlagSet("neckless", flag.ExitOnError)
+	// rootFlags.SetOutput(args.Nio.err)
+	// // fmt.Fprintf(args.Nio.err, "kfkdkfkfd\n")
+	// // args.Nio.err.Write([]byte("menox"))
+	// // rootFlags.Output().Write([]byte("meno"))
+	// rootCmd := &ffcli.Command{
+	// 	Name:       "neckless",
+	// 	ShortUsage: "neckless subcommand [flags]",
+	// 	ShortHelp:  "neckless short help",
+	// 	LongHelp:   strings.TrimSpace("neckless long help"),
+	// 	Subcommands: []*ffcli.Command{
+	// 		versionCmd(args),
+	// 		casketCmd(args),
+	// 		gemCmd(args),
+	// 		keyValueCmd(args),
+	// 		gpgCmd(args),
+	// 	},
+	// 	FlagSet: rootFlags,
+	// 	Exec:    func(context.Context, []string) error { return flag.ErrHelp },
 	// }
+
+	f, err := os.OpenFile("logfile", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+	log.SetOutput(io.Writer(f))
+	log.Println("Called with=>", osArgs)
+	// err = rootCmd.ParseAndRun(context.Background(), osArgs)
+	// // // fmt.Printf(">>>>>", osArgs)
+	// // if  err != nil && err != flag.ErrHelp {
+	// // 	fmt.Fprintln(args.Nio.err, err)
+	// // }
+
+	rootCmd := &cobra.Command{
+		Use: path.Base(osArgs[0]),
+		// 	Name:       "neckless",
+		// 	ShortUsage: "neckless subcommand [flags]",
+		Short:   "neckless short help",
+		Long:    strings.TrimSpace("neckless long help"),
+		Version: versionStr(args),
+		Args:    cobra.MinimumNArgs(0),
+		RunE:    gpgRunE(args),
+	}
+	rootCmd.SetArgs(osArgs[1:])
+	// rootCmd.PersistentFlags().BoolVarP(&args.Gpg.Armor, "armor", "a", false, "Author name for copyright attribution")
+	// rootCmd.PersistentFlags().BoolVarP(&args.Gpg.DetachSign, "detach-sign", "b", false, "Author name for copyright attribution")
+	// rootCmd.PersistentFlags().BoolVarP(&args.Gpg.Sign, "sign", "s", false, "Author name for copyright attribution")
+	// rootCmd.PersistentFlags().StringVarP(&args.Gpg.UserID, "user-id", "u", "", "Author name for copyright attribution")
+	gpgFlags(rootCmd.PersistentFlags(), args)
+	rootCmd.AddCommand(gpgCmd(args))
+	rootCmd.AddCommand(versionCmd(args))
+	rootCmd.AddCommand(casketCmd(args))
+	rootCmd.AddCommand(gemCmd(args))
+	rootCmd.AddCommand(keyValueCmd(args))
+
+	// cmdEcho.AddCommand(cmdTimes)
+	err = rootCmd.Execute()
+	// fmt.Println(args.Gpg)
+	f.Close()
+
 	return rootCmd, err
 }
 
@@ -93,7 +132,7 @@ func main() {
 		Version:   Version,
 		Nio:       nio,
 	}
-	_, err := buildArgs(os.Args[1:], &args)
+	_, err := buildArgs(os.Args, &args)
 	// fmt.Println("xxxx", nio.out.String())
 	os.Stdout.WriteString(nio.out.String())
 	// os.Stderr.WriteString("Hallo")

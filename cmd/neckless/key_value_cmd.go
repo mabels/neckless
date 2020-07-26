@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -9,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/peterbourgon/ff/v2/ffcli"
+	"github.com/spf13/cobra"
 	"neckless.adviser.com/kvpearl"
 	"neckless.adviser.com/member"
 	"neckless.adviser.com/necklace"
@@ -22,13 +21,13 @@ type KeyValueLsArgs struct {
 	shKeyValue *bool
 	ghAddMask  *bool
 	onlyValue  *bool
-	tags       arrayFlags
+	tags       *[]string
 }
 
 type KeyValueArgs struct {
 	Fname       string
 	CasketFname string
-	PrivKeyIds  arrayFlags
+	PrivKeyIds  *[]string
 	PrivKeyEnv  string
 	PrivKeyVal  string
 	Ls          KeyValueLsArgs
@@ -45,20 +44,16 @@ func toKV(kvp *kvpearl.KVPearl, args []string) (*kvpearl.KVPearl, []error) {
 	}
 	return kvp, errs
 }
-func kvAddCmd(arg *NecklessArgs) *ffcli.Command {
-	flags := flag.NewFlagSet("kv.Add", flag.ExitOnError)
+func kvAddCmd(arg *NecklessArgs) *cobra.Command {
 	// Args VAL=Wert[TAGS,TAGS]
-	return &ffcli.Command{
-		Name:       "add",
-		ShortUsage: "manage a key value secrets args <KEY=VAL[TAGS,]>",
-		ShortHelp:  "manage key value secrets",
+	return &cobra.Command{
+		Use:   "add",
+		Short: "manage a key value secrets args <KEY=VAL[TAGS,]>",
 
-		LongHelp: strings.TrimSpace(`
+		Long: strings.TrimSpace(`
 	    This command is used to create and add user to the pipeline secret
 	    `),
-		FlagSet:     flags,
-		Subcommands: []*ffcli.Command{},
-		Exec: func(_ context.Context, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			if len(args) == 0 {
 				return flag.ErrHelp
 			}
@@ -75,7 +70,7 @@ func kvAddCmd(arg *NecklessArgs) *ffcli.Command {
 			nl, _ := necklace.Read(arg.Kvs.Fname)
 			pkms, err := GetPkms(GetPkmsArgs{
 				casketFname: arg.Kvs.CasketFname,
-				privIds:     arg.Kvs.PrivKeyIds,
+				privIds:     *arg.Kvs.PrivKeyIds,
 				person:      true,
 				device:      false,
 			})
@@ -102,30 +97,20 @@ func kvAddCmd(arg *NecklessArgs) *ffcli.Command {
 	}
 }
 
-func kvLsCmd(arg *NecklessArgs) *ffcli.Command {
-	flags := flag.NewFlagSet("kv.Ls", flag.ExitOnError)
-	arg.Kvs.Ls.json = flags.Bool("json", false, "select device keys")
-	arg.Kvs.Ls.keyValue = flags.Bool("keyValue", true, "select device keys")
-	arg.Kvs.Ls.onlyValue = flags.Bool("onlyValue", false, "select device keys")
-	arg.Kvs.Ls.shKeyValue = flags.Bool("shKeyValue", false, "select device keys")
-	arg.Kvs.Ls.ghAddMask = flags.Bool("ghAddMask", false, "set Value as github mask")
-	flags.Var(&arg.Kvs.Ls.tags, "tag", "list of tags to filter")
-	return &ffcli.Command{
-		Name:       "ls",
-		ShortUsage: "manage a key value secrets",
-		ShortHelp:  "manage key value secrets",
+func kvLsCmd(arg *NecklessArgs) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "ls",
+		Short: "manage a key value secrets",
 
-		LongHelp: strings.TrimSpace(`
+		Long: strings.TrimSpace(`
 	    This command is used to create and add user to the pipeline secret
 	    `),
-		FlagSet:     flags,
-		Subcommands: []*ffcli.Command{},
-		Exec: func(_ context.Context, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			nl, _ := necklace.Read(arg.Kvs.Fname)
 			closedKvps := nl.FilterByType(kvpearl.Type)
 			pkms, err := GetPkms(GetPkmsArgs{
 				casketFname: arg.Kvs.CasketFname,
-				privIds:     arg.Kvs.PrivKeyIds,
+				privIds:     *arg.Kvs.PrivKeyIds,
 				privEnvName: arg.Kvs.PrivKeyEnv,
 				privKeyVal:  arg.Kvs.PrivKeyVal,
 				person:      false,
@@ -148,7 +133,7 @@ func kvLsCmd(arg *NecklessArgs) *ffcli.Command {
 			keys := args
 			tags := arg.Kvs.Ls.tags
 			// fmt.Fprintf(arg.Nio.out, "# %s\n", strings.Join(tags, ","))
-			out := kvpearl.Merge(kvps, keys, tags).AsJSON()
+			out := kvpearl.Merge(kvps, keys, *tags).AsJSON()
 			err = nil
 			// var err error
 			if *arg.Kvs.Ls.json {
@@ -189,49 +174,44 @@ func kvLsCmd(arg *NecklessArgs) *ffcli.Command {
 			return err
 		},
 	}
+	flags := cmd.PersistentFlags()
+	arg.Kvs.Ls.json = flags.Bool("json", false, "select device keys")
+	arg.Kvs.Ls.keyValue = flags.Bool("keyValue", true, "select device keys")
+	arg.Kvs.Ls.onlyValue = flags.Bool("onlyValue", false, "select device keys")
+	arg.Kvs.Ls.shKeyValue = flags.Bool("shKeyValue", false, "select device keys")
+	arg.Kvs.Ls.ghAddMask = flags.Bool("ghAddMask", false, "set Value as github mask")
+	arg.Kvs.Ls.tags = flags.StringSlice("tag", []string{}, "list of tags to filter")
+	return cmd
 }
 
-func kvRmCmd(arg *NecklessArgs) *ffcli.Command {
-	flags := flag.NewFlagSet("kv.Rm", flag.ExitOnError)
-	return &ffcli.Command{
-		Name:       "rm",
-		ShortUsage: "manage a key value secrets",
-		ShortHelp:  "manage key value secrets",
+func kvRmCmd(arg *NecklessArgs) *cobra.Command {
+	return &cobra.Command{
+		Use:   "rm",
+		Short: "manage a key value secrets",
 
-		LongHelp: strings.TrimSpace(`
+		Long: strings.TrimSpace(`
 	    This command is used to create and add user to the pipeline secret
 	    `),
-		FlagSet:     flags,
-		Subcommands: []*ffcli.Command{},
-		Exec:        func(context.Context, []string) error { return flag.ErrHelp },
 	}
 }
 
-func keyValueCmd(arg *NecklessArgs) *ffcli.Command {
-	flags := flag.NewFlagSet("kv", flag.ExitOnError)
+func keyValueCmd(arg *NecklessArgs) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "kv",
+		Short: "manage a key value secrets",
+		Long: strings.TrimSpace(`
+	    This command is used to create and add user to the pipeline secret
+	    `),
+	}
+	cmd.AddCommand(kvAddCmd(arg), kvLsCmd(arg), kvRmCmd(arg))
+	flags := cmd.PersistentFlags()
 	necklessFile := findFile(".neckless")
 	flags.StringVar(&arg.Kvs.Fname, "file", necklessFile, "the neckless file")
 	homeDir := os.Getenv("HOME")
 	flags.StringVar(&arg.Kvs.CasketFname, "casketFile",
 		fmt.Sprintf("%s/.neckless/casket.json", homeDir), "filename of the casket")
-	arg.Gems.PrivKeyIds = arrayFlags{}
-	flags.Var(&arg.Kvs.PrivKeyIds, "privkeyid", "the neckless file")
+	arg.Kvs.PrivKeyIds = flags.StringSlice("privkeyid", []string{}, "the neckless file")
 	flags.StringVar(&arg.Kvs.PrivKeyEnv, "privkeyenv", "NECKLESS_PRIVKEY", "the neckless file")
 	flags.StringVar(&arg.Kvs.PrivKeyVal, "privkeyval", "", "the neckless file")
-	return &ffcli.Command{
-		Name:       "kv",
-		ShortUsage: "manage a key value secrets",
-		ShortHelp:  "manage key value secrets",
-
-		LongHelp: strings.TrimSpace(`
-	    This command is used to create and add user to the pipeline secret
-	    `),
-		FlagSet: flags,
-		Subcommands: []*ffcli.Command{
-			kvAddCmd(arg),
-			kvLsCmd(arg),
-			kvRmCmd(arg),
-		},
-		Exec: func(context.Context, []string) error { return flag.ErrHelp },
-	}
+	return cmd
 }

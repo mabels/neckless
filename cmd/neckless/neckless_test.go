@@ -29,7 +29,9 @@ $NECKLESS gem --casketFile casket.User2.json -file neckless.shared.json ls
 */
 
 func cmdNeckless(t *testing.T, strargs string) (*NecklessIO, error) {
-	cargs := strings.Split(strargs, " ")
+	cargs := []string{"neckless"}
+	splitted := strings.Split(strargs, " ")
+	cargs = append(cargs, splitted...) //, splitted)
 	nio := NecklessIO{
 		// in:  bytes.Buffer,
 		out: new(bytes.Buffer),
@@ -41,7 +43,8 @@ func cmdNeckless(t *testing.T, strargs string) (*NecklessIO, error) {
 	// fmt.Println(">>>", cargs)
 	_, err := buildArgs(cargs, &args)
 	if t != nil && err != nil {
-		t.Error(fmt.Sprintf("%s=>%s", strargs, err))
+		pwd, _ := os.Getwd()
+		t.Error(fmt.Sprintf("[%s]%s=>%s", pwd, strargs, err))
 	}
 	return &nio, err
 }
@@ -50,29 +53,72 @@ func TestAddUserToGem(t *testing.T) {
 	for i := 0; i < 43; i++ {
 		// test for unsort maps quirks
 		os.Remove("casket.User1.json")
-		nio, _ := cmdNeckless(t, "casket --file casket.User1.json create --person --name Person.User1")
-		nio, _ = cmdNeckless(t, "casket --file casket.User1.json create --device --name Device.User1")
-		nio, _ = cmdNeckless(t, "casket --file casket.User1.json get")
-		nio, _ = cmdNeckless(t, "casket --file casket.User1.json get --outFile device1.pub.json --device")
+		nio, err := cmdNeckless(t, "casket --file casket.User1.json create --person --name Person.User1")
+		if err != nil {
+			t.Error(err)
+		}
+		nio, err = cmdNeckless(t, "casket --file casket.User1.json create --device --name Device.User1")
+		if err != nil {
+			t.Error(err)
+		}
+		nio, err = cmdNeckless(t, "casket --file casket.User1.json get")
+		if err != nil {
+			t.Error(err)
+		}
+		nio, err = cmdNeckless(t, "casket --file casket.User1.json get --outFile device1.pub.json --device")
+		if err != nil {
+			t.Error(err)
+		}
 		os.Remove("casket.User2.json")
-		nio, _ = cmdNeckless(t, "casket --file casket.User2.json create --name Person.User2")
-		nio, _ = cmdNeckless(t, "casket --file casket.User2.json get --outFile user2.pub.json")
+		nio, err = cmdNeckless(t, "casket --file casket.User2.json create --name Person.User2")
+		if err != nil {
+			t.Error(err)
+		}
+		nio, err = cmdNeckless(t, "casket --file casket.User2.json get --outFile user2.pub.json")
+		if err != nil {
+			t.Error(err)
+		}
 		os.Remove("neckless.shared.json")
 		// t.Error("X0.out:", nio.out.String(), "\nX0.err:", nio.err.String())
-		nio, _ = cmdNeckless(t, "gem --casketFile casket.User1.json --file neckless.shared.json add")
-		nio, _ = cmdNeckless(t, "gem --casketFile casket.User1.json --file neckless.shared.json ls")
-		// t.Error("X1.out:", nio.out.String(), "\nX1.err:", nio.err.String())
-		nio, _ = cmdNeckless(t, "gem --casketFile casket.User1.json --file neckless.shared.json add --pubFile user2.pub.json")
-
-		nio, _ = cmdNeckless(t, "gem --casketFile casket.User1.json --file neckless.shared.json add --pubFile device1.pub.json")
-		// t.Error("X2", nio.out.String(), nio.err.String())
-		// t.Error("X2", nio.out.String(), nio.err.String())
-		u1nio, _ := cmdNeckless(t, "gem --casketFile casket.User1.json --file neckless.shared.json ls")
-		u2nio, _ := cmdNeckless(t, "gem --casketFile casket.User2.json --file neckless.shared.json ls")
-		tmp := []gem.JsonGem{}
-		// t.Error(string(u1nio.out.Bytes()))
-		err := json.Unmarshal(u1nio.out.Bytes(), &tmp)
+		nio, err = cmdNeckless(t, "gem --casketFile casket.User1.json --file neckless.shared.json add")
 		if err != nil {
+			t.Error(err)
+		}
+		nio, err = cmdNeckless(t, "gem --casketFile casket.User1.json --file neckless.shared.json ls")
+		if err != nil {
+			t.Error(err)
+		}
+		// t.Error("X1.out:", nio.out.String(), "\nX1.err:", nio.err.String())
+		nio, err = cmdNeckless(t, "gem --casketFile casket.User1.json --file neckless.shared.json add --pubFile user2.pub.json")
+		if err != nil {
+			t.Error(err)
+		}
+
+		nio, err = cmdNeckless(t, "gem --casketFile casket.User1.json --file neckless.shared.json add --pubFile device1.pub.json")
+		if err != nil {
+			t.Error(err)
+		}
+		// t.Error("X2", nio.out.String(), nio.err.String())
+		// t.Error("X2", nio.out.String(), nio.err.String())
+		u1nio, err := cmdNeckless(t, "gem --casketFile casket.User1.json --file neckless.shared.json ls")
+		if err != nil {
+			t.Error(err)
+		}
+		tmp := []gem.JsonGem{}
+		err = json.Unmarshal(u1nio.out.Bytes(), &tmp)
+		if err != nil {
+			pwd, _ := os.Getwd()
+			t.Error(pwd, string(u1nio.out.Bytes()))
+			t.Error(err)
+		}
+		u2nio, err := cmdNeckless(t, "gem --casketFile casket.User2.json --file neckless.shared.json ls")
+		if err != nil {
+			t.Error(err)
+		}
+		tmp = []gem.JsonGem{}
+		err = json.Unmarshal(u2nio.out.Bytes(), &tmp)
+		if err != nil {
+			t.Error(string(u2nio.out.Bytes()))
 			t.Error(err)
 		}
 		if len(tmp) != 1 {
@@ -85,13 +131,13 @@ func TestAddUserToGem(t *testing.T) {
 			t.Error("YYYY", u1nio.out.String(), u1nio.err.String())
 			t.Error("XXXX", u2nio.out.String(), u2nio.err.String())
 		}
-		var toDelId string
+		var toDelID string
 		for i := range tmp[0].PubKeys {
 			if strings.Compare(string(tmp[0].PubKeys[i].Type), string(member.Device)) == 0 {
-				toDelId = tmp[0].PubKeys[i].Id
+				toDelID = tmp[0].PubKeys[i].Id
 			}
 		}
-		nio, _ = cmdNeckless(t, fmt.Sprintf("gem --casketFile casket.User2.json --file neckless.shared.json rm %s", toDelId))
+		nio, _ = cmdNeckless(t, fmt.Sprintf("gem --casketFile casket.User2.json --file neckless.shared.json rm %s", toDelID))
 		// t.Error("X2", tmp[0].PubKeys[0].Id, nio.out.String(), nio.err.String())
 
 		u1nio, _ = cmdNeckless(t, "gem --casketFile casket.User1.json --file neckless.shared.json ls")
@@ -140,7 +186,7 @@ func TestKvs(t *testing.T) {
 	}
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add M=1 M=2")
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add N=4711 M=3")
-	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls -json")
+	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --json")
 	var my kvpearl.JsonKVPearl
 	json.Unmarshal(nio.out.Bytes(), &my)
 	if len(my.Keys) != 2 {
@@ -161,16 +207,16 @@ func TestKvs(t *testing.T) {
 
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add YU=1[T1]")
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add YU=2[T2]")
-	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls -tag T1 YU")
+	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --tag T1 YU")
 	if strings.Compare(strings.TrimSpace(nio.out.String()), "YU=\"1\"") != 0 {
 		t.Error("not expected", nio.out.String())
 	}
-	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls -tag T2 YU")
+	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --tag T2 YU")
 	if strings.Compare(strings.TrimSpace(nio.out.String()), "YU=\"2\"") != 0 {
 		t.Error("not expected", nio.out.String())
 	}
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add YU=22[T2]")
-	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls -tag T2 YU")
+	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --tag T2 YU")
 	if strings.Compare(strings.TrimSpace(nio.out.String()), "YU=\"22\"") != 0 {
 		t.Error("not expected", nio.out.String())
 	}

@@ -1,10 +1,8 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -12,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/peterbourgon/ff/v2/ffcli"
+	"github.com/spf13/cobra"
 	"neckless.adviser.com/casket"
 	"neckless.adviser.com/key"
 	"neckless.adviser.com/member"
@@ -102,29 +100,16 @@ func GetPkms(a GetPkmsArgs) ([]*member.PrivateMember, error) {
 	return pkms, nil
 }
 
-func casketCreateCmd(arg *NecklessArgs) *ffcli.Command {
-	flags := flag.NewFlagSet("create", flag.ExitOnError)
-	defaultName := uuid.New().String()
-	flags.StringVar(&arg.Casket.create.Name, "name", defaultName, "name of the key")
-	flags.StringVar(&arg.Casket.create.DeviceName, "deviceName", "", "name of the key")
+func casketCreateCmd(arg *NecklessArgs) *cobra.Command {
 
-	arg.Casket.create.DryRun = flags.Bool("dryRun", false, "set the dryrun flag")
+	cmd := &cobra.Command{
+		Use:   "create",
+		Short: "manage a casket secrets",
 
-	arg.Casket.create.DeviceType = flags.Bool("device", false, "is device")
-	arg.Casket.create.PersonType = flags.Bool("person", false, "is person")
-
-	flags.StringVar(&arg.Casket.create.ValidUntil, "valid", "", "not impl yet")
-
-	return &ffcli.Command{
-		Name:       "create",
-		ShortUsage: "manage a casket secrets",
-		ShortHelp:  "manage casket secrets",
-
-		LongHelp: strings.TrimSpace(`
+		Long: strings.TrimSpace(`
 	    This command is used to create and add user to the pipeline secret
 	    `),
-		FlagSet: flags,
-		Exec: func(ctx context.Context, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			typ := member.Person
 			if *arg.Casket.create.DeviceType {
 				typ = member.Device
@@ -149,25 +134,29 @@ func casketCreateCmd(arg *NecklessArgs) *ffcli.Command {
 			return nil
 		},
 	}
+
+	flags := cmd.PersistentFlags()
+	defaultName := uuid.New().String()
+	flags.StringVar(&arg.Casket.create.Name, "name", defaultName, "name of the key")
+	flags.StringVar(&arg.Casket.create.DeviceName, "deviceName", "", "name of the key")
+
+	arg.Casket.create.DryRun = flags.Bool("dryRun", false, "set the dryrun flag")
+
+	arg.Casket.create.DeviceType = flags.Bool("device", false, "is device")
+	arg.Casket.create.PersonType = flags.Bool("person", false, "is person")
+
+	flags.StringVar(&arg.Casket.create.ValidUntil, "valid", "", "not impl yet")
+	return cmd
 }
 
-func casketGetCmd(arg *NecklessArgs) *ffcli.Command {
-	flags := flag.NewFlagSet("get", flag.ExitOnError)
-	flags.StringVar(&arg.Casket.get.PubFile, "outFile", "", "filename to write")
-	arg.Casket.get.PrivateKey = flags.Bool("privateKey", false, "set export to private key")
-	arg.Casket.get.Person = flags.Bool("person", false, "select person keys")
-	arg.Casket.get.Device = flags.Bool("device", false, "select device keys")
-	arg.Casket.get.KeyValue = flags.Bool("keyValue", false, "output as keyvalue")
-	return &ffcli.Command{
-		Name:       "get",
-		ShortUsage: "get casket secrets",
-		ShortHelp:  "get casket secrets",
-
-		LongHelp: strings.TrimSpace(`
+func casketGetCmd(arg *NecklessArgs) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "get",
+		Short: "get casket secrets",
+		Long: strings.TrimSpace(`
 	    This command is used to create and add user to the pipeline secret
 	    `),
-		FlagSet: flags,
-		Exec: func(_ context.Context, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			pkms, err := GetPkms(GetPkmsArgs{
 				casketFname: arg.Casket.Fname,
 				privIds:     args,
@@ -230,6 +219,13 @@ func casketGetCmd(arg *NecklessArgs) *ffcli.Command {
 			return nil
 		},
 	}
+	flags := cmd.PersistentFlags()
+	flags.StringVar(&arg.Casket.get.PubFile, "outFile", "", "filename to write")
+	arg.Casket.get.PrivateKey = flags.Bool("privateKey", false, "set export to private key")
+	arg.Casket.get.Person = flags.Bool("person", false, "select person keys")
+	arg.Casket.get.Device = flags.Bool("device", false, "select device keys")
+	arg.Casket.get.KeyValue = flags.Bool("keyValue", false, "output as keyvalue")
+	return cmd
 }
 
 // func casketLsArgs(arg *NecklessArgs) *ffcli.Command {
@@ -257,19 +253,15 @@ func casketGetCmd(arg *NecklessArgs) *ffcli.Command {
 // 	}
 // }
 
-func casketRmCmd(arg *NecklessArgs) *ffcli.Command {
-	flags := flag.NewFlagSet("rm", flag.ExitOnError)
-	arg.Casket.rm.DryRun = flags.Bool("dryRun", false, "set the dryrun flag")
-	return &ffcli.Command{
-		Name:       "rm",
-		ShortUsage: "manage a casket secrets",
-		ShortHelp:  "manage casket secrets",
+func casketRmCmd(arg *NecklessArgs) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "rm",
+		Short: "manage casket secrets",
 
-		LongHelp: strings.TrimSpace(`
+		Long: strings.TrimSpace(`
 	    This command is used to create and add user to the pipeline secret
 	    `),
-		FlagSet: flags,
-		Exec: func(_ context.Context, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			_, pks, err := casket.Rm(casket.RmArg{
 				Ids:    args,
 				DryRun: *arg.Casket.rm.DryRun,
@@ -290,12 +282,10 @@ func casketRmCmd(arg *NecklessArgs) *ffcli.Command {
 			return nil
 		},
 	}
+	arg.Casket.rm.DryRun = cmd.PersistentFlags().Bool("dryRun", false, "set the dryrun flag")
+	return cmd
 }
-func casketCmd(arg *NecklessArgs) *ffcli.Command {
-	flags := flag.NewFlagSet("casket", flag.ExitOnError)
-	homeDir := os.Getenv("HOME")
-	flags.StringVar(&arg.Casket.Fname, "file",
-		fmt.Sprintf("%s/.neckless/casket.json", homeDir), "filename of the casket")
+func casketCmd(arg *NecklessArgs) *cobra.Command {
 
 	// fmt.Fprintln("xXxxx", args.casket.create.MemberArg.Type)
 	// var typ string
@@ -309,21 +299,16 @@ func casketCmd(arg *NecklessArgs) *ffcli.Command {
 	// }
 	// 	// defaultDur, _ := time.ParseDuration("5y")
 	// 	// flags.Duration("valid", defaultDur, "defined the validilty of the key")
-	return &ffcli.Command{
-		Name:       "casket",
-		ShortUsage: "manage a casket secrets",
-		ShortHelp:  "manage casket secrets",
+	cmd := &cobra.Command{
+		Use:   "casket",
+		Short: "manage a casket secrets",
 
-		LongHelp: strings.TrimSpace(`
+		Long: strings.TrimSpace(`
 	    This command is used to create and add user to the pipeline secret
 	    `),
-		FlagSet: flags,
-		Subcommands: []*ffcli.Command{
-			casketCreateCmd(arg),
-			casketGetCmd(arg),
-			casketRmCmd(arg),
-		},
-		Exec: func(context.Context, []string) error { return flag.ErrHelp },
+		Args: cobra.MinimumNArgs(0),
+
+		// RunE: func(*cobra.Command, []string) error { return flag.ErrHelp },
 		/*
 			Exec: func(context.Context, []string) error {
 				fmt.Fprintln("Casket-Hello")
@@ -331,4 +316,11 @@ func casketCmd(arg *NecklessArgs) *ffcli.Command {
 			},
 		*/
 	}
+	cmd.AddCommand(casketCreateCmd(arg), casketGetCmd(arg), casketRmCmd(arg))
+
+	flags := cmd.PersistentFlags()
+	homeDir := os.Getenv("HOME")
+	flags.StringVar(&arg.Casket.Fname, "file",
+		fmt.Sprintf("%s/.neckless/casket.json", homeDir), "filename of the casket")
+	return cmd
 }
