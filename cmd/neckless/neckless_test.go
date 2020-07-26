@@ -53,7 +53,7 @@ func TestAddUserToGem(t *testing.T) {
 	for i := 0; i < 43; i++ {
 		// test for unsort maps quirks
 		os.Remove("casket.User1.json")
-		nio, err := cmdNeckless(t, "casket --file casket.User1.json create --person --name Person.User1")
+		nio, err := cmdNeckless(t, "casket --file casket.User1.json create --person --name Person.User1 --email test@test.com")
 		if err != nil {
 			t.Error(err)
 		}
@@ -61,9 +61,22 @@ func TestAddUserToGem(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		nio, err = cmdNeckless(t, "casket --file casket.User1.json get")
+		nio, err = cmdNeckless(t, "casket --file casket.User1.json get test@test")
 		if err != nil {
 			t.Error(err)
+		}
+		tmp := []member.JsonPublicMember{}
+		err = json.Unmarshal(nio.out.Bytes(), &tmp)
+		if err != nil {
+			t.Error(string(nio.out.Bytes()))
+			t.Error(err)
+		}
+		if len(tmp) != 1 {
+			t.Error(string(nio.out.Bytes()))
+			t.Error(err)
+		}
+		if !strings.Contains(tmp[0].Email, "test@test") {
+			t.Error(string(nio.out.Bytes()))
 		}
 		nio, err = cmdNeckless(t, "casket --file casket.User1.json get --outFile device1.pub.json --device")
 		if err != nil {
@@ -104,8 +117,8 @@ func TestAddUserToGem(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		tmp := []gem.JsonGem{}
-		err = json.Unmarshal(u1nio.out.Bytes(), &tmp)
+		gtmp := []gem.JsonGem{}
+		err = json.Unmarshal(u1nio.out.Bytes(), &gtmp)
 		if err != nil {
 			pwd, _ := os.Getwd()
 			t.Error(pwd, string(u1nio.out.Bytes()))
@@ -115,26 +128,26 @@ func TestAddUserToGem(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		tmp = []gem.JsonGem{}
-		err = json.Unmarshal(u2nio.out.Bytes(), &tmp)
+		gtmp = []gem.JsonGem{}
+		err = json.Unmarshal(u2nio.out.Bytes(), &gtmp)
 		if err != nil {
 			t.Error(string(u2nio.out.Bytes()))
 			t.Error(err)
 		}
-		if len(tmp) != 1 {
-			t.Error("not expected len", len(tmp))
+		if len(gtmp) != 1 {
+			t.Error("not expected len", len(gtmp))
 		}
-		if len(tmp[0].PubKeys) != 3 {
-			t.Error("not expected len pubkeys", len(tmp[0].PubKeys))
+		if len(gtmp[0].PubKeys) != 3 {
+			t.Error("not expected len pubkeys", len(gtmp[0].PubKeys))
 		}
 		if bytes.Compare(u1nio.out.Bytes(), u2nio.out.Bytes()) != 0 {
 			t.Error("YYYY", u1nio.out.String(), u1nio.err.String())
 			t.Error("XXXX", u2nio.out.String(), u2nio.err.String())
 		}
 		var toDelID string
-		for i := range tmp[0].PubKeys {
-			if strings.Compare(string(tmp[0].PubKeys[i].Type), string(member.Device)) == 0 {
-				toDelID = tmp[0].PubKeys[i].Id
+		for i := range gtmp[0].PubKeys {
+			if strings.Compare(string(gtmp[0].PubKeys[i].Type), string(member.Device)) == 0 {
+				toDelID = gtmp[0].PubKeys[i].Id
 			}
 		}
 		nio, _ = cmdNeckless(t, fmt.Sprintf("gem --casketFile casket.User2.json --file neckless.shared.json rm %s", toDelID))
@@ -142,21 +155,21 @@ func TestAddUserToGem(t *testing.T) {
 
 		u1nio, _ = cmdNeckless(t, "gem --casketFile casket.User1.json --file neckless.shared.json ls")
 		u2nio, _ = cmdNeckless(t, "gem --casketFile casket.User2.json --file neckless.shared.json ls")
-		tmp = []gem.JsonGem{}
+		gtmp = []gem.JsonGem{}
 		// t.Error(string(u1nio.out.Bytes()))
-		err = json.Unmarshal(u1nio.out.Bytes(), &tmp)
+		err = json.Unmarshal(u1nio.out.Bytes(), &gtmp)
 		if err != nil {
 			t.Error(err)
 		}
-		if len(tmp) != 1 {
+		if len(gtmp) != 1 {
 			t.Error("YYYY", u1nio.out.String(), u1nio.err.String())
 			t.Error("XXXX", u2nio.out.String(), u2nio.err.String())
-			t.Error("not expected len", len(tmp))
+			t.Error("not expected len", len(gtmp))
 		}
-		if len(tmp[0].PubKeys) != 2 {
+		if len(gtmp[0].PubKeys) != 2 {
 			t.Error("YYYY", u1nio.out.String(), u1nio.err.String())
 			t.Error("XXXX", u2nio.out.String(), u2nio.err.String())
-			t.Error("not expected len pubkeys", len(tmp[0].PubKeys))
+			t.Error("not expected len pubkeys", len(gtmp[0].PubKeys))
 		}
 		if bytes.Compare(u1nio.out.Bytes(), u2nio.out.Bytes()) != 0 {
 			t.Error("YYYY", u1nio.out.String(), u1nio.err.String())

@@ -21,6 +21,7 @@ type MemberArg struct {
 	Type       MemberType
 	Name       string
 	Device     string
+	Email      string
 	ValidUntil *time.Time
 	Updated    *time.Time `json:"updated"`
 	Created    *time.Time `json:"created"`
@@ -29,6 +30,7 @@ type MemberArg struct {
 type MemberBase struct {
 	Type       MemberType `json:"type"`
 	Name       string     `json:"name"`
+	Email      string     `json:"email,omitempty"`
 	Device     string     `json:"device,omitempty"`
 	ValidUntil time.Time  `json:"validUntil"`
 	Updated    time.Time  `json:"updated"`
@@ -74,6 +76,9 @@ func NewMember(m *MemberArg) (*Member, error) {
 		return &ret, errors.New("Require name")
 	}
 	ret.Name = m.Name
+	if len(m.Email) != 0 {
+		ret.Email = m.Email
+	}
 	if len(m.Device) != 0 {
 		ret.Device = m.Device
 	}
@@ -240,17 +245,38 @@ type JsonPrivatePublicMember struct {
 	PublicKey  *string
 }
 
-func FilterById(pkms []*PrivateMember, ids ...string) []*PrivateMember {
-	ret := []*PrivateMember{}
-	mids := map[string](struct{}){}
-	for i := range ids {
-		mids[ids[i]] = struct{}{}
+func Matcher(args ...string) func(p *PrivateMember) bool {
+	return func(p *PrivateMember) bool {
+		for i := range args {
+			if strings.Contains(p.Id, args[i]) ||
+				strings.Contains(p.Name, args[i]) ||
+				strings.Contains(p.Email, args[i]) {
+				return true
+			}
+		}
+		return len(args) == 0
 	}
+}
+
+func Filter(pkms []*PrivateMember, filters ...func(*PrivateMember) bool) []*PrivateMember {
+	ret := []*PrivateMember{}
+	/*
+		mids := map[string](struct{}){}
+		for i := range ids {
+			mids[ids[i]] = struct{}{}
+		}
+	*/
+	filter := func(*PrivateMember) bool { return true }
+	if len(filters) > 0 {
+		filter = filters[0]
+	}
+
 	for i := range pkms {
 		pkm := pkms[i]
-		_, found := mids[pkm.Id]
-		// fmt.Println(pkm.Id, ids)
-		if len(mids) == 0 || found {
+		if filter(pkm) {
+			// _, found := mids[pkm.Id]
+			// fmt.Println(pkm.Id, ids)
+			// if len(mids) == 0 || found {
 			ret = append(ret, pkm)
 		}
 	}

@@ -23,6 +23,7 @@ type CasketCreateArgs struct {
 	Name       string
 	DryRun     *bool
 	DeviceName string
+	Email      string
 	DeviceType *bool
 	PersonType *bool
 	ValidUntil string
@@ -45,9 +46,10 @@ type GetPkmsArgs struct {
 	casketFname string
 	privEnvName string
 	privKeyVal  string
-	privIds     []string
-	person      bool
-	device      bool
+	filter      func(*member.PrivateMember) bool
+	// privIds     []string
+	person bool
+	device bool
 }
 
 func GetPkms(a GetPkmsArgs) ([]*member.PrivateMember, error) {
@@ -93,7 +95,7 @@ func GetPkms(a GetPkmsArgs) ([]*member.PrivateMember, error) {
 			pkms = append(pkms, pkm)
 		}
 	}
-	pkms = append(pkms, member.FilterByType(member.FilterById(casket.AsPrivateMembers(), a.privIds...), mtyps...)...)
+	pkms = append(pkms, member.FilterByType(member.Filter(casket.AsPrivateMembers(), a.filter), mtyps...)...)
 	if len(pkms) == 0 {
 		return nil, errors.New("you need a private key")
 	}
@@ -122,6 +124,7 @@ func casketCreateCmd(arg *NecklessArgs) *cobra.Command {
 					Id:     uuid.New().String(),
 					Type:   typ,
 					Name:   arg.Casket.create.Name,
+					Email:  arg.Casket.create.Email,
 					Device: arg.Casket.create.DeviceName,
 				},
 			})
@@ -139,6 +142,7 @@ func casketCreateCmd(arg *NecklessArgs) *cobra.Command {
 	defaultName := uuid.New().String()
 	flags.StringVar(&arg.Casket.create.Name, "name", defaultName, "name of the key")
 	flags.StringVar(&arg.Casket.create.DeviceName, "deviceName", "", "name of the key")
+	flags.StringVar(&arg.Casket.create.Email, "email", "", "email address")
 
 	arg.Casket.create.DryRun = flags.Bool("dryRun", false, "set the dryrun flag")
 
@@ -151,15 +155,16 @@ func casketCreateCmd(arg *NecklessArgs) *cobra.Command {
 
 func casketGetCmd(arg *NecklessArgs) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "get",
-		Short: "get casket secrets",
+		Use:     "get",
+		Aliases: []string{"ls"},
+		Short:   "get casket secrets",
 		Long: strings.TrimSpace(`
 	    This command is used to create and add user to the pipeline secret
 	    `),
 		RunE: func(_ *cobra.Command, args []string) error {
 			pkms, err := GetPkms(GetPkmsArgs{
 				casketFname: arg.Casket.Fname,
-				privIds:     args,
+				filter:      member.Matcher(args...),
 				privEnvName: arg.Kvs.PrivKeyEnv,
 				privKeyVal:  arg.Kvs.PrivKeyVal,
 				person:      *arg.Casket.get.Person,
@@ -168,24 +173,6 @@ func casketGetCmd(arg *NecklessArgs) *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			// c, err := casket.Ls(arg.Casket.Fname)
-			// pkms := c.AsPrivateMembers()
-			// mtyps := []member.MemberType{}
-			// if *arg.Casket.get.Person {
-			// 	mtyps = append(mtyps, member.Person)
-			// }
-			// if *arg.Casket.get.Device {
-			// 	mtyps = append(mtyps, member.Device)
-			// }
-			// // if len(mtyps) == 0 {
-			// // mtyps = append(mtyps, member.Person)
-			// // }
-			// // fmt.Fprintln(arg.Nio.err, "xxxx", mtyps, args, len(pkms))
-			// // fmt.Fprintln(arg.Nio.err, len(member.FilterByType(pkms, mtyps...)))
-			// // fmt.Fprintln(arg.Nio.err, args[0], len(member.FilterById(pkms, args...)))
-			// pkms = member.FilterById(member.FilterByType(pkms, mtyps...), args...)
-			// // fmt.Fprintln(arg.Nio.err, "yyy", mtyps, args, len(pkms))
 			var js []byte
 			var err1 error
 			if *arg.Casket.get.PrivateKey {

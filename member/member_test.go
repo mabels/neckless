@@ -49,6 +49,9 @@ func compareMember(m1 *Member, m2 *Member, t *testing.T) {
 	if strings.Compare(m1.Device, m2.Device) != 0 {
 		t.Error("Device error")
 	}
+	if strings.Compare(m1.Email, m2.Email) != 0 {
+		t.Error("Email error")
+	}
 	// t.Error(pmi.Member.ValidUntil.String(), pm.Member.ValidUntil.String())
 	if !time.Time.Equal(m1.ValidUntil, m2.ValidUntil) {
 		t.Error("ValidUntil error")
@@ -113,6 +116,7 @@ func TestPrivateMemberJson(t *testing.T) {
 			Type:   Person,
 			Name:   "testName",
 			Device: "testDevice",
+			Email:  "testEmail",
 		},
 	})
 	json, _ := pkm.AsJSON().String()
@@ -165,19 +169,19 @@ func TestFilterById(t *testing.T) {
 		})
 		lst = append(lst, device)
 	}
-	if len(FilterById(lst)) != len(lst) {
+	if len(Filter(lst, Matcher())) != len(lst) {
 		t.Error("Filter by nothing")
 	}
-	if len(FilterById(lst, []string{}...)) != len(lst) {
+	if len(Filter(lst, Matcher([]string{}...))) != len(lst) {
 		t.Error("Filter by nothing")
 	}
-	if len(FilterById(lst)) != len(lst) {
+	if len(Filter(lst)) != len(lst) {
 		t.Error("Filter by nothing")
 	}
-	if len(FilterById(lst, []string{"darf nix passieren"}...)) != 0 {
+	if len(Filter(lst, Matcher([]string{"darf nix passieren"}...))) != 0 {
 		t.Error("Filter by nothing")
 	}
-	if len(FilterById(lst, lst[0].Id, lst[3].Id, "garnix")) != 2 {
+	if len(Filter(lst, Matcher(lst[0].Id, lst[3].Id, "garnix"))) != 2 {
 		t.Error("Filter by nothing")
 	}
 }

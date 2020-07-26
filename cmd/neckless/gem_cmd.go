@@ -104,7 +104,7 @@ func gemAddCmd(arg *NecklessArgs) *cobra.Command {
 		RunE: func(*cobra.Command, []string) error {
 			pkms, err := GetPkms(GetPkmsArgs{
 				casketFname: arg.Gems.CasketFname,
-				privIds:     arg.Gems.PrivKeyIds,
+				filter:      member.Matcher(arg.Gems.PrivKeyIds...),
 				person:      *arg.Gems.Add.Person,
 				device:      *arg.Gems.Add.Device})
 			if err != nil {
@@ -172,7 +172,8 @@ func gemRmCmd(arg *NecklessArgs) *cobra.Command {
 		RunE: func(_ *cobra.Command, args []string) error {
 			pkms, err := GetPkms(GetPkmsArgs{
 				casketFname: arg.Gems.CasketFname,
-				privIds:     arg.Gems.PrivKeyIds})
+				filter:      member.Matcher(arg.Gems.PrivKeyIds...),
+			})
 			nl, _ := necklace.Read(arg.Gems.Fname)
 			gems, _ := GetGems(pkms, &nl)
 			// fmt.Fprintln(arg.Nio.err, pkms[0].Id)
@@ -209,7 +210,7 @@ func gemLsCmd(arg *NecklessArgs) *cobra.Command {
 		RunE: func(*cobra.Command, []string) error {
 			pkms, err := GetPkms(GetPkmsArgs{
 				casketFname: arg.Gems.CasketFname,
-				privIds:     arg.Gems.PrivKeyIds,
+				filter:      member.Matcher(arg.Gems.PrivKeyIds...),
 				person:      *arg.Gems.Ls.Person,
 				device:      *arg.Gems.Ls.Device})
 			if err != nil {

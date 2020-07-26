@@ -70,7 +70,7 @@ func kvAddCmd(arg *NecklessArgs) *cobra.Command {
 			nl, _ := necklace.Read(arg.Kvs.Fname)
 			pkms, err := GetPkms(GetPkmsArgs{
 				casketFname: arg.Kvs.CasketFname,
-				privIds:     *arg.Kvs.PrivKeyIds,
+				filter:      member.Matcher(*arg.Kvs.PrivKeyIds...),
 				person:      true,
 				device:      false,
 			})
@@ -110,7 +110,7 @@ func kvLsCmd(arg *NecklessArgs) *cobra.Command {
 			closedKvps := nl.FilterByType(kvpearl.Type)
 			pkms, err := GetPkms(GetPkmsArgs{
 				casketFname: arg.Kvs.CasketFname,
-				privIds:     *arg.Kvs.PrivKeyIds,
+				filter:      member.Matcher(*arg.Kvs.PrivKeyIds...),
 				privEnvName: arg.Kvs.PrivKeyEnv,
 				privKeyVal:  arg.Kvs.PrivKeyVal,
 				person:      false,
