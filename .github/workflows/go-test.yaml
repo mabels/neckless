@@ -20,7 +20,7 @@ jobs:
             go: '1.14'
             path_name: neckless
             bin_name: neckless-linux
-          - platform: macos-latest
+          - platform: ['self-hosted', 'macOS', 'X64']
             go: '1.14'
             path_name: neckless
             bin_name: neckless-macos

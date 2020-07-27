@@ -53,7 +53,7 @@ jobs:
           path_name: neckless
           go: '1.14'
           bin_name: neckless-linux
-        - platform: macos-latest
+        - platform: ['self-hosted', 'macOS', 'X64']
           path_name: neckless
           go: '1.14'
           bin_name: neckless-mac
