@@ -24,7 +24,8 @@ jobs:
             go: '1.14'
             path_name: neckless
             bin_name: neckless-macos
-          - platform: windows-latest
+          #- platform: windows-latest
+          - platform: ['self-hosted', 'Windows', 'X64']
             go: '1.14'
             path_name: neckless.exe
             bin_name: neckless-win.exe
