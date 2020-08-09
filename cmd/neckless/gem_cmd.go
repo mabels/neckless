@@ -112,7 +112,7 @@ func gemAddCmd(arg *NecklessArgs) *cobra.Command {
 			}
 			var jsStr []byte
 			if strings.Compare(arg.Gems.Add.PubFile, "stdin") == 0 {
-				jsStr, err = ioutil.ReadAll(os.Stdin)
+				jsStr, err = ioutil.ReadAll(arg.Nio.in)
 			} else {
 				jsStr, err = ioutil.ReadFile(arg.Gems.Add.PubFile)
 			}
@@ -148,7 +148,7 @@ func gemAddCmd(arg *NecklessArgs) *cobra.Command {
 			}
 			nl.Save(arg.Gems.Fname)
 			jsStr, err = json.MarshalIndent(pubMembers, "", "  ")
-			fmt.Fprintln(arg.Nio.out, string(jsStr))
+			fmt.Fprintln(arg.Nio.out.first().buf, string(jsStr))
 			return err
 		},
 	}
@@ -194,7 +194,7 @@ func gemRmCmd(arg *NecklessArgs) *cobra.Command {
 			}
 			nl.Save(arg.Gems.Fname)
 			jsStr, err := json.MarshalIndent(myGems, "", "  ")
-			fmt.Fprintln(arg.Nio.out, string(jsStr))
+			fmt.Fprintln(arg.Nio.out.first().buf, string(jsStr))
 			return err
 		},
 	}
@@ -223,7 +223,7 @@ func gemLsCmd(arg *NecklessArgs) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(arg.Nio.out, string(jsStr))
+			fmt.Fprintln(arg.Nio.out.first().buf, string(jsStr))
 			return nil
 		},
 	}

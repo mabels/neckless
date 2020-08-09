@@ -3,8 +3,10 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -13,15 +15,90 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type NecklessOutput struct {
+	buf   *bytes.Buffer
+	Size  int
+	Name  string
+	Perm  os.FileMode
+	Error error
+}
+
+type NecklessOutputs struct {
+	nos []NecklessOutput
+}
+
+func (no *NecklessOutputs) first() *NecklessOutput {
+	return &no.nos[0]
+}
+
+func (no *NecklessOutputs) add(fname *string) *NecklessOutput {
+	if fname != nil {
+		// fmt.Println("add:", *fname, len(no.nos))
+		for i := range no.nos {
+			if no.nos[i].Name == *fname {
+				// fmt.Println("add:found:", *fname)
+				return &no.nos[i]
+			}
+		}
+		no.nos = append(no.nos, NecklessOutput{
+			buf:  &bytes.Buffer{},
+			Size: 0,
+			Name: *fname,
+			Perm: 0644,
+		})
+		// fmt.Printf("add:append:%p:%s:%d\n", no, *fname, len(no.nos))
+		return &no.nos[len(no.nos)-1]
+	}
+	return &no.nos[0]
+}
+
 // CrazyBeeArgs Toplevel Command Args
 type NecklessIO struct {
 	// in  *bufio.Reader
 	// out *bufio.Writer
 	// err *bufio.Writer
-	in  *bufio.Reader
-	out *bytes.Buffer
-	err *bytes.Buffer
+	quite bool
+	in    *bufio.Reader
+	out   NecklessOutputs
+	err   NecklessOutputs
 }
+
+func (outs *NecklessOutputs) write(quite ...bool) {
+	status := [](*NecklessOutput){}
+	for i := range outs.nos {
+		out := outs.nos[i]
+		// fmt.Printf(">>>>:%p:%s:%d:%d\n", outs, out, i, len(outs.nos))
+		if out.Name == "/dev/stderr" {
+			os.Stderr.WriteString(out.buf.String())
+		} else if out.Name == "/dev/stdout" {
+			os.Stdout.WriteString(out.buf.String())
+		} else {
+			if out.Perm == 0000 {
+				out.Perm = 0644
+			}
+			out.Error = ioutil.WriteFile(out.Name, out.buf.Bytes(), out.Perm)
+			status = append(status, &out)
+		}
+		out.Size = len(out.buf.Bytes())
+	}
+	if (len(quite) == 0 || !quite[0]) && len(status) > 0 {
+		hasError := false
+		for i := range status {
+			if status[i].Error != nil {
+				hasError = true
+			}
+		}
+		if hasError {
+			data, err := json.MarshalIndent(status, "", "  ")
+			if err != nil {
+				os.Stderr.WriteString(err.Error())
+				return
+			}
+			os.Stderr.Write(data)
+		}
+	}
+}
+
 type NecklessArgs struct {
 	GitCommit string
 	Version   string
@@ -43,7 +120,7 @@ func versionCmd(arg *NecklessArgs) *cobra.Command {
 		Long:  strings.TrimSpace(`print version`),
 		Args:  cobra.MinimumNArgs(0),
 		RunE: func(*cobra.Command, []string) error {
-			fmt.Fprintf(arg.Nio.out, "Version: %s:%s\n", arg.Version, arg.GitCommit)
+			fmt.Fprintf(arg.Nio.out.first().buf, "Version: %s:%s\n", arg.Version, arg.GitCommit)
 			return nil
 		},
 	}
@@ -99,6 +176,7 @@ func buildArgs(osArgs []string, args *NecklessArgs) (*cobra.Command, error) {
 	// rootCmd.PersistentFlags().BoolVarP(&args.Gpg.DetachSign, "detach-sign", "b", false, "Author name for copyright attribution")
 	// rootCmd.PersistentFlags().BoolVarP(&args.Gpg.Sign, "sign", "s", false, "Author name for copyright attribution")
 	// rootCmd.PersistentFlags().StringVarP(&args.Gpg.UserID, "user-id", "u", "", "Author name for copyright attribution")
+	rootCmd.PersistentFlags().BoolVarP(&args.Nio.quite, "quite", "q", false, "no output")
 	gpgFlags(rootCmd.PersistentFlags(), args)
 	rootCmd.AddCommand(gpgCmd(args))
 	rootCmd.AddCommand(versionCmd(args))
@@ -122,31 +200,29 @@ var GitCommit string
 var Version string
 
 func main() {
-	nio := NecklessIO{
-		in:  bufio.NewReader(os.Stdin),
-		out: new(bytes.Buffer),
-		err: new(bytes.Buffer),
-	}
 	args := NecklessArgs{
 		GitCommit: GitCommit,
 		Version:   Version,
-		Nio:       nio,
+		Nio: NecklessIO{
+			in: bufio.NewReader(os.Stdin),
+			out: NecklessOutputs{
+				nos: []NecklessOutput{{
+					buf:  new(bytes.Buffer),
+					Name: "/dev/stdout",
+				}}},
+			err: NecklessOutputs{
+				nos: []NecklessOutput{{
+					buf:  new(bytes.Buffer),
+					Name: "/dev/stderr",
+				}}},
+		},
 	}
 	_, err := buildArgs(os.Args, &args)
-	// fmt.Println("xxxx", nio.out.String())
-	os.Stdout.WriteString(nio.out.String())
-	// os.Stderr.WriteString("Hallo")
-	os.Stderr.WriteString(nio.err.String())
+	args.Nio.out.write(args.Nio.quite)
+	args.Nio.err.write(args.Nio.quite)
+
 	if err != nil {
 		os.Stderr.WriteString(fmt.Sprintln(err.Error()))
 		os.Exit(1)
 	}
-	// nio.out.Flush()
-	// nio.err.Flush()
-	// fmt.Println(">>>", args, cmd.FlagSet.Args())
-	// fmt.Println("DryRun", args.casket.create.DryRun)
-	// fmt.Println("File", *&args.casket.create.Fname)
-	// fmt.Println("Name", args.casket.create.MemberArg.Name)
-	// fmt.Println("Device", args.casket.create.MemberArg.Device)
-	// fmt.Println("Type", args.casket.create.MemberArg.Type)
 }

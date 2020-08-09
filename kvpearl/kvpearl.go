@@ -3,196 +3,78 @@ package kvpearl
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
-	"fmt"
-	"math"
-	"regexp"
 	"sort"
-	"strings"
 	"time"
 
 	"neckless.adviser.com/key"
 	"neckless.adviser.com/pearl"
 )
 
-type Value struct {
-	Value string
-	Order time.Time // `json:"-"`
-	Tags  []string
-}
-type Key struct {
-	Key    string
-	Values [](*Value)
-}
+// // fmt.Println("XXXX", len(key.Values), len(mergedValue), mergedValue)
+// if len(key.Values) < len(mergedValue) {
+// 	for i := len(key.Values); i < len(mergedValue); i++ {
+// 		key.Values = append(key.Values, &Value{
+// 			Value: "",
+// 			Tags:  []string{},
+// 		})
+// 		// fmt.Println("APPEND-To-Values", len(key.Values))
+// 	}
+// }
+// // key.Values = make([]Value, len(mergedValue))
+// idx := 0
+// for i := range mergedValue {
+// 	key.Values[idx] = mergedValue[i]
+// 	idx++
+// }
 
-type KeySorter []*Key
-
-// Len is part of sort.Interface.
-func (s *KeySorter) Len() int {
-	return len(*s)
-}
-
-// Swap is part of sort.Interface.
-func (s *KeySorter) Swap(i, j int) {
-	(*s)[i], (*s)[j] = (*s)[j], (*s)[i]
-}
-
-// Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
-func (s *KeySorter) Less(i, j int) bool {
-	return strings.Compare((*s)[i].Key, (*s)[j].Key) < 0
+type JsonKVPearl struct {
+	// Tags []string
+	Keys        []*JsonKey // sorted by keys
+	FingerPrint string     `json:"FingerPrint,omitempty"`
+	Created     time.Time
 }
 
 type KVPearl struct {
 	// Tags []string
-	Keys    map[string](*Key)
+	Keys    keys
 	Created time.Time
-	Seq     int64            `json:"-"` // windows timer is not good enough
-	Pearl   *pearl.OpenPearl `json:"-"`
-}
-
-type JsonKVPearl struct {
-	// Tags []string
-	Keys        []*Key
-	FingerPrint string `json:"FingerPrint,omitempty"`
-	Created     time.Time
-}
-
-func JsonKVPearlValueBy(p1, p2 *JsonKVPearl) bool {
-	return p1.Created.UnixNano() < p2.Created.UnixNano()
-}
-
-type JsonKVPearlSorter struct {
-	Values [](*JsonKVPearl)
-	By     func(p1, p2 *JsonKVPearl) bool // Closure used in the Less method.
-}
-
-// Len is part of sort.Interface.
-func (s *JsonKVPearlSorter) Len() int {
-	return len(s.Values)
-}
-
-// Swap is part of sort.Interface.
-func (s *JsonKVPearlSorter) Swap(i, j int) {
-	s.Values[i], s.Values[j] = s.Values[j], s.Values[i]
-}
-
-// Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
-func (s *JsonKVPearlSorter) Less(i, j int) bool {
-	return s.By(s.Values[i], s.Values[j])
-}
-
-func AsJSON(kvps []*KVPearl) []*JsonKVPearl {
-	out := make([]*JsonKVPearl, len(kvps))
-	for i := range kvps {
-		out[i] = kvps[i].AsJSON()
-	}
-	sort.Sort(&JsonKVPearlSorter{
-		Values: out,
-		By:     JsonKVPearlValueBy,
-	})
-	return out
-}
-
-func uniqStrings(strs []string) []string {
-	set := map[string](struct{}){}
-	for i := range strs {
-		set[strs[i]] = struct{}{}
-	}
-	ret := make([]string, len(set))
-	// fmt.Printf("uniq-1:%d\n", len(set), len(ret))
-	idx := 0
-	for i := range set {
-		ret[idx] = i
-		idx++
-		// fmt.Printf("i:%s:%d\n", i, len(ret))
-	}
-	// fmt.Println("xxxx:", ret)
-	sort.Strings(ret)
-	return ret
+	// Seq     int64            `json:"-"` // windows timer is not good enough
+	Pearl *pearl.OpenPearl `json:"-"`
 }
 
 func Create( /* tags ...string */ ) *KVPearl {
 	return &KVPearl{
 		// Tags: uniqStrings(tags),
-		Keys:    map[string](*Key){},
+		Keys:    keys{},
 		Created: time.Now(),
 	}
 }
 
-func (key *Key) setValue(order time.Time, val string, tags []string) *Value {
-	mergedValue := map[string](*Value){}
-	for i := range key.Values {
-		value, found := mergedValue[key.Values[i].Value]
-		if !found {
-			value = key.Values[i]
-			mergedValue[key.Values[i].Value] = value
-		}
-		value.Tags = uniqStrings(value.Tags)
-	}
-	value, found := mergedValue[val]
-	if !found {
-		value = &Value{
-			Value: val,
-			Order: order,
-			Tags:  []string{},
-		}
-		mergedValue[val] = value
-	}
-	clearTags := []string{}
-	for i := range tags {
-		trimmed := strings.TrimSpace(tags[i])
-		if len(trimmed) != 0 {
-			clearTags = append(clearTags, trimmed)
-		}
-	}
-
-	value.Tags = uniqStrings(append(value.Tags, clearTags...))
-
-	// fmt.Println("XXXX", len(key.Values), len(mergedValue), mergedValue)
-	if len(key.Values) < len(mergedValue) {
-		for i := len(key.Values); i < len(mergedValue); i++ {
-			key.Values = append(key.Values, &Value{
-				Value: "",
-				Tags:  []string{},
-			})
-			// fmt.Println("APPEND-To-Values", len(key.Values))
-		}
-	}
-	// key.Values = make([]Value, len(mergedValue))
-	idx := 0
-	for i := range mergedValue {
-		key.Values[idx] = mergedValue[i]
-		idx++
-	}
-
-	sort.Sort(&ValueSorter{
-		values: key.Values,
-	})
-	// fmt.Println("YYYY=>", key.Key, len(key.Values), key.Values, tags, uniqStrings(append(value.Tags, tags...)))
-	// value.Tags = uniqStrings(append(value.Tags, tags...))
-	return value
+type SetArg struct {
+	Key        string  // is set if plain Key
+	Unresolved *string // Unresolved is set value was resolved
+	Val        string  // Value is Set if an = is used
+	Tags       []string
 }
 
-func (kvp *KVPearl) Set(order time.Time, keyVal string, val string, tags ...string) *KVPearl {
-	key, found := kvp.Keys[keyVal]
-	if !found {
-		key = &Key{
-			Key:    keyVal,
-			Values: []*Value{},
-		}
-		kvp.Keys[keyVal] = key
-		// fmt.Println("Set=>", kvp, key, keyVal, val, tags)
-	} else {
-		// fmt.Println("Found-Set=>", kvp, key, keyVal, val, tags)
-	}
-	kvp.Seq = (kvp.Seq + 41) % 4839231 // do not think
-	n10e9 := int64(math.Pow10(9))
-	tickedOrder := time.Unix(order.UnixNano()/n10e9, (order.UnixNano()%n10e9)+kvp.Seq)
-	// fmt.Printf("XXXXX:%d:%d:%d:%d:%d\n", kvp.Seq, order.UnixNano(), order.UnixNano()/n10e9, order.UnixNano()%n10e9, tickedOrder.UnixNano())
-	key.setValue(tickedOrder, val, tags)
-	// fmt.Println("Post-Set-Values", kvp, key, len(key.Values))
+// type Map map[string]*kvpearl.SetArg,
+// type Map map[string]*kvpearl.,
+// type Map map[string]*kvpearl.SetArg,toKVpearls
+
+func (kvp *KVPearl) Set(a SetArg) *KVPearl {
+	key, _ := kvp.Keys.getOrAdd(a.Key)
+	key.setValue(a.Unresolved, a.Val, tags2Map(a.Tags))
 	return kvp
 }
+
+// func (sa *SetArg) ToKVParsed() *KVParsed {
+// 	return &KVParsed{
+// 		Key:        sa.Key,
+// 		Unresolved: sa.Unresolved,
+// 		Val:        sa.Val,
+// 		Tags:       stringArray2Map(sa.Tags),
+// 	}
+// }
 
 func FromJSON(jsStr []byte) (*KVPearl, error) {
 	jskvp := JsonKVPearl{}
@@ -206,43 +88,24 @@ func FromJSON(jsStr []byte) (*KVPearl, error) {
 	for i := range jskvp.Keys {
 		key := jskvp.Keys[i]
 		for j := range key.Values {
-			kvp.Set(kvp.Created, key.Key, key.Values[j].Value, key.Values[j].Tags...)
+			kvp.Set(SetArg{
+				Key:        key.Key,
+				Unresolved: key.Values[j].Unresolved,
+				Val:        key.Values[j].Value,
+				Tags:       key.Values[j].Tags,
+			})
+
 		}
-		kvp.Keys[key.Key] = key
+		// kvp.Keys[key.Key] = &Key{
+		// 	Key:    key.Key,
+		// 	Values: kvp.get(key.Key),
+		// }
 	}
 	return kvp, nil
 }
 
-type ValueSorter struct {
-	values []*Value
-}
-
-// Len is part of sort.Interface.
-func (s *ValueSorter) Len() int {
-	return len(s.values)
-}
-
-// Swap is part of sort.Interface.
-func (s *ValueSorter) Swap(i, j int) {
-	s.values[i], s.values[j] = s.values[j], s.values[i]
-}
-
-// Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
-func (s *ValueSorter) Less(i, j int) bool {
-	return s.values[i].Order.UnixNano() > s.values[j].Order.UnixNano()
-}
-
 func (kvp *KVPearl) AsJSON() *JsonKVPearl {
-	keys := KeySorter{}
-	for i := range kvp.Keys {
-		key := kvp.Keys[i]
-		sort.Sort(&ValueSorter{values: key.Values})
-		keys = append(keys, key)
-	}
-	sort.Sort(&keys)
-	// for i := range keys {
-	// 	fmt.Println(keys[i].Key)
-	// }
+	keys := kvp.Keys.Sorted().asJson()
 	fpr := ""
 	if kvp.Pearl != nil {
 		fpr = base64.StdEncoding.EncodeToString(kvp.Pearl.Closed.FingerPrint)
@@ -281,33 +144,7 @@ func OpenPearl(pks []*key.PrivateKey, prl *pearl.Pearl) (*KVPearl, error) {
 	return kvp, err
 }
 
-type KVPearls []KVPearl
-
-type KeyValue struct {
-	Key   string
-	Value string
-}
-
-type KeyValueSorter struct {
-	values []KeyValue
-}
-
-// Len is part of sort.Interface.
-func (s *KeyValueSorter) Len() int {
-	return len(s.values)
-}
-
-// Swap is part of sort.Interface.
-func (s *KeyValueSorter) Swap(i, j int) {
-	s.values[i], s.values[j] = s.values[j], s.values[i]
-}
-
-// Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
-func (s *KeyValueSorter) Less(i, j int) bool {
-	return strings.Compare(s.values[i].Key, s.values[j].Key) < 0
-}
-
-func findTag(t1, t2 []string) bool {
+func findTag(t1 Tags, t2 []string) bool {
 	if len(t2) == 0 {
 		return true
 	}
@@ -318,9 +155,9 @@ func findTag(t1, t2 []string) bool {
 	var toSet []string
 	if len(t1) > len(t2) {
 		ref = t2
-		toSet = t1
+		toSet = t1.sorted()
 	} else {
-		ref = t1
+		ref = t1.sorted()
 		toSet = t2
 	}
 	set := map[string](struct{}){}
@@ -338,7 +175,7 @@ func findTag(t1, t2 []string) bool {
 	return false
 }
 
-func matchTag(kvp KVPearl, tags []string) []KeyValue {
+func (kvp *KVPearl) matchTag(tags []string) []KeyValue {
 	// if len(kvp.Tags) != 0 {
 	// 	if !findTag(kvp.Tags, tags) {
 	// 		return []KeyValue{}
@@ -347,145 +184,24 @@ func matchTag(kvp KVPearl, tags []string) []KeyValue {
 	mapRet := map[string]KeyValue{}
 	for i := range kvp.Keys {
 		key := kvp.Keys[i]
-		for j := range key.Values {
-			if findTag(key.Values[j].Tags, tags) {
+		vals := key.Values.revOrdered()
+		for j := range *vals {
+			if findTag((*vals)[j].Tags, tags) {
 				mapRet[key.Key] = KeyValue{
 					Key:   key.Key,
-					Value: key.Values[j].Value,
+					Value: (*vals)[j].Value,
 				}
 				break
 			}
 		}
 
 	}
-	ret := make([]KeyValue, len(mapRet))
+	ret := make(KeyValues, len(mapRet))
 	idx := 0
 	for i := range mapRet {
 		ret[idx] = mapRet[i]
 		idx++
 	}
+	sort.Sort(&ret)
 	return ret
-}
-
-func (kvps *KVPearls) Ls(tags ...string) []KeyValue {
-	// ret := KVPearls{}
-	byKey := map[string]KeyValue{}
-	for i := range *kvps {
-		kvpearl := (*kvps)[i]
-		kvs := matchTag(kvpearl, tags)
-		for j := range kvs {
-			kv := kvs[j]
-			byKey[kv.Key] = KeyValue{
-				Value: kv.Value,
-				Key:   kv.Key,
-			}
-		}
-	}
-	out := make([]KeyValue, len(byKey))
-	idx := 0
-	for i := range byKey {
-		out[idx] = byKey[i]
-		idx++
-	}
-	// fmt.Println("In=>", out)
-	sort.Sort(&KeyValueSorter{
-		values: out,
-	})
-	// fmt.Println("Out=>", out)
-	return out
-}
-
-func (kvps *KVPearls) Get(name string, tags ...string) *KeyValue {
-	out := kvps.Ls(tags...)
-	for i := range out {
-		if strings.Compare(out[i].Key, name) == 0 {
-			return &out[i]
-		}
-	}
-	return nil
-}
-
-func (kv *KVPearl) Parse(arg string) (*KVPearl, error) {
-	kvp, err := kv.parseBrackets(arg)
-	if err != nil {
-		kvp, err = kv.parseComma(arg)
-	}
-	return kvp, err
-}
-
-func (kv *KVPearl) parseComma(arg string) (*KVPearl, error) {
-	isKeyValue := regexp.MustCompile(`^([^=]+)=(.*)$`)
-	split := isKeyValue.FindStringSubmatch(arg)
-	if len(split) != 3 {
-		return nil, errors.New("found no key value")
-	}
-
-	commas := strings.Split(split[2], ",")
-	if len(commas) == 1 {
-		kv.Set(time.Now(), split[1], commas[0])
-	} else {
-		kv.Set(time.Now(), split[1], commas[0], commas[1:]...)
-	}
-	return kv, nil
-}
-
-func (kv *KVPearl) parseBrackets(arg string) (*KVPearl, error) {
-	argRegex := regexp.MustCompile(`^([^=]+)=([^\[]+)(\[([^\]]*)\])$`)
-	split := argRegex.FindStringSubmatch(arg)
-	if len(split) != 5 {
-		return nil, errors.New(fmt.Sprintf("no matching kv:[%s]", arg))
-	}
-	// js, _ := json.Marshal(split)
-	// fmt.Println(string(js))
-
-	if len(split) > 3 && len(split[4]) > 0 {
-		// fmt.Println("split set tag")
-		kv.Set(time.Now(), split[1], split[2], strings.Split(split[4], ",")...)
-	} else {
-		// fmt.Println("split set")
-		kv.Set(time.Now(), split[1], split[2])
-	}
-	return kv, nil
-}
-
-func Merge(kvps []*KVPearl, keys []string, tags []string) *KVPearl {
-	kvp := Create()
-	mapKeys := map[string]struct{}{}
-	for i := range keys {
-		key := keys[i]
-		mapKeys[key] = struct{}{}
-	}
-	mapTags := map[string]struct{}{}
-	for i := range tags {
-		key := tags[i]
-		mapTags[key] = struct{}{}
-	}
-	for i := range kvps {
-		for j := range kvps[i].Keys {
-			key := kvps[i].Keys[j]
-			_, found := mapKeys[key.Key]
-			if len(keys) == 0 || found {
-				for k := range key.Values {
-					value := key.Values[k]
-					if len(mapTags) == 0 {
-						kvp.Set(value.Order, key.Key, value.Value, value.Tags...)
-					} else {
-						if len(value.Tags) == 0 {
-							kvp.Set(value.Order, key.Key, value.Value, value.Tags...)
-						}
-						found := false
-						for t := range value.Tags {
-							_, myFound := mapTags[value.Tags[t]]
-							found = found || myFound
-						}
-						if found {
-							kvp.Set(value.Order, key.Key, value.Value, value.Tags...)
-						}
-					}
-				}
-			}
-		}
-	}
-	kvp.Created = time.Now()
-	return kvp
 }

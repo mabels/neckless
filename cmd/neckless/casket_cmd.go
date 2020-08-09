@@ -133,7 +133,7 @@ func casketCreateCmd(arg *NecklessArgs) *cobra.Command {
 				return nil
 			}
 			js, err := json.MarshalIndent(pk.AsJSON(), "", "  ")
-			fmt.Fprintln(arg.Nio.out, string(js))
+			fmt.Fprintln(arg.Nio.out.first().buf, string(js))
 			return nil
 		},
 	}
@@ -194,13 +194,13 @@ func casketGetCmd(arg *NecklessArgs) *cobra.Command {
 				if len(arg.Casket.get.PubFile) > 0 {
 					ioutil.WriteFile(arg.Casket.get.PubFile, []byte(strings.Join(out, "\n")), 0644)
 				} else {
-					fmt.Fprintln(arg.Nio.out, strings.Join(out, "\n"))
+					fmt.Fprintln(arg.Nio.out.first().buf, strings.Join(out, "\n"))
 				}
 			} else {
 				if len(arg.Casket.get.PubFile) > 0 {
 					ioutil.WriteFile(arg.Casket.get.PubFile, js, 0644)
 				} else {
-					fmt.Fprintln(arg.Nio.out, string(js))
+					fmt.Fprintln(arg.Nio.out.first().buf, string(js))
 				}
 			}
 			return nil
@@ -265,7 +265,7 @@ func casketRmCmd(arg *NecklessArgs) *cobra.Command {
 			if err != nil {
 				log.Fatal(err)
 			}
-			fmt.Fprintln(arg.Nio.out, string(js))
+			fmt.Fprintln(arg.Nio.out.first().buf, string(js))
 			return nil
 		},
 	}

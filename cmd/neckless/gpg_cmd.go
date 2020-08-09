@@ -62,13 +62,13 @@ func runCmd(cmd *exec.Cmd, args *NecklessArgs) error {
 	switch args.Gpg.StatusFd {
 	case 1:
 		log.Println("Exec(1)=", cmd.Args, sout.String(), serr.String(), err)
-		args.Nio.out.WriteString(sout.String())
-		args.Nio.err.WriteString(serr.String())
+		args.Nio.out.first().buf.WriteString(sout.String())
+		args.Nio.err.first().buf.WriteString(serr.String())
 		break
 	case 2:
 		log.Println("Exec(2)=", cmd.Args, sout.String(), serr.String(), err)
-		args.Nio.out.WriteString(sout.String())
-		args.Nio.err.WriteString(serr.String())
+		args.Nio.out.first().buf.WriteString(sout.String())
+		args.Nio.err.first().buf.WriteString(serr.String())
 		break
 	default:
 		return errors.New("Unknown statusfd")

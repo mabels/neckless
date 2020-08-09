@@ -48,12 +48,12 @@ func Read(fname string) (Necklace, []error) {
 // Reset Set or Add a Pearl to the Necklace. UpdateFprs enables
 // to replace an existing Pearl in a Necklace Chain
 func (nl *Necklace) Reset(p *pearl.Pearl, updateFprs ...[]byte) *Necklace {
-	foundIt := [][]byte{}
 	mapFpr := map[string]struct{}{}
 	mapFpr[fmt.Sprintf("%x", p.FingerPrint)] = struct{}{}
 	for i := range updateFprs {
 		mapFpr[fmt.Sprintf("%x", updateFprs[i])] = struct{}{}
 	}
+	foundIt := [][]byte{}
 	for i := range nl.Pearls {
 		_, found := mapFpr[fmt.Sprintf("%x", nl.Pearls[i].FingerPrint)]
 		// fmt.Println(found, fmt.Sprintf("%x", nl.Pearls[i].FingerPrint))
@@ -61,7 +61,7 @@ func (nl *Necklace) Reset(p *pearl.Pearl, updateFprs ...[]byte) *Necklace {
 			foundIt = append(foundIt, nl.Pearls[i].FingerPrint)
 		}
 	}
-	// fmt.Println(p.FingerPrint, foundIt)
+	fmt.Println(p.FingerPrint, foundIt)
 	nl.Rm(foundIt...)
 	nl.Pearls = append(nl.Pearls, p)
 	return nl
@@ -69,11 +69,11 @@ func (nl *Necklace) Reset(p *pearl.Pearl, updateFprs ...[]byte) *Necklace {
 
 // Rm removes Pearls from an Necklace
 func (nl *Necklace) Rm(fprs ...[]byte) *Necklace {
-	founds := []int{}
 	mapFpr := map[string]struct{}{}
 	for i := range fprs {
 		mapFpr[fmt.Sprintf("%x", fprs[i])] = struct{}{}
 	}
+	founds := []int{}
 	for i := range nl.Pearls {
 		_, found := mapFpr[fmt.Sprintf("%x", nl.Pearls[i].FingerPrint)]
 		if found {
