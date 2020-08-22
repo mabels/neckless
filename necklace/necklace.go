@@ -61,7 +61,7 @@ func (nl *Necklace) Reset(p *pearl.Pearl, updateFprs ...[]byte) *Necklace {
 			foundIt = append(foundIt, nl.Pearls[i].FingerPrint)
 		}
 	}
-	fmt.Println(p.FingerPrint, foundIt)
+	// fmt.Println(p.FingerPrint, foundIt)
 	nl.Rm(foundIt...)
 	nl.Pearls = append(nl.Pearls, p)
 	return nl

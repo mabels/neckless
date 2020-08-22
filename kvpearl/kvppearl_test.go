@@ -3,6 +3,7 @@ package kvpearl
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"math"
 	"strings"
 	"testing"
@@ -531,18 +532,35 @@ func TestMerge(t *testing.T) {
 
 func TestResolv(t *testing.T) {
 	kvp := Create()
-	sa, err := Parse("mmm@ooo")
+	p, err := Parse("mmm@ooo")
 	if err != nil {
 		t.Error(err)
 	}
-	kvp.Set(*sa)
-	if kvp.Keys.get("mmm").Values.get("ooo").Value != "ooo" {
+	if *p.Key != "mmm" {
+		t.Error("should be mmm")
+	}
+	if *p.ToResolve != "ooo" {
 		t.Error("should be ooo")
 	}
-	if kvp.Keys.get("mmm").Values.get("ooo").Unresolved != nil {
-		t.Error("should be unresolved should nil")
+	if p.KeyRegex.String() != "^mmm$" {
+		t.Error(fmt.Sprintf("should be %s", p.KeyRegex.String()))
 	}
-	sa, err = Parse("mmm@aaa", func(string, string) (*string, error) { m := "ooo"; return &m, nil })
+	if p.Val != nil {
+		t.Error("should be ooo")
+	}
+	if len(p.Tags) != 0 {
+		t.Error("should be ooo")
+	}
+
+	p, err = Parse("mmm@aaa")
+	if err != nil {
+		t.Error(err)
+	}
+	p, err = p.Resolv(func(string, string) (*string, error) { m := "ooo"; return &m, nil })
+	if err != nil {
+		t.Error(err)
+	}
+	sa, err := p.ToSetArgs()
 	if err != nil {
 		t.Error(err)
 	}
@@ -557,7 +575,15 @@ func TestResolv(t *testing.T) {
 
 func TestResolvWithCommaTags(t *testing.T) {
 	kvp := Create()
-	sa, err := Parse("mmm@ooo,T1,T2")
+	p, err := Parse("mmm@ooo,T1,T2")
+	if err != nil {
+		t.Error(err)
+	}
+	p, err = p.Resolv(func(string, string) (*string, error) { m := "ooo"; return &m, nil })
+	if err != nil {
+		t.Error(err)
+	}
+	sa, err := p.ToSetArgs()
 	if err != nil {
 		t.Error(err)
 	}
@@ -574,7 +600,15 @@ func TestResolvWithCommaTags(t *testing.T) {
 	if kvp.Keys.get("mmm").Values.get("ooo").Tags.sorted()[1] != "T2" {
 		t.Error("should tags T2")
 	}
-	sa, err = Parse("mmm@aaa,T3,T4", func(string, string) (*string, error) { m := "ooo"; return &m, nil })
+	p, err = Parse("mmm@aaa,T3,T4")
+	if err != nil {
+		t.Error(err)
+	}
+	p, err = p.Resolv(func(string, string) (*string, error) { m := "ooo"; return &m, nil })
+	if err != nil {
+		t.Error(err)
+	}
+	sa, err = p.ToSetArgs()
 	if err != nil {
 		t.Error(err)
 	}
@@ -600,7 +634,15 @@ func TestResolvWithCommaTags(t *testing.T) {
 	if kvp.Keys.get("mmm").Values.get("ooo").Tags.sorted()[3] != "T4" {
 		t.Error("should tags T4")
 	}
-	sa, err = Parse("mmm@aaa,T3,T4", func(string, string) (*string, error) { m := "rrr"; return &m, nil })
+	p, err = Parse("mmm@aaa,T3,T4")
+	if err != nil {
+		t.Error(err)
+	}
+	p, err = p.Resolv(func(string, string) (*string, error) { m := "rrr"; return &m, nil })
+	if err != nil {
+		t.Error(err)
+	}
+	sa, err = p.ToSetArgs()
 	if err != nil {
 		t.Error(err)
 	}
@@ -621,19 +663,34 @@ func TestResolvWithCommaTags(t *testing.T) {
 		t.Error("should tags T2")
 	}
 }
-func testSA(t *testing.T, err error, sa *SetArg) {
+func testSA(t *testing.T, err error, sa *KVParsed, vals ...string) {
 	if err != nil {
 		t.Error("not expected here", err)
 	}
-	if sa.Key != "mmm" {
+	if sa.Key == nil {
 		t.Error("should be mmm")
 	}
-	if sa.Val != "" {
-		t.Error("should be \"\"")
+	if *sa.Key != "mmm" {
+		t.Error("should be mmm")
 	}
-	if sa.Unresolved != nil {
+	if sa.KeyRegex.String() != "^mmm$" {
+		t.Error("should be ^mmm$")
+	}
+	if sa.ToResolve == nil {
 		t.Error("should be unresolved nil")
 	}
+	if len(vals) == 0 {
+		if sa.Val != nil {
+			t.Error("should be val")
+		}
+	} else {
+		if *sa.Val != vals[0] {
+			t.Error("should be val")
+		}
+	}
+	// if *sa.Val != "" {
+	// t.Error("should be \"\"")
+	// }
 	if len(sa.Tags) != 0 {
 		t.Error("should be 0")
 	}
@@ -641,17 +698,36 @@ func testSA(t *testing.T, err error, sa *SetArg) {
 func TestEmptyParse(t *testing.T) {
 	sa, err := Parse("mmm@[]")
 	testSA(t, err, sa)
-	sa, err = Parse("mmm@[]", func(string, string) (*string, error) { m := "rrr"; return &m, nil })
-	testSA(t, err, sa)
+	sa, err = Parse("mmm@[]")
+	sa, err = sa.Resolv(func(string, string) (*string, error) { m := "rrr"; return &m, nil })
+	testSA(t, err, sa, "rrr")
 	sa, err = Parse("mmm@,")
 	testSA(t, err, sa)
-	sa, err = Parse("mmm@,", func(string, string) (*string, error) { m := "rrr"; return &m, nil })
-	testSA(t, err, sa)
+	sa, err = Parse("mmm@,")
+	sa, err = sa.Resolv(func(string, string) (*string, error) { m := "rrr"; return &m, nil })
+	testSA(t, err, sa, "rrr")
 }
 
 func TestResolvWithBracketsTags(t *testing.T) {
 	kvp := Create()
-	sa, err := Parse("mmm@ooo[T1,T2]")
+	p, err := Parse("mmm@ZZZ[T1,T2]")
+	if err != nil {
+		t.Error(err)
+	}
+	p, err = p.Resolv(func(key string, val string) (*string, error) {
+		if key != "mmm" {
+			t.Error("should be mmm")
+		}
+		if val != "ZZZ" {
+			t.Error("should be ZZZ")
+		}
+		m := "ooo"
+		return &m, nil
+	})
+	if err != nil {
+		t.Error(err)
+	}
+	sa, err := p.ToSetArgs()
 	if err != nil {
 		t.Error(err)
 	}
@@ -668,7 +744,15 @@ func TestResolvWithBracketsTags(t *testing.T) {
 	if kvp.Keys.get("mmm").Values.get("ooo").Tags.sorted()[1] != "T2" {
 		t.Error("should tags T2")
 	}
-	sa, err = Parse("mmm@aaa[T3,T4]", func(string, string) (*string, error) { m := "ooo"; return &m, nil })
+	p, err = Parse("mmm@aaa[T3,T4]")
+	if err != nil {
+		t.Error(err)
+	}
+	p, err = p.Resolv(func(string, string) (*string, error) { m := "ooo"; return &m, nil })
+	if err != nil {
+		t.Error(err)
+	}
+	sa, err = p.ToSetArgs()
 	if err != nil {
 		t.Error(err)
 	}
@@ -695,7 +779,15 @@ func TestResolvWithBracketsTags(t *testing.T) {
 		t.Error("should tags T4")
 	}
 
-	sa, err = Parse("mmm@aaa[T3,T4]", func(string, string) (*string, error) { m := "rrr"; return &m, nil })
+	p, err = Parse("mmm@aaa[T3,T4]")
+	if err != nil {
+		t.Error(err)
+	}
+	p, err = p.Resolv(func(string, string) (*string, error) { m := "rrr"; return &m, nil })
+	if err != nil {
+		t.Error(err)
+	}
+	sa, err = p.ToSetArgs()
 	if err != nil {
 		t.Error(err)
 	}

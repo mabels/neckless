@@ -14,7 +14,7 @@ type KVParsed struct {
 	Tags      Tags
 }
 
-// type Resolv func(key string, fname string) (*string, error)
+type ResolvFN func(key string, fname string) (*string, error)
 
 var plainRegex = regexp.MustCompile("^[A-Za-z0-9_]+$")
 
@@ -141,6 +141,15 @@ func parseBrackets(arg string) (*KVParsed, error) {
 	}, nil
 }
 
+func (p *KVParsed) Resolv(fn ResolvFN) (*KVParsed, error) {
+	res, err := fn(*p.Key, *p.ToResolve)
+	if err != nil {
+		return nil, err
+	}
+	p.Val = res
+	return p, nil
+}
+
 func (p *KVParsed) ToSetArgs() (*SetArg, error) {
 	if p.Key == nil {
 		return nil, errors.New("ToSetArgs need a key")
@@ -152,7 +161,7 @@ func (p *KVParsed) ToSetArgs() (*SetArg, error) {
 		Key:        *p.Key,      // is set if plain Key
 		Unresolved: p.ToResolve, // Unresolved is set value was resolved
 		Val:        *p.Val,      // Value is Set if an = is used
-		Tags:       p.Tags.sorted(),
+		Tags:       p.Tags.toArray(),
 	}, nil
 }
 

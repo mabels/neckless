@@ -41,7 +41,12 @@ func toKVreadFile(args []string) ([]*kvpearl.SetArg, []error) {
 	errs := []error{}
 	sas := []*kvpearl.SetArg{}
 	for i := range args {
-		sa, err := kvpearl.Parse(args[i], func(key string, fname string) (*string, error) {
+		kvp, err := kvpearl.Parse(args[i])
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		kvp, err = kvp.Resolv(func(key string, fname string) (*string, error) {
 			c, err := ioutil.ReadFile(fname)
 			if err != nil {
 				return nil, err
@@ -52,6 +57,10 @@ func toKVreadFile(args []string) ([]*kvpearl.SetArg, []error) {
 		if err != nil {
 			errs = append(errs, err)
 		} else {
+			sa, err := kvp.ToSetArgs()
+			if err != nil {
+				errs = append(errs, err)
+			}
 			sas = append(sas, sa)
 		}
 	}
@@ -137,21 +146,31 @@ func parseArgs2KVpearl(args []string, write string, tags []string) (map[string]*
 		if len(m) == 2 {
 			arg := fmt.Sprintf("%s@%s[%s]", m[1], write, strings.Join(tags, ","))
 			// fmt.Println("parsed:", arg)
-			sa, err := kvpearl.Parse(arg, resolv)
+			sa, err := kvpearl.Parse(arg)
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+			sa, err = sa.Resolv(resolv)
 			if err != nil {
 				errs = append(errs, err)
 			} else {
-				ret[sa.Key] = sa.ToKVParsed()
+				ret[*sa.Key] = sa
 			}
 
 		} else {
-			sa, err := kvpearl.Parse(args[i], resolv)
+			sa, err := kvpearl.Parse(args[i])
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+			sa, err = sa.Resolv(resolv)
 			// myOut, _ := json.MarshalIndent(kvp, "", "  ")
 			// fmt.Println("parsed:", args[i], string(myOut))
 			if err != nil {
 				errs = append(errs, err)
 			} else {
-				ret[sa.Key] = sa.ToKVParsed()
+				ret[*sa.Key] = sa
 			}
 		}
 	}
@@ -203,8 +222,8 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 			for i := range errs {
 				fmt.Fprintln(narg.Nio.err.first().buf, errs[i])
 			}
-			myOut, _ := json.MarshalIndent(keys, "", "  ")
-			fmt.Printf("%s:%s\n", args, myOut)
+			// myOut, _ := json.MarshalIndent(keys, "", "  ")
+			// fmt.Printf("%s:%s\n", args, myOut)
 			// tags := narg.Kvs.Ls.tags
 			// fmt.Fprintf(arg.Nio.out, "# %s\n", strings.Join(tags, ","))
 			out := kvps.Merge(keys).AsJSON()

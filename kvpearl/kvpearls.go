@@ -1,7 +1,6 @@
 package kvpearl
 
 import (
-	"fmt"
 	"sort"
 	"time"
 )
@@ -41,43 +40,39 @@ func (kvps *KVPearls) orderByTime() *KVPearls {
 
 type MergeArgs map[string]*KVParsed
 
+func (mas *MergeArgs) Match(key string, tags Tags) bool {
+	if len(*mas) == 0 {
+		return true
+	} else {
+		ma, found := (*mas)[key]
+		if !found || len(ma.Tags) == 0 {
+			return true
+		}
+		for tag := range ma.Tags {
+			_, found = tags[tag]
+			if found {
+				return true
+			}
+		}
+		return false
+	}
+}
+
 func (kvps *KVPearls) Merge(keys MergeArgs) *KVPearl {
 	kvp := Create()
 	for i := range *kvps.orderByTime() {
 		for j := range (*kvps)[i].Keys {
 			key := (*kvps)[i].Keys[j]
-			kvparsed, found := keys[key.Key]
-			var unresolved *string
-			if found {
-				unresolved = kvparsed.Unresolved
-			}
-			if len(keys) == 0 || found {
-				vals := key.Values.ordered()
-				for k := range *vals {
-					value := (*vals)[k]
-					if len(value.Tags) == 0 {
-						kvp.Set(SetArg{
-							Key:        key.Key,
-							Unresolved: unresolved,
-							Val:        value.Value,
-							Tags:       value.Tags.sorted(),
-						})
-					} else {
-						found := false
-						for t := range value.Tags {
-							_, myFound := keys[t]
-							found = found || myFound
-						}
-						fmt.Println(found, value.Tags, len(keys))
-						if found {
-							kvp.Set(SetArg{
-								Key:        key.Key,
-								Unresolved: unresolved,
-								Val:        value.Value,
-								Tags:       value.Tags.sorted(),
-							})
-						}
-					}
+			vals := key.Values.ordered()
+			for k := range *vals {
+				value := (*vals)[k]
+				if keys.Match(key.Key, value.Tags) {
+					kvp.Set(SetArg{
+						Key:        key.Key,
+						Unresolved: value.Unresolved,
+						Val:        value.Value,
+						Tags:       value.Tags.sorted(),
+					})
 				}
 			}
 		}

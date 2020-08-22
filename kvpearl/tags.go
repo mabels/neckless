@@ -16,13 +16,18 @@ func (tags *Tags) add(toAdd ...string) {
 	}
 }
 
-func (tags *Tags) sorted() []string {
+func (tags *Tags) toArray() []string {
 	ret := make([]string, len(*tags))
 	retIdx := 0
 	for i := range *tags {
 		ret[retIdx] = i
 		retIdx++
 	}
+	return ret
+}
+
+func (tags *Tags) sorted() []string {
+	ret := tags.toArray()
 	sort.Strings(ret)
 	return ret
 }
