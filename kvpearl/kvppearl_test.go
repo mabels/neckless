@@ -695,6 +695,23 @@ func testSA(t *testing.T, err error, sa *KVParsed, vals ...string) {
 		t.Error("should be 0")
 	}
 }
+
+func TestOrderPreserve(t *testing.T) {
+	inKvp := Create()
+	inKvp.Set(SetArg{Key: "M1", Val: "first"})
+	inKvp.Set(SetArg{Key: "M1", Val: "second"})
+	inKvp.Set(SetArg{Key: "M1", Val: "first"})
+	u, _ := json.Marshal(inKvp.AsJSON())
+	outKvp, _ := FromJSON(u)
+	val := outKvp.Keys.get("M1").Values
+	if val.len() != 2 {
+		t.Error("need to be 2")
+	}
+	if val.get("first").order < val.get("second").order {
+		t.Error("order should be right")
+	}
+}
+
 func TestEmptyParse(t *testing.T) {
 	sa, err := Parse("mmm@[]")
 	testSA(t, err, sa)

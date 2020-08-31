@@ -7,8 +7,8 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/peterbourgon/ff/v2 v2.0.0
 	github.com/rickb777/date v1.12.5
-	github.com/spf13/cobra v0.0.3
-	github.com/spf13/pflag v1.0.3
+	github.com/spf13/cobra v1.0.0
+	github.com/spf13/pflag v1.0.5
 	//	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect
 	//	github.com/apenwarr/fixconsole v0.0.0-20191012055117-5a9f6489cc29
 	//	github.com/coreos/go-iptables v0.4.5

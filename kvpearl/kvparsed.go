@@ -142,6 +142,9 @@ func parseBrackets(arg string) (*KVParsed, error) {
 }
 
 func (p *KVParsed) Resolv(fn ResolvFN) (*KVParsed, error) {
+	if p.ToResolve == nil && p.Val != nil {
+		return p, nil
+	}
 	res, err := fn(*p.Key, *p.ToResolve)
 	if err != nil {
 		return nil, err

@@ -184,7 +184,7 @@ func (kvp *KVPearl) matchTag(tags []string) []KeyValue {
 	mapRet := map[string]KeyValue{}
 	for i := range kvp.Keys {
 		key := kvp.Keys[i]
-		vals := key.Values.revOrdered()
+		vals := key.Values.RevOrdered()
 		for j := range *vals {
 			if findTag((*vals)[j].Tags, tags) {
 				mapRet[key.Key] = KeyValue{

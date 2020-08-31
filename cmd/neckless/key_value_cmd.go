@@ -133,45 +133,34 @@ func kvAddCmd(narg *NecklessArgs) *cobra.Command {
 
 var matchNoAtOrEqual = regexp.MustCompile("^([^@=]+)$")
 
-func parseArgs2KVpearl(args []string, write string, tags []string) (map[string]*kvpearl.KVParsed, []error) {
-	resolv := func(key string, fname string) (*string, error) {
-		out := fmt.Sprintf("IGNORED:%s:%s", fname, key)
-		return &out, nil
-	}
+func parseArgs2KVpearl(args []string, write string, tags []string) (kvpearl.MapByToResolve, []error) {
+	// resolv := func(key string, fname string) (*string, error) {
+	// 	out := fmt.Sprintf("IGNORED:%s:%s", fname, key)
+	// 	return &out, nil
+	// }
 	// kvp := kvpearl.Create()
-	ret := map[string]*kvpearl.KVParsed{}
+	ret := kvpearl.MapByToResolve{}
 	errs := []error{}
 	for i := range args {
 		m := matchNoAtOrEqual.FindStringSubmatch(args[i])
 		if len(m) == 2 {
 			arg := fmt.Sprintf("%s@%s[%s]", m[1], write, strings.Join(tags, ","))
-			// fmt.Println("parsed:", arg)
 			sa, err := kvpearl.Parse(arg)
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
-			sa, err = sa.Resolv(resolv)
-			if err != nil {
-				errs = append(errs, err)
-			} else {
-				ret[*sa.Key] = sa
-			}
-
+			ret.Add(sa)
 		} else {
 			sa, err := kvpearl.Parse(args[i])
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
-			sa, err = sa.Resolv(resolv)
-			// myOut, _ := json.MarshalIndent(kvp, "", "  ")
-			// fmt.Println("parsed:", args[i], string(myOut))
-			if err != nil {
-				errs = append(errs, err)
-			} else {
-				ret[*sa.Key] = sa
+			if sa.ToResolve == nil || len(*sa.ToResolve) == 0 {
+				sa.ToResolve = &write
 			}
+			ret.Add(sa)
 		}
 	}
 	return ret, errs
@@ -223,52 +212,50 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 				fmt.Fprintln(narg.Nio.err.first().buf, errs[i])
 			}
 			// myOut, _ := json.MarshalIndent(keys, "", "  ")
-			// fmt.Printf("%s:%s\n", args, myOut)
+			// fmt.Printf("%s:%s\n", args, string(myOut))
 			// tags := narg.Kvs.Ls.tags
 			// fmt.Fprintf(arg.Nio.out, "# %s\n", strings.Join(tags, ","))
-			out := kvps.Merge(keys).AsJSON()
+			outputs := kvps.Match(keys)
 			// out := kvps.AsJSON()
 			err = nil
 			// var err error
-			if *narg.Kvs.Ls.json {
-				var jsStr []byte
-				jsStr, err = json.MarshalIndent(out, "", "  ")
-				fmt.Fprintln(narg.Nio.out.first().buf, string(jsStr))
-			} else if *narg.Kvs.Ls.onlyValue {
-				for i := range out.Keys {
-					key := out.Keys[i]
-					// fmt.Println("writeTo:", *key.Values[0].Unresolved)
-					out := narg.Nio.out.add(key.Values[0].Unresolved)
-					fmt.Fprintf(out.buf, "%s\n", key.Values[0].Value)
-				}
-				err = nil
-			} else {
-				eol := "\n"
-				if *narg.Kvs.Ls.shKeyValue {
-					eol = ";\n"
-				}
-				for i := range out.Keys {
-					key := out.Keys[i]
-					var v []byte
-					v, err = json.Marshal(key.Values[0].Value)
-
-					fmt.Fprintf(narg.Nio.out.first().buf, "%s=%s%s", key.Key, string(v), eol)
+			// outputs := toKVPearl2Outputs(out)
+			for fname := range outputs {
+				kvs := outputs[fname]
+				outValues := kvs.ToJson()
+				if *narg.Kvs.Ls.json {
+					jsStr, err := json.MarshalIndent(outValues, "", "  ")
+					if err != nil {
+						fmt.Fprintf(narg.Nio.err.first().buf, "%s", err)
+					}
+					fmt.Fprintln(narg.Nio.out.add(&fname).buf, string(jsStr))
+				} else if *narg.Kvs.Ls.onlyValue {
+					for i := range outValues {
+						out := narg.Nio.out.add(&fname)
+						fmt.Fprintf(out.buf, "%s\n", outValues[i].Vals[0].Value)
+					}
+					err = nil
+				} else {
+					eol := "\n"
 					if *narg.Kvs.Ls.shKeyValue {
-						fmt.Fprintf(narg.Nio.out.first().buf, "export %s%s", key.Key, eol)
+						eol = ";\n"
 					}
-					if *narg.Kvs.Ls.ghAddMask {
-						fmt.Fprintf(narg.Nio.out.first().buf, "echo ::add-mask::%s%s", out.Keys[i].Values[0].Value, eol)
+					for i := range outValues {
+						kv := outValues[i]
+						var v []byte
+						v, err = json.Marshal(kv.Vals[0].Value)
+						fmt.Fprintf(narg.Nio.out.add(&fname).buf, "%s=%s%s", kv.Key, string(v), eol)
+						if *narg.Kvs.Ls.shKeyValue {
+							fmt.Fprintf(narg.Nio.out.add(&fname).buf, "export %s%s", kv.Key, eol)
+						}
+						if *narg.Kvs.Ls.ghAddMask {
+							fmt.Fprintf(narg.Nio.out.add(&fname).buf, "echo ::add-mask::%s%s", kv.Vals[0].Value, eol)
+						}
 					}
 				}
-			}
-			if len(narg.Kvs.Ls.writeFname) > 0 {
-				narg.Nio.out.first().Name = narg.Kvs.Ls.writeFname
 			}
 			// fmt.Fprintf(arg.Nio.err, "XXXX:%d", len(out.Keys))
 			// fmt.Fprintf(arg.Nio.out, "XXXX:%d", len(out.Keys))
-			if len(out.Keys) == 0 {
-				return errors.New(fmt.Sprintf("There was nothing found:[%s]", strings.Join(args, "],[")))
-			}
 
 			return err
 		},

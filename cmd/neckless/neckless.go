@@ -23,6 +23,10 @@ type NecklessOutput struct {
 	Error error
 }
 
+func (no *NecklessOutput) writer() io.Writer {
+	return nil
+}
+
 type NecklessOutputs struct {
 	nos []NecklessOutput
 }
@@ -32,7 +36,7 @@ func (no *NecklessOutputs) first() *NecklessOutput {
 }
 
 func (no *NecklessOutputs) add(fname *string) *NecklessOutput {
-	if fname != nil {
+	if fname != nil && len(*fname) != 0 {
 		// fmt.Println("add:", *fname, len(no.nos))
 		for i := range no.nos {
 			if no.nos[i].Name == *fname {
@@ -165,12 +169,15 @@ func buildArgs(osArgs []string, args *NecklessArgs) (*cobra.Command, error) {
 		Use: path.Base(osArgs[0]),
 		// 	Name:       "neckless",
 		// 	ShortUsage: "neckless subcommand [flags]",
-		Short:   "neckless short help",
-		Long:    strings.TrimSpace("neckless long help"),
-		Version: versionStr(args),
-		Args:    cobra.MinimumNArgs(0),
-		RunE:    gpgRunE(args),
+		Short:        "neckless short help",
+		Long:         strings.TrimSpace("neckless long help"),
+		Version:      versionStr(args),
+		Args:         cobra.MinimumNArgs(0),
+		RunE:         gpgRunE(args),
+		SilenceUsage: true,
 	}
+	// rootCmd.SetOut(args.Nio.out.first().writer())
+	// rootCmd.SetErr(args.Nio.err.first().writer())
 	rootCmd.SetArgs(osArgs[1:])
 	// rootCmd.PersistentFlags().BoolVarP(&args.Gpg.Armor, "armor", "a", false, "Author name for copyright attribution")
 	// rootCmd.PersistentFlags().BoolVarP(&args.Gpg.DetachSign, "detach-sign", "b", false, "Author name for copyright attribution")
