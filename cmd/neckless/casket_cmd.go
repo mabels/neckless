@@ -16,9 +16,12 @@ import (
 	"neckless.adviser.com/member"
 )
 
+// CasketRmArgs the args of the rm command
 type CasketRmArgs struct {
 	DryRun *bool
 }
+
+// CasketCreateArgs the args of the create command
 type CasketCreateArgs struct {
 	Name       string
 	DryRun     *bool
@@ -28,6 +31,8 @@ type CasketCreateArgs struct {
 	PersonType *bool
 	ValidUntil string
 }
+
+// CasketGetArgs the args of the get command
 type CasketGetArgs struct {
 	PubFile    string
 	PrivateKey *bool
@@ -35,6 +40,8 @@ type CasketGetArgs struct {
 	Person     *bool
 	KeyValue   *bool
 }
+
+// CasketArgs the global args of the casket command
 type CasketArgs struct {
 	Fname  string
 	create CasketCreateArgs
@@ -42,6 +49,7 @@ type CasketArgs struct {
 	get    CasketGetArgs
 }
 
+// GetPkmsArgs are the args for the api to retrieve the private key and member information
 type GetPkmsArgs struct {
 	casketFname string
 	privEnvName string
@@ -52,6 +60,7 @@ type GetPkmsArgs struct {
 	device bool
 }
 
+// GetPkms retrievs the privateMembers from the casket
 func GetPkms(a GetPkmsArgs) ([]*member.PrivateMember, error) {
 	casket, err := casket.Ls(a.casketFname)
 	if err != nil {
@@ -80,7 +89,7 @@ func GetPkms(a GetPkmsArgs) ([]*member.PrivateMember, error) {
 				return nil, err
 			}
 			if pk == nil {
-				return nil, errors.New(fmt.Sprintf("we need a private key passed:%s", strPks[i]))
+				return nil, fmt.Errorf("we need a private key passed:%s", strPks[i])
 			}
 			pkm, err := member.MakePrivateMember(&member.PrivateMemberArg{
 				Member: member.MemberArg{

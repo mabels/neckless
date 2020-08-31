@@ -17,6 +17,7 @@ import (
 	"neckless.adviser.com/pearl"
 )
 
+// KeyValueLsArgs defines the arguments to the kv ls command
 type KeyValueLsArgs struct {
 	json       *bool
 	keyValue   *bool
@@ -27,6 +28,7 @@ type KeyValueLsArgs struct {
 	writeFname string
 }
 
+// KeyValueArgs defines the global arguments
 type KeyValueArgs struct {
 	Fname       string
 	CasketFname string

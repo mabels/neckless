@@ -15,6 +15,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NecklessOutput defines the structure of an output to a file or stdout/stderr
+// this is needed for testing or multiple outputs of a kv ls command
 type NecklessOutput struct {
 	buf   *bytes.Buffer
 	Size  int
@@ -27,6 +29,7 @@ func (no *NecklessOutput) writer() io.Writer {
 	return nil
 }
 
+// NecklessOutputs defines the list of requested outputs
 type NecklessOutputs struct {
 	nos []NecklessOutput
 }
@@ -56,21 +59,18 @@ func (no *NecklessOutputs) add(fname *string) *NecklessOutput {
 	return &no.nos[0]
 }
 
-// CrazyBeeArgs Toplevel Command Args
+// NecklessIO defines the io for the application
 type NecklessIO struct {
-	// in  *bufio.Reader
-	// out *bufio.Writer
-	// err *bufio.Writer
 	quite bool
 	in    *bufio.Reader
 	out   NecklessOutputs
 	err   NecklessOutputs
 }
 
-func (outs *NecklessOutputs) write(quite ...bool) {
+func (no *NecklessOutputs) write(quite ...bool) {
 	status := [](*NecklessOutput){}
-	for i := range outs.nos {
-		out := outs.nos[i]
+	for i := range no.nos {
+		out := no.nos[i]
 		// fmt.Printf(">>>>:%p:%s:%d:%d\n", outs, out, i, len(outs.nos))
 		if out.Name == "/dev/stderr" {
 			os.Stderr.WriteString(out.buf.String())
@@ -103,6 +103,7 @@ func (outs *NecklessOutputs) write(quite ...bool) {
 	}
 }
 
+// NecklessArgs defines the global args of the neckless command
 type NecklessArgs struct {
 	GitCommit string
 	Version   string
@@ -203,7 +204,10 @@ func buildArgs(osArgs []string, args *NecklessArgs) (*cobra.Command, error) {
 // 	return a + b
 // }
 
+// GitCommit is injected during compile time
 var GitCommit string
+
+// Version is injected during compile time
 var Version string
 
 func main() {

@@ -29,8 +29,9 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// GpgArgs defines the global args to mock a gpg command
 type GpgArgs struct {
-	KeyIdFormat string
+	KeyIDFormat string
 	StatusFd    int
 	Verify      string
 	Sign        bool
@@ -42,7 +43,7 @@ type GpgArgs struct {
 
 func gpgFlags(flags *pflag.FlagSet, arg *NecklessArgs) *pflag.FlagSet {
 	// flags := flag.NewFlagSet("gpg.cmd", flag.ExitOnError)
-	flags.StringVar(&arg.Gpg.KeyIdFormat, "keyid-format", "long", "set keyid-format")
+	flags.StringVar(&arg.Gpg.KeyIDFormat, "keyid-format", "long", "set keyid-format")
 	flags.StringVar(&arg.Gpg.GpgCli, "gpg-cli", "/usr/local/bin/gpg", "gpg programm")
 	flags.IntVar(&arg.Gpg.StatusFd, "status-fd", 1, "status file descriptor")
 	flags.StringVar(&arg.Gpg.Verify, "verify", "", "verify filename")
@@ -106,7 +107,7 @@ func gpgRunE(args *NecklessArgs) func(_ *cobra.Command, arg []string) error {
 			// log.Printf("---\n%s\n---", string(content))
 			if strings.Contains(string(content), "BEGIN PGP SIGNATURE") {
 				cmd := exec.Command(args.Gpg.GpgCli,
-					fmt.Sprintf("--keyid-format=%s", args.Gpg.KeyIdFormat),
+					fmt.Sprintf("--keyid-format=%s", args.Gpg.KeyIDFormat),
 					fmt.Sprintf("--status-fd=%d", args.Gpg.StatusFd),
 					"--verify", args.Gpg.Verify, arg[0])
 				if arg[0] == "-" {

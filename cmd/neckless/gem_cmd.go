@@ -14,18 +14,7 @@ import (
 	"neckless.adviser.com/pearl"
 )
 
-// type arrayFlags []string
-
-// func (i *arrayFlags) String() string {
-// 	// change this, this is just can example to satisfy the interface
-// 	return strings.Join(*i, ",")
-// }
-
-// func (i *arrayFlags) Set(value string) error {
-// 	*i = append(*i, strings.TrimSpace(value))
-// 	return nil
-// }
-
+// GemAddArgs defines arguments for the gem add command
 type GemAddArgs struct {
 	PubFile  string
 	Device   *bool
@@ -33,11 +22,14 @@ type GemAddArgs struct {
 	KeyValue *bool
 	ToKeyIds []string
 }
+
+// GemLsArgs defines arguments for the gem ls command
 type GemLsArgs struct {
 	Device *bool
 	Person *bool
 }
 
+// GemArgs defines the global arguments for the gem command
 type GemArgs struct {
 	Fname       string
 	CasketFname string
@@ -46,6 +38,7 @@ type GemArgs struct {
 	Ls          GemLsArgs
 }
 
+// GetGems retrievs the gems from the neckless
 func GetGems(pkms []*member.PrivateMember, nl *necklace.Necklace) ([]*gem.Gem, []error) {
 	closedGems := nl.FilterByType(gem.Type)
 	out := []*gem.Gem{}
