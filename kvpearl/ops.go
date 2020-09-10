@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Ls operation by tags
 func (kvps *KVPearls) Ls(tags ...string) KeyValues {
 	// ret := KVPearls{}
 	byKey := map[string]KeyValue{}
@@ -31,6 +32,7 @@ func (kvps *KVPearls) Ls(tags ...string) KeyValues {
 	return out
 }
 
+// Get operation
 func (kvps *KVPearls) Get(name string, tags ...string) *KeyValue {
 	out := kvps.Ls(tags...)
 	for i := range out {

@@ -210,7 +210,7 @@ func TestKvs(t *testing.T) {
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add M=1 M=2")
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add N=4711 M=3")
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --json")
-	var my kvpearl.JsonKVPearl
+	var my kvpearl.JSONKVPearl
 	json.Unmarshal(nio.out.first().buf.Bytes(), &my)
 	if len(my.Keys) != 2 {
 		t.Error("not ok")

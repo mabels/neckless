@@ -1,91 +1,147 @@
 package kvpearl
 
-import "testing"
+import (
+	"fmt"
+	"regexp"
+	"testing"
+	"time"
+)
+
+func (mptr *MapByToResolve) add(key string, tags ...string) *MapByToResolve {
+	keyreg := regexp.MustCompile(fmt.Sprintf("^%s$", key))
+	if len(key) == 0 {
+		keyreg = regexp.MustCompile("^.*$")
+	}
+	mytags := Tags{}
+	for i := range tags {
+		mytags[tags[i]] = 1
+	}
+	kvp := KVParsed{
+		Key:       &key,
+		KeyRegex:  keyreg,
+		ToResolve: &key,
+		Val:       &key,
+		Tags:      mytags,
+	}
+	(*mptr)[key] = [](*KVParsed){&kvp}
+	return mptr
+}
+
+func (kvps *KVPearls) add(key string, tags ...string) *KVPearls {
+	keys := keys{}
+	values := createValues()
+	values.order++
+	mytags := Tags{}
+	for i := range tags {
+		mytags[tags[i]] = 1
+	}
+	values.getOrAddValue(&Value{
+		Value: fmt.Sprintf("%d:%s", values.order, key),
+		Tags:  mytags,
+		order: values.order,
+	})
+	ret := append(*kvps, &KVPearl{Keys: keys, Created: time.Now()})
+	return &ret
+}
 
 func TestEmptyMatchTag(t *testing.T) {
-	ma := MergeArgs{}
-	if mkvp, found := ma.Match("xx", Tags{}); !found && mkvp == nil {
+	ma := KVPearls{}
+	mptr := MapByToResolve{}
+	mptr.add("key")
+	mkvp := ma.Match(mptr)
+	if len(mkvp) != 0 {
 		t.Error("should be true")
 	}
 }
 
 func TestEmptyMatchEmptyTags(t *testing.T) {
-	ma := MergeArgs{}
-	ma["test1"] = &KVParsed{Tags: Tags{}}
-	ma["test2"] = &KVParsed{Tags: Tags{}}
-	if mkvp, found := ma.Match("xx", Tags{}); found && mkvp == nil {
+	ma := (&KVPearls{}).add("test1").add("test2")
+
+	m0 := MapByToResolve{}
+	if mkvp := ma.Match(m0); len(mkvp) != 2 {
+		t.Error("should be true", len(mkvp))
+	}
+	m1 := MapByToResolve{}
+	m1.add("test1")
+	if mkvp := ma.Match(m1); mkvp == nil {
 		t.Error("should be true")
 	}
-	if mkvp, found := ma.Match("test1", Tags{}); !found && mkvp == nil {
-		t.Error("should be true")
-	}
-	if mkvp, found := ma.Match("test2", Tags{}); !found && mkvp == nil {
+	m2 := MapByToResolve{}
+	m2.add("test1")
+	if mkvp := ma.Match(m2); mkvp == nil {
 		t.Error("should be true")
 	}
 }
 
 func TestEmptyMatchTags(t *testing.T) {
-	ma := MergeArgs{}
-	test1Tag := Tags{}
-	test1Tag["t1T1"] = 1
-	test1Tag["t1T2"] = 1
-	ma["test1"] = &KVParsed{Tags: test1Tag}
-	test2Tag := Tags{}
-	test2Tag["t2T1"] = 1
-	test2Tag["t2T2"] = 1
-	ma["test2"] = &KVParsed{Tags: test2Tag}
-	if ma.Match("xx", Tags{}) {
+	ma := (&KVPearls{}).add("test1", "t1T2", "t1T2").add("test2", "t2T1", "t2T2")
+
+	mx := MapByToResolve{}
+	mx.add("xx")
+	if len(ma.Match(mx)) != 0 {
 		t.Error("should be true")
 	}
-	if ma.Match("test1", Tags{}) {
-		t.Error("should be true")
+	m1 := MapByToResolve{}
+	m1.add("test1")
+	if len(ma.Match(m1)) != 1 {
+		t.Error("should be true", len(ma.Match(m1)))
 	}
-	if ma.Match("test2", Tags{}) {
+	m2 := MapByToResolve{}
+	m2.add("test2")
+	if len(ma.Match(m2)) != 1 {
 		t.Error("should be true")
 	}
 
-	unMatch := Tags{}
-	unMatch["unMatch"] = 1
-	if ma.Match("test1", unMatch) {
+	unMatch1 := MapByToResolve{}
+	unMatch1.add("test1", "unMatch")
+	if len(ma.Match(unMatch1)) == 0 {
 		t.Error("should be true")
 	}
-	if ma.Match("test2", unMatch) {
-		t.Error("should be true")
-	}
-
-	matcht1T1 := Tags{}
-	matcht1T1["t1T1"] = 1
-	if !ma.Match("test1", matcht1T1) {
-		t.Error("should be true")
-	}
-	if ma.Match("test2", matcht1T1) {
+	unMatch2 := MapByToResolve{}
+	unMatch2.add("test2", "unMatch")
+	if len(ma.Match(unMatch2)) == 0 {
 		t.Error("should be true")
 	}
 
-	matcht1T2 := Tags{}
-	matcht1T2["t1T2"] = 1
-	if !ma.Match("test1", matcht1T2) {
+	matcht11T1 := MapByToResolve{}
+	matcht11T1.add("test1", "t1T1")
+	if len(ma.Match(matcht11T1)) != 1 {
 		t.Error("should be true")
 	}
-	if ma.Match("test2", matcht1T2) {
+	matcht21T1 := MapByToResolve{}
+	matcht21T1.add("test2", "t1T1")
+	if len(ma.Match(matcht21T1)) != 0 {
+		t.Error("should be true")
+	}
+
+	matcht11T2 := MapByToResolve{}
+	matcht11T2.add("test1", "t1T2")
+	if len(ma.Match(matcht11T2)) != 0 {
+		t.Error("should be true")
+	}
+	matcht21T2 := MapByToResolve{}
+	matcht21T2.add("test2", "t1T2")
+	if len(ma.Match(matcht21T2)) != 0 {
 		t.Error("should be true")
 	}
 
 }
 
 func TestNoTags(t *testing.T) {
-	ma := MergeArgs{}
-	test1 := "test1"
-	ma[test1] = &KVParsed{Key: &test1, Tags: Tags{}}
-	test2 := "test2"
-	ma[test2] = &KVParsed{Key: &test2, Tags: Tags{}}
-	if ma.Match("xxx", Tags{}) {
+	ma := (&KVPearls{}).add("test1").add("test2")
+	xxx := MapByToResolve{}
+	xxx.add("xxx")
+	if len(ma.Match(xxx)) != 0 {
 		t.Error("Should fail")
 	}
-	if !ma.Match("test1", Tags{}) {
+	test1 := MapByToResolve{}
+	test1.add("test1")
+	if len(ma.Match(test1)) != 1 {
 		t.Error("Should match")
 	}
-	if !ma.Match("test2", Tags{}) {
+	test2 := MapByToResolve{}
+	test2.add("test2")
+	if len(ma.Match(test2)) != 0 {
 		t.Error("Should match")
 	}
 }

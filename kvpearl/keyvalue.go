@@ -2,11 +2,13 @@ package kvpearl
 
 import "strings"
 
+// KeyValue pair with just one Value
 type KeyValue struct {
 	Key   string
 	Value string
 }
 
+// KeyValues is a array of a KeyValue
 type KeyValues []KeyValue
 
 // Len is part of sort.Interface.

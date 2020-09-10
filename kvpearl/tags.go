@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Tags uniq Tags list
 type Tags map[string]int
 
 func (tags *Tags) add(toAdd ...string) {
@@ -37,28 +38,28 @@ type tag struct {
 	order int
 }
 
-type tags []tag
+type tagsArray []tag
 
 // Len is part of sort.Interface.
-func (s *tags) Len() int {
+func (s *tagsArray) Len() int {
 	return len(*s)
 }
 
 // Swap is part of sort.Interface.
-func (s *tags) Swap(i, j int) {
+func (s *tagsArray) Swap(i, j int) {
 	(*s)[i], (*s)[j] = (*s)[j], (*s)[i]
 }
 
 // Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
-func (s *tags) Less(i, j int) bool {
+func (s *tagsArray) Less(i, j int) bool {
 	return (*s)[i].order < (*s)[j].order
 }
 
-func (tgs *Tags) byOrder() []string {
-	toTags := make(tags, len(*tgs))
+func (tags *Tags) byOrder() []string {
+	toTags := make(tagsArray, len(*tags))
 	toTagsIdx := 0
-	for i := range *tgs {
-		order := (*tgs)[i]
+	for i := range *tags {
+		order := (*tags)[i]
 		toTags[toTagsIdx] = tag{
 			tag:   i,
 			order: order,
@@ -66,7 +67,7 @@ func (tgs *Tags) byOrder() []string {
 		toTagsIdx++
 	}
 	sort.Sort(&toTags)
-	ret := make([]string, len(*tgs))
+	ret := make([]string, len(*tags))
 	for i := range toTags {
 		ret[i] = toTags[i].tag
 	}

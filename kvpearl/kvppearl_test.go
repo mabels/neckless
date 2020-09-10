@@ -167,8 +167,8 @@ func TestJson(t *testing.T) {
 	c.Set(SetArg{Key: "K1", Val: "V2", Tags: []string{"V24", "V23"}})
 	c.Set(SetArg{Key: "K2", Val: "V2", Tags: []string{"T2"}})
 	compareKVPearl(t, c)
-	var jo *JsonKVPearl
-	var prev *JsonKVPearl = nil
+	var jo *JSONKVPearl
+	var prev *JSONKVPearl = nil
 	for i := 0; i < 100; i++ {
 		jo = c.AsJSON()
 		if len(jo.Keys) != 3 {
@@ -515,14 +515,15 @@ func TestMerge(t *testing.T) {
 		Create().Set(SetArg{Key: "K1", Val: "1V1", Tags: []string{"TEST"}}).Set(SetArg{Key: "K1", Val: "V4", Tags: []string{"WURST", "TEST"}}).Set(SetArg{Key: "K2", Val: "1VV"}).Set(SetArg{Key: "K3", Val: "SehrGeheim"}),
 		Create().Set(SetArg{Key: "K6", Val: "1V1"}).Set(SetArg{Key: "K7", Val: "V4"}).Set(SetArg{Key: "K8", Val: "1VV"}).Set(SetArg{Key: "K1", Val: "SehrGeheim"}),
 	}
-	kvp := kvps.Merge(MergeArgs{}).AsJSON()
+	kvp := kvps.Match(MapByToResolve{})
+	t.Error(kvp)
 	// js, _ := json.MarshalIndent(kvp, "", "  ")
-	if strings.Compare(kvp.Keys[0].Values[0].Value, "SehrGeheim") != 0 {
-		t.Error("failed order")
-	}
-	if strings.Compare(kvp.Keys[1].Values[0].Value, "1VV") != 0 {
-		t.Error("failed order")
-	}
+	// if strings.Compare(kvp.Keys[0].Values[0].Value, "SehrGeheim") != 0 {
+	// 	t.Error("failed order")
+	// }
+	// if strings.Compare(kvp.Keys[1].Values[0].Value, "1VV") != 0 {
+	// 	t.Error("failed order")
+	// }
 	// t.Error(string(js))
 	// kvp.Keys
 	// kvp.FingerPrint

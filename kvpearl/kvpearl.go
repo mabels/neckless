@@ -10,39 +10,23 @@ import (
 	"neckless.adviser.com/pearl"
 )
 
-// // fmt.Println("XXXX", len(key.Values), len(mergedValue), mergedValue)
-// if len(key.Values) < len(mergedValue) {
-// 	for i := len(key.Values); i < len(mergedValue); i++ {
-// 		key.Values = append(key.Values, &Value{
-// 			Value: "",
-// 			Tags:  []string{},
-// 		})
-// 		// fmt.Println("APPEND-To-Values", len(key.Values))
-// 	}
-// }
-// // key.Values = make([]Value, len(mergedValue))
-// idx := 0
-// for i := range mergedValue {
-// 	key.Values[idx] = mergedValue[i]
-// 	idx++
-// }
-
-type JsonKVPearl struct {
+// JSONKVPearl the JSON resprestion of a KVPearl
+type JSONKVPearl struct {
 	// Tags []string
-	Keys        []*JsonKey // sorted by keys
+	Keys        []*JSONKey // sorted by keys
 	FingerPrint string     `json:"FingerPrint,omitempty"`
 	Created     time.Time
 }
 
+// KVPearl which is stored in Gems
 type KVPearl struct {
-	// Tags []string
 	Keys    keys
 	Created time.Time
-	// Seq     int64            `json:"-"` // windows timer is not good enough
-	Pearl *pearl.OpenPearl `json:"-"`
+	Pearl   *pearl.OpenPearl `json:"-"`
 }
 
-func Create( /* tags ...string */ ) *KVPearl {
+// Create a KVPearl
+func Create() *KVPearl {
 	return &KVPearl{
 		// Tags: uniqStrings(tags),
 		Keys:    keys{},
@@ -50,6 +34,7 @@ func Create( /* tags ...string */ ) *KVPearl {
 	}
 }
 
+// SetArg allow explict creating of a KVPearl
 type SetArg struct {
 	Key        string  // is set if plain Key
 	Unresolved *string // Unresolved is set value was resolved
@@ -57,27 +42,16 @@ type SetArg struct {
 	Tags       []string
 }
 
-// type Map map[string]*kvpearl.SetArg,
-// type Map map[string]*kvpearl.,
-// type Map map[string]*kvpearl.SetArg,toKVpearls
-
+// Set added the Args to a KVPearl
 func (kvp *KVPearl) Set(a SetArg) *KVPearl {
 	key, _ := kvp.Keys.getOrAdd(a.Key)
 	key.setValue(a.Unresolved, a.Val, tags2Map(a.Tags))
 	return kvp
 }
 
-// func (sa *SetArg) ToKVParsed() *KVParsed {
-// 	return &KVParsed{
-// 		Key:        sa.Key,
-// 		Unresolved: sa.Unresolved,
-// 		Val:        sa.Val,
-// 		Tags:       stringArray2Map(sa.Tags),
-// 	}
-// }
-
+// FromJSON converts from json to a KVPearl
 func FromJSON(jsStr []byte) (*KVPearl, error) {
-	jskvp := JsonKVPearl{}
+	jskvp := JSONKVPearl{}
 	err := json.Unmarshal(jsStr, &jskvp)
 	if err != nil {
 		return nil, err
@@ -104,21 +78,24 @@ func FromJSON(jsStr []byte) (*KVPearl, error) {
 	return kvp, nil
 }
 
-func (kvp *KVPearl) AsJSON() *JsonKVPearl {
-	keys := kvp.Keys.Sorted().asJson()
+// AsJSON convert a KVPearl to a JSONKVPearl
+func (kvp *KVPearl) AsJSON() *JSONKVPearl {
+	keys := kvp.Keys.Sorted().asJSON()
 	fpr := ""
 	if kvp.Pearl != nil {
 		fpr = base64.StdEncoding.EncodeToString(kvp.Pearl.Closed.FingerPrint)
 	}
-	return &JsonKVPearl{
+	return &JSONKVPearl{
 		Created:     kvp.Created,
 		FingerPrint: fpr,
 		Keys:        keys,
 	}
 }
 
+// Type is the Typename of the KVPearl
 const Type = "KVPearl"
 
+// ClosePearl closes a Pearl with encryption
 func (kvp *KVPearl) ClosePearl(owners *pearl.PearlOwner) (*pearl.Pearl, error) {
 	jsonStr, err := json.Marshal(kvp.AsJSON())
 	if err != nil {
@@ -131,6 +108,7 @@ func (kvp *KVPearl) ClosePearl(owners *pearl.PearlOwner) (*pearl.Pearl, error) {
 	})
 }
 
+// OpenPearl tries to open the given pearl with the privatekey
 func OpenPearl(pks []*key.PrivateKey, prl *pearl.Pearl) (*KVPearl, error) {
 	op, err := pearl.Open(pks, prl)
 	if err != nil {

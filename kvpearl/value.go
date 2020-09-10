@@ -1,5 +1,6 @@
 package kvpearl
 
+// Value structure
 type Value struct {
 	Value      string
 	Unresolved *string
@@ -8,15 +9,16 @@ type Value struct {
 	// Tags       map[string]struct{}
 }
 
-type JsonValue struct {
+// JSONValue the Value resprestation
+type JSONValue struct {
 	Value      string
 	Unresolved *string `json:"Unresolved,omitempty"`
 	// Order      time.Time // `json:"-"`
 	Tags []string
 }
 
-func (val *Value) asJson() *JsonValue {
-	return &JsonValue{
+func (val *Value) asJSON() *JSONValue {
+	return &JSONValue{
 		Value:      val.Value,
 		Unresolved: val.Unresolved,
 		Tags:       val.Tags.sorted(),

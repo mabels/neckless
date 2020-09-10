@@ -5,27 +5,27 @@ import (
 	"strings"
 )
 
+// KVPearls is a array of KVPearl
 type KVPearls []*KVPearl
 
-// type jsonKVPearlSorter []*JsonKVPearl
-
 // Len is part of sort.Interface.
-func (s *KVPearls) Len() int {
-	return len(*s)
+func (kvps *KVPearls) Len() int {
+	return len(*kvps)
 }
 
 // Swap is part of sort.Interface.
-func (s *KVPearls) Swap(i, j int) {
-	(*s)[i], (*s)[j] = (*s)[j], (*s)[i]
+func (kvps *KVPearls) Swap(i, j int) {
+	(*kvps)[i], (*kvps)[j] = (*kvps)[j], (*kvps)[i]
 }
 
 // Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
-func (s *KVPearls) Less(i, j int) bool {
-	return (*s)[i].Created.UnixNano() < (*s)[j].Created.UnixNano()
+func (kvps *KVPearls) Less(i, j int) bool {
+	return (*kvps)[i].Created.UnixNano() < (*kvps)[j].Created.UnixNano()
 }
 
-func (kvps *KVPearls) AsJSON() []*JsonKVPearl {
-	out := make([]*JsonKVPearl, len(*kvps))
+// AsJSON Converts KVPearls to JSONKVPearl
+func (kvps *KVPearls) AsJSON() []*JSONKVPearl {
+	out := make([]*JSONKVPearl, len(*kvps))
 	obt := kvps.orderByTime()
 	for i := range *obt {
 		out[i] = (*obt)[i].AsJSON()
@@ -38,10 +38,10 @@ func (kvps *KVPearls) orderByTime() *KVPearls {
 	return kvps
 }
 
-// type MergeArgs map[string]*KVParsed
-
+// MapByToResolve KVParsed ordered by ToResolve
 type MapByToResolve map[string][]*KVParsed
 
+// Add a KVParsed to MapByToResolve
 func (mbr *MapByToResolve) Add(sa *KVParsed) {
 	if sa == nil {
 		return
@@ -57,75 +57,46 @@ func (mbr *MapByToResolve) Add(sa *KVParsed) {
 	(*mbr)[toResolve] = append(kvps, sa)
 }
 
-func (kvp *KVParsed) Match(key *Key, val *Value) (*KVParsed, bool) {
-	// findKey := false
-	// for ikvps := range kvps {
-	// kvp := kvps[ikvps]
-	if kvp.KeyRegex.MatchString(key.Key) {
-		// fmt.Printf("Matched:%s:%d", kvp.Key, len(kvp.Tags))
-		if len(kvp.Tags) == 0 {
-			return kvp, true
-		}
-		for tag := range val.Tags {
-			// fmt.Printf("%s:%s\n", tag, kvp.Tags)
-			_, found := kvp.Tags[tag]
-			if found {
-				return kvp, true
-			}
-		}
-	}
-
-	// if *kvp.Key != key {
-	// 	return nil, false
-	// }
-	// if len(rtags) == 0 {
-	// 	return nil, true
-	// }
-	// if len(kvp.Tags) == 0 {
-	// 	return kvp, true
-	// }
-	// for tag := range rtags {
-	// 	_, found := kvp.Tags[tag]
-	// 	if found {
-	// 		return kvp, true
-	// 	}
-	// }
-	return nil, false
-}
-
+// ByKeyValues the shim to sort the keys by the keyvalue
 type ByKeyValues struct {
 	Key  string
 	Vals Values
 }
 
+// ArrayByKeyValues an array of ByKeyValues
 type ArrayByKeyValues []*ByKeyValues
 
-type JsonByKeyValues struct {
+// JSONByKeyValues Respresentation of ByKeyValues
+type JSONByKeyValues struct {
 	Key  string
 	Vals JsonValues
 }
-type ArrayOfJsonByKeyValues []JsonByKeyValues
 
-func (s *ArrayOfJsonByKeyValues) Len() int {
+// ArrayOfJSONByKeyValues an array JSONByKeyValues
+type ArrayOfJSONByKeyValues []JSONByKeyValues
+
+func (s *ArrayOfJSONByKeyValues) Len() int {
 	return len(*s)
 }
 
 // Swap is part of sort.Interface.
-func (s *ArrayOfJsonByKeyValues) Swap(i, j int) {
+func (s *ArrayOfJSONByKeyValues) Swap(i, j int) {
 	(*s)[i], (*s)[j] = (*s)[j], (*s)[i]
 }
 
 // Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
-func (s *ArrayOfJsonByKeyValues) Less(i, j int) bool {
+func (s *ArrayOfJSONByKeyValues) Less(i, j int) bool {
 	return strings.Compare((*s)[i].Key, (*s)[j].Key) < 0
 }
 
+// MapByKeyValues map a "key/unresolved" to ArrayByKeyValues
 type MapByKeyValues map[string]ArrayByKeyValues
 
-func (a *ArrayByKeyValues) ToJson() []JsonByKeyValues {
-	ret := make(ArrayOfJsonByKeyValues, len(*a))
+// ToJSON return a Array of the json respresentation of ArrayByKeyValues
+func (a *ArrayByKeyValues) ToJSON() ArrayOfJSONByKeyValues {
+	ret := make(ArrayOfJSONByKeyValues, len(*a))
 	for i := range *a {
-		ret[i] = JsonByKeyValues{
+		ret[i] = JSONByKeyValues{
 			Key:  (*a)[i].Key,
 			Vals: (*a)[i].Vals.RevOrdered().asJson(),
 		}
@@ -167,6 +138,7 @@ func (mbkv *MapByKeyValues) add(key *Key, val *Value) {
 	(*mbkv)[unresolved] = bkvs
 }
 
+// Match KVPearls against the MapByToResolve
 func (kvps *KVPearls) Match(toResolves MapByToResolve) MapByKeyValues {
 	ret := MapByKeyValues{}
 	orderedKvps := kvps.orderByTime()
@@ -220,70 +192,5 @@ func (kvps *KVPearls) Match(toResolves MapByToResolve) MapByKeyValues {
 			}
 		}
 	}
-	// 	ret[""] = tmp
-	// 	// fmt.Printf("------- done:%d:%d\n", len(ret), len(tmp))
-	// }
 	return ret
 }
-
-// func (mapBy *MapByKeyValues) oneMatch(orderedKvps *KVPearls, kvparsed *KVParsed) {
-// 	for k := range *orderedKvps {
-// 		kvp := (*orderedKvps)[k]
-// 		for i := range kvp.Keys {
-// 			key := kvp.Keys[i]
-// 			rev := *key.Values.RevOrdered()
-// 			for j := range rev {
-// 				val := rev[j]
-// 				matchedKVP, found := kvparsed.Match(key.Key, val.Tags)
-// 				if found {
-// 					unresolved := ""
-// 					if matchedKVP.ToResolve != nil {
-// 						unresolved = *matchedKVP.ToResolve
-// 					}
-// 					kvs, found := (*mapBy)[unresolved]
-// 					if !found {
-// 						kvs = make([]ByKeyValues, 0)
-// 					}
-// 					my := ByKeyValues{
-// 						Key: key.Key,
-// 						Val: Value{
-// 							Value:      val.Value,
-// 							Unresolved: &unresolved,
-// 							Tags:       val.Tags,
-// 							order:      val.order,
-// 						},
-// 					}
-// 					(*mapBy)[unresolved] = append(kvs, my)
-// 				}
-// 			}
-// 		}
-// 	}
-// }
-
-// func (kvps *KVPearls) Merge(keys MergeArgs) *KVPearl {
-// 	kvp := Create()
-// 	for i := range *kvps.orderByTime() {
-// 		for j := range (*kvps)[i].Keys {
-// 			key := (*kvps)[i].Keys[j]
-// 			vals := key.Values.RevOrdered()
-// 			for k := range *vals {
-// 				value := (*vals)[k]
-// 				matchKVP, found := keys.Match(key.Key, value.Tags)
-// 				if found {
-// 					var unresolved *string
-// 					if matchKVP != nil {
-// 						unresolved = matchKVP.ToResolve
-// 					}
-// 					kvp.Set(SetArg{
-// 						Key:        key.Key,
-// 						Unresolved: unresolved,
-// 						Val:        value.Value,
-// 						Tags:       value.Tags.sorted(),
-// 					})
-// 				}
-// 			}
-// 		}
-// 	}
-// 	kvp.Created = time.Now()
-// 	return kvp
-// }

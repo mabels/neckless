@@ -6,6 +6,7 @@ import (
 	"regexp"
 )
 
+// KVParsed is the Parsed KeyValue from the CommandLine
 type KVParsed struct {
 	Key       *string        // is set if plain Key
 	KeyRegex  *regexp.Regexp // is allways set
@@ -14,6 +15,7 @@ type KVParsed struct {
 	Tags      Tags
 }
 
+// ResolvFN is the Resolver Function Reference
 type ResolvFN func(key string, fname string) (*string, error)
 
 var plainRegex = regexp.MustCompile("^[A-Za-z0-9_]+$")
@@ -112,7 +114,7 @@ var argRegex = regexp.MustCompile(`^([^=@]+)([=@])([^\[]*)(\[([^\]]*)\])$`)
 func parseBrackets(arg string) (*KVParsed, error) {
 	split := argRegex.FindStringSubmatch(arg)
 	if len(split) != 6 {
-		return nil, errors.New(fmt.Sprintf("no matching kv:[%s]", arg))
+		return nil, fmt.Errorf("no matching kv:[%s]", arg)
 	}
 	keyRegex, err := asMatch(split[1])
 	if err != nil {
@@ -141,37 +143,61 @@ func parseBrackets(arg string) (*KVParsed, error) {
 	}, nil
 }
 
-func (p *KVParsed) Resolv(fn ResolvFN) (*KVParsed, error) {
-	if p.ToResolve == nil && p.Val != nil {
-		return p, nil
+// Resolv is the Shim t the ResolvFN
+func (kvp *KVParsed) Resolv(fn ResolvFN) (*KVParsed, error) {
+	if kvp.ToResolve == nil && kvp.Val != nil {
+		return kvp, nil
 	}
-	res, err := fn(*p.Key, *p.ToResolve)
+	res, err := fn(*kvp.Key, *kvp.ToResolve)
 	if err != nil {
 		return nil, err
 	}
-	p.Val = res
-	return p, nil
+	kvp.Val = res
+	return kvp, nil
 }
 
-func (p *KVParsed) ToSetArgs() (*SetArg, error) {
-	if p.Key == nil {
+// ToSetArgs converts KVParsed to ToSetArgs
+func (kvp *KVParsed) ToSetArgs() (*SetArg, error) {
+	if kvp.Key == nil {
 		return nil, errors.New("ToSetArgs need a key")
 	}
-	if p.Val == nil {
+	if kvp.Val == nil {
 		return nil, errors.New("ToSetArgs need a val")
 	}
 	return &SetArg{
-		Key:        *p.Key,      // is set if plain Key
-		Unresolved: p.ToResolve, // Unresolved is set value was resolved
-		Val:        *p.Val,      // Value is Set if an = is used
-		Tags:       p.Tags.toArray(),
+		Key:        *kvp.Key,      // is set if plain Key
+		Unresolved: kvp.ToResolve, // Unresolved is set value was resolved
+		Val:        *kvp.Val,      // Value is Set if an = is used
+		Tags:       kvp.Tags.toArray(),
 	}, nil
 }
 
+// Parse the given string to a KVParsed type
 func Parse(arg string) (*KVParsed, error) {
 	parsed, err := parseBrackets(arg)
 	if err != nil {
 		parsed, err = parseComma(arg)
 	}
 	return parsed, err
+}
+
+// Match a key and value agains a KVParsed
+func (kvp *KVParsed) Match(key *Key, val *Value) (*KVParsed, bool) {
+	// findKey := false
+	// for ikvps := range kvps {
+	// kvp := kvps[ikvps]
+	if kvp.KeyRegex.MatchString(key.Key) {
+		// fmt.Printf("Matched:%s:%d", kvp.Key, len(kvp.Tags))
+		if len(kvp.Tags) == 0 {
+			return kvp, true
+		}
+		for tag := range val.Tags {
+			// fmt.Printf("%s:%s\n", tag, kvp.Tags)
+			_, found := kvp.Tags[tag]
+			if found {
+				return kvp, true
+			}
+		}
+	}
+	return nil, false
 }

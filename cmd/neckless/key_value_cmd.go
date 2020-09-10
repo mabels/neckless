@@ -143,6 +143,9 @@ func parseArgs2KVpearl(args []string, write string, tags []string) (kvpearl.MapB
 	// kvp := kvpearl.Create()
 	ret := kvpearl.MapByToResolve{}
 	errs := []error{}
+	if len(args) == 0 && len(tags) > 0 {
+		args = []string{".*"}
+	}
 	for i := range args {
 		m := matchNoAtOrEqual.FindStringSubmatch(args[i])
 		if len(m) == 2 {

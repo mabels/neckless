@@ -4,6 +4,7 @@ import (
 	"sort"
 )
 
+// Values structure with a order
 type Values struct {
 	order  int64
 	Values map[string]*Value
@@ -33,6 +34,7 @@ func (s *revOrderedValues) Less(i, j int) bool {
 	return (*s)[i].order > (*s)[j].order
 }
 
+// RevOrdered give a list Values revervse by order
 func (values *Values) RevOrdered() *revOrderedValues {
 	ret := make(revOrderedValues, len(values.Values))
 	retIdx := 0
@@ -110,12 +112,12 @@ func (values *Values) getOrAdd(val string) (*Value, bool) {
 	})
 }
 
-type JsonValues []*JsonValue
+type JsonValues []*JSONValue
 
 func (ordered *revOrderedValues) asJson() JsonValues {
 	ret := make(JsonValues, len(*ordered))
 	for i := range *ordered {
-		ret[i] = (*ordered)[i].asJson()
+		ret[i] = (*ordered)[i].asJSON()
 	}
 	return ret
 }

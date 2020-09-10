@@ -4,17 +4,20 @@ import (
 	"strings"
 )
 
-type JsonKey struct {
+// JSONKey JSON Respresation of the Key
+type JSONKey struct {
 	Key    string
 	Values JsonValues
 }
 
+// Key the KeyValue Structure
 type Key struct {
 	Key    string
 	Values Values
 }
 
-type KeySorter []*JsonKey
+// KeySorter KeyValue sorted by Key
+type KeySorter []*JSONKey
 
 // Len is part of sort.Interface.
 func (s *KeySorter) Len() int {
@@ -65,8 +68,8 @@ func (key *Key) setValue(unresolved *string, val string, tags map[string]int) *V
 	return value
 }
 
-func (key *Key) asJson() *JsonKey {
-	return &JsonKey{
+func (key *Key) asJSON() *JSONKey {
+	return &JSONKey{
 		Key:    key.Key,
 		Values: key.Values.RevOrdered().asJson(),
 	}

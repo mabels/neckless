@@ -30,24 +30,24 @@ func (ks *keys) getOrAdd(val string) (*Key, bool) {
 type sortedKeys [](*Key)
 
 // Len is part of sort.Interface.
-func (s *sortedKeys) Len() int {
-	return len(*s)
+func (sk *sortedKeys) Len() int {
+	return len(*sk)
 }
 
 // Swap is part of sort.Interface.
-func (s *sortedKeys) Swap(i, j int) {
-	(*s)[i], (*s)[j] = (*s)[j], (*s)[i]
+func (sk *sortedKeys) Swap(i, j int) {
+	(*sk)[i], (*sk)[j] = (*sk)[j], (*sk)[i]
 }
 
 // Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
-func (s *sortedKeys) Less(i, j int) bool {
-	return strings.Compare((*s)[i].Key, (*s)[j].Key) < 0
+func (sk *sortedKeys) Less(i, j int) bool {
+	return strings.Compare((*sk)[i].Key, (*sk)[j].Key) < 0
 }
 
-func (sk *sortedKeys) asJson() []*JsonKey {
-	ret := make([]*JsonKey, len(*sk))
+func (sk *sortedKeys) asJSON() []*JSONKey {
+	ret := make([]*JSONKey, len(*sk))
 	for i := range *sk {
-		ret[i] = (*sk)[i].asJson()
+		ret[i] = (*sk)[i].asJSON()
 	}
 	return ret
 }
