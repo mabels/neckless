@@ -515,15 +515,18 @@ func TestMerge(t *testing.T) {
 		Create().Set(SetArg{Key: "K1", Val: "1V1", Tags: []string{"TEST"}}).Set(SetArg{Key: "K1", Val: "V4", Tags: []string{"WURST", "TEST"}}).Set(SetArg{Key: "K2", Val: "1VV"}).Set(SetArg{Key: "K3", Val: "SehrGeheim"}),
 		Create().Set(SetArg{Key: "K6", Val: "1V1"}).Set(SetArg{Key: "K7", Val: "V4"}).Set(SetArg{Key: "K8", Val: "1VV"}).Set(SetArg{Key: "K1", Val: "SehrGeheim"}),
 	}
-	kvp := kvps.Match(MapByToResolve{})
-	t.Error(kvp)
+	kvp := kvps.Match(MapByToResolve{})[""]
+	if len(kvp) != 6 {
+		t.Error(len(kvp))
+	}
 	// js, _ := json.MarshalIndent(kvp, "", "  ")
-	// if strings.Compare(kvp.Keys[0].Values[0].Value, "SehrGeheim") != 0 {
-	// 	t.Error("failed order")
-	// }
-	// if strings.Compare(kvp.Keys[1].Values[0].Value, "1VV") != 0 {
-	// 	t.Error("failed order")
-	// }
+	// t.Error(string(js))
+	if strings.Compare(kvp[0].Vals.get("SehrGeheim").Value, "SehrGeheim") != 0 {
+		t.Error("failed order")
+	}
+	if strings.Compare(kvp[1].Vals.get("1VV").Value, "1VV") != 0 {
+		t.Error("failed order")
+	}
 	// t.Error(string(js))
 	// kvp.Keys
 	// kvp.FingerPrint
