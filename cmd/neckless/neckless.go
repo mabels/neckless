@@ -38,14 +38,20 @@ func (no *NecklessOutputs) first() *NecklessOutput {
 	return &no.nos[0]
 }
 
+func (no *NecklessOutputs) get(fname string) *NecklessOutput {
+	for i := range no.nos {
+		if no.nos[i].Name == fname {
+			return &no.nos[i]
+		}
+	}
+	return nil
+}
+
 func (no *NecklessOutputs) add(fname *string) *NecklessOutput {
 	if fname != nil && len(*fname) != 0 {
-		// fmt.Println("add:", *fname, len(no.nos))
-		for i := range no.nos {
-			if no.nos[i].Name == *fname {
-				// fmt.Println("add:found:", *fname)
-				return &no.nos[i]
-			}
+		nos := no.get(*fname)
+		if nos != nil {
+			return nos
 		}
 		no.nos = append(no.nos, NecklessOutput{
 			buf:  &bytes.Buffer{},

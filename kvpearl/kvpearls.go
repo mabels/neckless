@@ -69,7 +69,7 @@ type ArrayByKeyValues []*ByKeyValues
 // JSONByKeyValues Respresentation of ByKeyValues
 type JSONByKeyValues struct {
 	Key  string
-	Vals JsonValues
+	Vals JSONValues
 }
 
 // ArrayOfJSONByKeyValues an array JSONByKeyValues

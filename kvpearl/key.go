@@ -7,7 +7,7 @@ import (
 // JSONKey JSON Respresation of the Key
 type JSONKey struct {
 	Key    string
-	Values JsonValues
+	Values JSONValues
 }
 
 // Key the KeyValue Structure

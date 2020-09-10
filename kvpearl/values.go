@@ -112,10 +112,10 @@ func (values *Values) getOrAdd(val string) (*Value, bool) {
 	})
 }
 
-type JsonValues []*JSONValue
+type JSONValues []*JSONValue
 
-func (ordered *revOrderedValues) asJson() JsonValues {
-	ret := make(JsonValues, len(*ordered))
+func (ordered *revOrderedValues) asJson() JSONValues {
+	ret := make(JSONValues, len(*ordered))
 	for i := range *ordered {
 		ret[i] = (*ordered)[i].asJSON()
 	}

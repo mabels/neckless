@@ -227,7 +227,7 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 			// outputs := toKVPearl2Outputs(out)
 			for fname := range outputs {
 				kvs := outputs[fname]
-				outValues := kvs.ToJson()
+				outValues := kvs.ToJSON()
 				if *narg.Kvs.Ls.json {
 					jsStr, err := json.MarshalIndent(outValues, "", "  ")
 					if err != nil {
