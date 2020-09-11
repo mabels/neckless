@@ -34,7 +34,7 @@ func (s *KeySorter) Less(i, j int) bool {
 	return strings.Compare((*s)[i].Key, (*s)[j].Key) < 0
 }
 
-func (key *Key) setValue(unresolved *string, val string, tags map[string]int) *Value {
+func (key *Key) setValue(unresolved *FuncsAndParam, val string, tags map[string]int) *Value {
 	// mergedValue := map[string](*Value){}
 	// for i := range key.Values {
 	// 	value, found := mergedValue[key.Values[i].Value]

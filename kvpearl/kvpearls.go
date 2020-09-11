@@ -46,15 +46,18 @@ func (mbr *MapByToResolve) Add(sa *KVParsed) {
 	if sa == nil {
 		return
 	}
-	toResolve := ""
+	toResolve := FuncsAndParam{
+		Param: "",
+		Funcs: []string{},
+	}
 	if sa.ToResolve != nil {
 		toResolve = *sa.ToResolve
 	}
-	kvps, found := (*mbr)[toResolve]
+	kvps, found := (*mbr)[toResolve.Param]
 	if !found {
 		kvps = make([]*KVParsed, 0)
 	}
-	(*mbr)[toResolve] = append(kvps, sa)
+	(*mbr)[toResolve.Param] = append(kvps, sa)
 }
 
 // ByKeyValues the shim to sort the keys by the keyvalue
@@ -106,11 +109,14 @@ func (a *ArrayByKeyValues) ToJSON() ArrayOfJSONByKeyValues {
 }
 
 func (mbkv *MapByKeyValues) add(key *Key, val *Value) {
-	unresolved := ""
+	unresolved := FuncsAndParam{
+		Param: "",
+		Funcs: []string{},
+	}
 	if val.Unresolved != nil {
 		unresolved = *val.Unresolved
 	}
-	bkvs, found := (*mbkv)[unresolved]
+	bkvs, found := (*mbkv)[unresolved.Param]
 	if !found {
 		bkvs = make([]*ByKeyValues, 0)
 	}
@@ -135,7 +141,7 @@ func (mbkv *MapByKeyValues) add(key *Key, val *Value) {
 		Tags:       val.Tags,
 		order:      val.order,
 	})
-	(*mbkv)[unresolved] = bkvs
+	(*mbkv)[unresolved.Param] = bkvs
 }
 
 // Match KVPearls against the MapByToResolve
@@ -163,11 +169,11 @@ func (kvps *KVPearls) Match(toResolves MapByToResolve) MapByKeyValues {
 			for k := range *rev {
 				// fmt.Printf("------- 0000:%d:%s:%d\n", o, i, k)
 				val := (*rev)[k]
-				unresolved := "" // taken from match
+				var unresolved *FuncsAndParam
 				if len(toResolves) == 0 {
 					ret.add(key, &Value{
 						Value:      val.Value,
-						Unresolved: &unresolved,
+						Unresolved: unresolved,
 						Tags:       val.Tags,
 						order:      val.order,
 					})
@@ -178,11 +184,11 @@ func (kvps *KVPearls) Match(toResolves MapByToResolve) MapByKeyValues {
 						matchKVP, match := kvp.Match(key, val)
 						if match {
 							if matchKVP.ToResolve != nil {
-								unresolved = *matchKVP.ToResolve
+								unresolved = matchKVP.ToResolve
 							}
 							ret.add(key, &Value{
 								Value:      val.Value,
-								Unresolved: &unresolved,
+								Unresolved: unresolved,
 								Tags:       val.Tags,
 								order:      val.order,
 							})

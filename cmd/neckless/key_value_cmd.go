@@ -48,8 +48,8 @@ func toKVreadFile(args []string) ([]*kvpearl.SetArg, []error) {
 			errs = append(errs, err)
 			continue
 		}
-		kvp, err = kvp.Resolv(func(key string, fname string) (*string, error) {
-			c, err := ioutil.ReadFile(fname)
+		kvp, err = kvp.Resolv(func(key string, fparam kvpearl.FuncsAndParam) (*string, error) {
+			c, err := ioutil.ReadFile(fparam.Param)
 			if err != nil {
 				return nil, err
 			}
@@ -162,13 +162,27 @@ func parseArgs2KVpearl(args []string, write string, tags []string) (kvpearl.MapB
 				errs = append(errs, err)
 				continue
 			}
-			if sa.ToResolve == nil || len(*sa.ToResolve) == 0 {
-				sa.ToResolve = &write
-			}
+			// if sa.ToResolve == nil || len(sa.ToResolve.Param) == 0 {
+			// 	sa.ToResolve = kvpearl.ParseFuncsAndParams(write)
+			// }
 			ret.Add(sa)
 		}
 	}
 	return ret, errs
+}
+
+func runActions(kv *kvpearl.JSONValue) (string, error) {
+	val := kv.Value
+	if kv.Unresolved != nil {
+		var err error
+		val, err = kv.Unresolved.RunFuncs(val)
+		if err != nil {
+			// fmt.Fprintln(narg.Nio.err.first().buf, err)
+			return val, err
+		}
+		// val = fmt.Sprintf("(%s:%d)", val, len)
+	}
+	return val, nil
 }
 
 func kvLsCmd(narg *NecklessArgs) *cobra.Command {
@@ -229,6 +243,16 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 				kvs := outputs[fname]
 				outValues := kvs.ToJSON()
 				if *narg.Kvs.Ls.json {
+					for i := range outValues {
+						kv := outValues[i]
+						for j := range kv.Vals {
+							val, err := runActions(kv.Vals[j])
+							if err != nil {
+								return err
+							}
+							kv.Vals[j].Value = val
+						}
+					}
 					jsStr, err := json.MarshalIndent(outValues, "", "  ")
 					if err != nil {
 						fmt.Fprintf(narg.Nio.err.first().buf, "%s", err)
@@ -236,8 +260,12 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 					fmt.Fprintln(narg.Nio.out.add(&fname).buf, string(jsStr))
 				} else if *narg.Kvs.Ls.onlyValue {
 					for i := range outValues {
+						val, err := runActions(outValues[i].Vals[0])
+						if err != nil {
+							return err
+						}
 						out := narg.Nio.out.add(&fname)
-						fmt.Fprintf(out.buf, "%s\n", outValues[i].Vals[0].Value)
+						fmt.Fprintf(out.buf, "%s\n", val)
 					}
 					err = nil
 				} else {
@@ -247,8 +275,12 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 					}
 					for i := range outValues {
 						kv := outValues[i]
+						val, err := runActions(kv.Vals[0])
+						if err != nil {
+							return err
+						}
 						var v []byte
-						v, err = json.Marshal(kv.Vals[0].Value)
+						v, err = json.Marshal(val)
 						fmt.Fprintf(narg.Nio.out.add(&fname).buf, "%s=%s%s", kv.Key, string(v), eol)
 						if *narg.Kvs.Ls.shKeyValue {
 							fmt.Fprintf(narg.Nio.out.add(&fname).buf, "export %s%s", kv.Key, eol)

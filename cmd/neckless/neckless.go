@@ -160,12 +160,17 @@ func buildArgs(osArgs []string, args *NecklessArgs) (*cobra.Command, error) {
 	// 	Exec:    func(context.Context, []string) error { return flag.ErrHelp },
 	// }
 
-	f, err := os.OpenFile("logfile", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatalf("error: %v", err)
+	logFile, found := os.LookupEnv("NECKLESS_LOGFILE")
+	var logF *os.File
+	if found {
+		var err error
+		logF, err = os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatalf("error: %v", err)
+		}
+		log.SetOutput(io.Writer(logF))
+		log.Println("Called with=>", osArgs)
 	}
-	log.SetOutput(io.Writer(f))
-	log.Println("Called with=>", osArgs)
 	// err = rootCmd.ParseAndRun(context.Background(), osArgs)
 	// // // fmt.Printf(">>>>>", osArgs)
 	// // if  err != nil && err != flag.ErrHelp {
@@ -199,9 +204,11 @@ func buildArgs(osArgs []string, args *NecklessArgs) (*cobra.Command, error) {
 	rootCmd.AddCommand(keyValueCmd(args))
 
 	// cmdEcho.AddCommand(cmdTimes)
-	err = rootCmd.Execute()
+	err := rootCmd.Execute()
 	// fmt.Println(args.Gpg)
-	f.Close()
+	if logF != nil {
+		logF.Close()
+	}
 
 	return rootCmd, err
 }

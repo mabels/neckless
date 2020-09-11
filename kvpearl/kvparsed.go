@@ -10,13 +10,14 @@ import (
 type KVParsed struct {
 	Key       *string        // is set if plain Key
 	KeyRegex  *regexp.Regexp // is allways set
-	ToResolve *string        // ToResolv is set if Needs to Resolv
-	Val       *string        // Value is Set if an = is used
-	Tags      Tags
+	ToResolve *FuncsAndParam // ToResolv is set if Needs to Resolv
+	// Actions   *[]string      // set if a Action is given
+	Val  *string // Value is Set if an = is used
+	Tags Tags
 }
 
 // ResolvFN is the Resolver Function Reference
-type ResolvFN func(key string, fname string) (*string, error)
+type ResolvFN func(key string, fparam FuncsAndParam) (*string, error)
 
 var plainRegex = regexp.MustCompile("^[A-Za-z0-9_]+$")
 
@@ -57,9 +58,29 @@ var isKeyValue = regexp.MustCompile(`^([^=@]+)([=@])(.*)$`)
 // 	return value, nil, nil
 // }
 
-func isToResolve(isAt string, value string) *string {
+var funcMatch = regexp.MustCompile("([^\\(]+)\\((.*)\\)")
+
+// ParseFuncsAndParams parses a String to FuncsAndParam
+func ParseFuncsAndParams(toParse string) *FuncsAndParam {
+	ret := FuncsAndParam{
+		Param: "",
+		Funcs: []string{},
+	}
+	return interalParseFuncsAndParams(toParse, &ret)
+}
+func interalParseFuncsAndParams(toParse string, ret *FuncsAndParam) *FuncsAndParam {
+	m := funcMatch.FindStringSubmatch(toParse)
+	if len(m) != 3 {
+		ret.Param = toParse
+		return ret
+	}
+	ret.Funcs = append(ret.Funcs, m[1])
+	return interalParseFuncsAndParams(m[2], ret)
+}
+
+func isToResolve(isAt string, value string) *FuncsAndParam {
 	if isAt == "@" {
-		return &value
+		return ParseFuncsAndParams(value)
 	}
 	return nil
 }
@@ -123,9 +144,8 @@ func parseBrackets(arg string) (*KVParsed, error) {
 	if len(split) > 3 && len(split[5]) > 0 {
 		// fmt.Println("split set tag")
 		return &KVParsed{
-			Key:      isPlain(split[1]),
-			KeyRegex: keyRegex,
-
+			Key:       isPlain(split[1]),
+			KeyRegex:  keyRegex,
 			ToResolve: isToResolve(split[2], split[3]),
 			Val:       isValue(split[2], split[3]),
 
@@ -167,8 +187,9 @@ func (kvp *KVParsed) ToSetArgs() (*SetArg, error) {
 	return &SetArg{
 		Key:        *kvp.Key,      // is set if plain Key
 		Unresolved: kvp.ToResolve, // Unresolved is set value was resolved
-		Val:        *kvp.Val,      // Value is Set if an = is used
-		Tags:       kvp.Tags.toArray(),
+		// Actions:    kvp.Actions,   // Actions is set value was processed
+		Val:  *kvp.Val, // Value is Set if an = is used
+		Tags: kvp.Tags.toArray(),
 	}, nil
 }
 

@@ -3,7 +3,7 @@ package kvpearl
 // Value structure
 type Value struct {
 	Value      string
-	Unresolved *string
+	Unresolved *FuncsAndParam
 	Tags       Tags
 	order      int64
 	// Tags       map[string]struct{}
@@ -12,7 +12,7 @@ type Value struct {
 // JSONValue the Value resprestation
 type JSONValue struct {
 	Value      string
-	Unresolved *string `json:"Unresolved,omitempty"`
+	Unresolved *FuncsAndParam `json:"Unresolved,omitempty"`
 	// Order      time.Time // `json:"-"`
 	Tags []string
 }

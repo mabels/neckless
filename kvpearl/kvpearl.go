@@ -36,10 +36,11 @@ func Create() *KVPearl {
 
 // SetArg allow explict creating of a KVPearl
 type SetArg struct {
-	Key        string  // is set if plain Key
-	Unresolved *string // Unresolved is set value was resolved
-	Val        string  // Value is Set if an = is used
-	Tags       []string
+	Key        string         // is set if plain Key
+	Unresolved *FuncsAndParam // Unresolved is set value was resolved
+	// Actions    *[]string      // Actions is set value was processed
+	Val  string // Value is Set if an = is used
+	Tags []string
 }
 
 // Set added the Args to a KVPearl

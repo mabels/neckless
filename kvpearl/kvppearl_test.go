@@ -543,7 +543,7 @@ func TestResolv(t *testing.T) {
 	if *p.Key != "mmm" {
 		t.Error("should be mmm")
 	}
-	if *p.ToResolve != "ooo" {
+	if *&p.ToResolve.Param != "ooo" {
 		t.Error("should be ooo")
 	}
 	if p.KeyRegex.String() != "^mmm$" {
@@ -560,7 +560,7 @@ func TestResolv(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	p, err = p.Resolv(func(string, string) (*string, error) { m := "ooo"; return &m, nil })
+	p, err = p.Resolv(func(string, FuncsAndParam) (*string, error) { m := "ooo"; return &m, nil })
 	if err != nil {
 		t.Error(err)
 	}
@@ -572,7 +572,7 @@ func TestResolv(t *testing.T) {
 	if kvp.Keys.get("mmm").Values.get("ooo").Value != "ooo" {
 		t.Error("should be ooo")
 	}
-	if *kvp.Keys.get("mmm").Values.get("ooo").Unresolved != "aaa" {
+	if *&kvp.Keys.get("mmm").Values.get("ooo").Unresolved.Param != "aaa" {
 		t.Error("should be aaa")
 	}
 }
@@ -583,7 +583,7 @@ func TestResolvWithCommaTags(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	p, err = p.Resolv(func(string, string) (*string, error) { m := "ooo"; return &m, nil })
+	p, err = p.Resolv(func(string, FuncsAndParam) (*string, error) { m := "ooo"; return &m, nil })
 	if err != nil {
 		t.Error(err)
 	}
@@ -608,7 +608,7 @@ func TestResolvWithCommaTags(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	p, err = p.Resolv(func(string, string) (*string, error) { m := "ooo"; return &m, nil })
+	p, err = p.Resolv(func(string, FuncsAndParam) (*string, error) { m := "ooo"; return &m, nil })
 	if err != nil {
 		t.Error(err)
 	}
@@ -620,7 +620,7 @@ func TestResolvWithCommaTags(t *testing.T) {
 	if kvp.Keys.get("mmm").Values.get("ooo").Value != "ooo" {
 		t.Error("should be ooo")
 	}
-	if *kvp.Keys.get("mmm").Values.get("ooo").Unresolved != "aaa" {
+	if *&kvp.Keys.get("mmm").Values.get("ooo").Unresolved.Param != "aaa" {
 		t.Error("should be aaa")
 	}
 	if len(kvp.Keys.get("mmm").Values.get("ooo").Tags) != 4 {
@@ -642,7 +642,7 @@ func TestResolvWithCommaTags(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	p, err = p.Resolv(func(string, string) (*string, error) { m := "rrr"; return &m, nil })
+	p, err = p.Resolv(func(string, FuncsAndParam) (*string, error) { m := "rrr"; return &m, nil })
 	if err != nil {
 		t.Error(err)
 	}
@@ -654,7 +654,7 @@ func TestResolvWithCommaTags(t *testing.T) {
 	if kvp.Keys.get("mmm").Values.get("rrr").Value != "rrr" {
 		t.Error("should be ooo")
 	}
-	if *kvp.Keys.get("mmm").Values.get("rrr").Unresolved != "aaa" {
+	if *&kvp.Keys.get("mmm").Values.get("rrr").Unresolved.Param != "aaa" {
 		t.Error("should be aaa")
 	}
 	if len(kvp.Keys.get("mmm").Values.get("rrr").Tags) != 2 {
@@ -720,12 +720,12 @@ func TestEmptyParse(t *testing.T) {
 	sa, err := Parse("mmm@[]")
 	testSA(t, err, sa)
 	sa, err = Parse("mmm@[]")
-	sa, err = sa.Resolv(func(string, string) (*string, error) { m := "rrr"; return &m, nil })
+	sa, err = sa.Resolv(func(string, FuncsAndParam) (*string, error) { m := "rrr"; return &m, nil })
 	testSA(t, err, sa, "rrr")
 	sa, err = Parse("mmm@,")
 	testSA(t, err, sa)
 	sa, err = Parse("mmm@,")
-	sa, err = sa.Resolv(func(string, string) (*string, error) { m := "rrr"; return &m, nil })
+	sa, err = sa.Resolv(func(string, FuncsAndParam) (*string, error) { m := "rrr"; return &m, nil })
 	testSA(t, err, sa, "rrr")
 }
 
@@ -735,11 +735,11 @@ func TestResolvWithBracketsTags(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	p, err = p.Resolv(func(key string, val string) (*string, error) {
+	p, err = p.Resolv(func(key string, fparam FuncsAndParam) (*string, error) {
 		if key != "mmm" {
 			t.Error("should be mmm")
 		}
-		if val != "ZZZ" {
+		if fparam.Param != "ZZZ" {
 			t.Error("should be ZZZ")
 		}
 		m := "ooo"
@@ -769,7 +769,7 @@ func TestResolvWithBracketsTags(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	p, err = p.Resolv(func(string, string) (*string, error) { m := "ooo"; return &m, nil })
+	p, err = p.Resolv(func(string, FuncsAndParam) (*string, error) { m := "ooo"; return &m, nil })
 	if err != nil {
 		t.Error(err)
 	}
@@ -781,7 +781,7 @@ func TestResolvWithBracketsTags(t *testing.T) {
 	if kvp.Keys.get("mmm").Values.get("ooo").Value != "ooo" {
 		t.Error("should be ooo")
 	}
-	if *kvp.Keys.get("mmm").Values.get("ooo").Unresolved != "aaa" {
+	if *&kvp.Keys.get("mmm").Values.get("ooo").Unresolved.Param != "aaa" {
 		t.Error("should be aaa")
 	}
 	if len(kvp.Keys.get("mmm").Values.get("ooo").Tags) != 4 {
@@ -804,7 +804,7 @@ func TestResolvWithBracketsTags(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	p, err = p.Resolv(func(string, string) (*string, error) { m := "rrr"; return &m, nil })
+	p, err = p.Resolv(func(string, FuncsAndParam) (*string, error) { m := "rrr"; return &m, nil })
 	if err != nil {
 		t.Error(err)
 	}
@@ -816,7 +816,7 @@ func TestResolvWithBracketsTags(t *testing.T) {
 	if kvp.Keys.get("mmm").Values.get("rrr").Value != "rrr" {
 		t.Error("should be ooo")
 	}
-	if *kvp.Keys.get("mmm").Values.get("rrr").Unresolved != "aaa" {
+	if *&kvp.Keys.get("mmm").Values.get("rrr").Unresolved.Param != "aaa" {
 		t.Error("should be aaa")
 	}
 	if len(kvp.Keys.get("mmm").Values.get("rrr").Tags) != 2 {
