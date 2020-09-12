@@ -68,9 +68,9 @@ func (key *Key) setValue(unresolved *FuncsAndParam, val string, tags map[string]
 	return value
 }
 
-func (key *Key) asJSON() *JSONKey {
-	return &JSONKey{
+func (key *Key) asJSON() JSONKey {
+	return JSONKey{
 		Key:    key.Key,
-		Values: key.Values.RevOrdered().asJson(),
+		Values: key.Values.Ordered().asJson(),
 	}
 }

@@ -13,25 +13,18 @@ import (
 // JSONKVPearl the JSON resprestion of a KVPearl
 type JSONKVPearl struct {
 	// Tags []string
-	Keys        []*JSONKey // sorted by keys
-	FingerPrint string     `json:"FingerPrint,omitempty"`
+	Keys        []JSONKey // sorted by keys
+	FingerPrint string    `json:"FingerPrint,omitempty"`
 	Created     time.Time
 }
 
 // KVPearl which is stored in Gems
 type KVPearl struct {
-	Keys    keys
-	Created time.Time
-	Pearl   *pearl.OpenPearl `json:"-"`
-}
-
-// Create a KVPearl
-func Create() *KVPearl {
-	return &KVPearl{
-		// Tags: uniqStrings(tags),
-		Keys:    keys{},
-		Created: time.Now(),
-	}
+	Keys     keys
+	Created  time.Time
+	Pearl    *pearl.OpenPearl `json:"-"`
+	orderRef *int
+	order    int
 }
 
 // SetArg allow explict creating of a KVPearl
@@ -45,7 +38,7 @@ type SetArg struct {
 
 // Set added the Args to a KVPearl
 func (kvp *KVPearl) Set(a SetArg) *KVPearl {
-	key, _ := kvp.Keys.getOrAdd(a.Key)
+	key, _ := kvp.Keys.getOrAdd(a.Key, kvp.orderRef)
 	key.setValue(a.Unresolved, a.Val, tags2Map(a.Tags))
 	return kvp
 }
@@ -57,7 +50,7 @@ func FromJSON(jsStr []byte) (*KVPearl, error) {
 	if err != nil {
 		return nil, err
 	}
-	kvp := Create()
+	kvp := CreateKVPearls().Add()
 	kvp.Created = jskvp.Created
 	// kvp.Tags = uniqStrings(kvp.Tags)
 	for i := range jskvp.Keys {
@@ -81,7 +74,7 @@ func FromJSON(jsStr []byte) (*KVPearl, error) {
 
 // AsJSON convert a KVPearl to a JSONKVPearl
 func (kvp *KVPearl) AsJSON() *JSONKVPearl {
-	keys := kvp.Keys.Sorted().asJSON()
+	keys := kvp.Keys.Sorted()
 	fpr := ""
 	if kvp.Pearl != nil {
 		fpr = base64.StdEncoding.EncodeToString(kvp.Pearl.Closed.FingerPrint)
@@ -163,7 +156,7 @@ func (kvp *KVPearl) matchTag(tags []string) []KeyValue {
 	mapRet := map[string]KeyValue{}
 	for i := range kvp.Keys {
 		key := kvp.Keys[i]
-		vals := key.Values.RevOrdered()
+		vals := key.Values.Ordered()
 		for j := range *vals {
 			if findTag((*vals)[j].Tags, tags) {
 				mapRet[key.Key] = KeyValue{

@@ -3,32 +3,82 @@ package kvpearl
 import (
 	"sort"
 	"strings"
+	"time"
 )
 
 // KVPearls is a array of KVPearl
-type KVPearls []*KVPearl
+type KVPearls struct {
+	kvps     []*KVPearl
+	orderRef *int
+	order    int
+}
+
+// CreateKVPearls a chain of Pearls
+func CreateKVPearls(orderps ...*int) *KVPearls {
+	order := 0x0abcdef
+	orderp := &order
+	if len(orderps) != 0 {
+		orderp = orderps[0]
+	}
+	(*orderp)++
+	return &KVPearls{
+		orderRef: orderp,
+		order:    *orderp,
+		kvps:     []*KVPearl{},
+	}
+}
 
 // Len is part of sort.Interface.
 func (kvps *KVPearls) Len() int {
-	return len(*kvps)
+	return len(kvps.kvps)
 }
 
 // Swap is part of sort.Interface.
 func (kvps *KVPearls) Swap(i, j int) {
-	(*kvps)[i], (*kvps)[j] = (*kvps)[j], (*kvps)[i]
+	(kvps.kvps)[i], (kvps.kvps)[j] = (kvps.kvps)[j], (kvps.kvps)[i]
 }
 
 // Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
 func (kvps *KVPearls) Less(i, j int) bool {
-	return (*kvps)[i].Created.UnixNano() < (*kvps)[j].Created.UnixNano()
+	if kvps.kvps[i].Created.UnixNano() == kvps.kvps[j].Created.UnixNano() {
+		return kvps.kvps[i].order < kvps.kvps[j].order
+	}
+	return (kvps.kvps)[i].Created.UnixNano() < kvps.kvps[j].Created.UnixNano()
+}
+
+// Add a KVPearl
+func (kvps *KVPearls) Add(kvp ...*KVPearl) *KVPearl {
+	if len(kvp) == 0 {
+		(*kvps.orderRef)++
+		ret := &KVPearl{
+			// Tags: uniqStrings(tags),
+			Keys:     keys{},
+			orderRef: kvps.orderRef,
+			order:    *kvps.orderRef,
+			Created:  time.Now(),
+		}
+		kvps.kvps = append(kvps.kvps, ret)
+		return ret
+	}
+	for i := range kvp {
+		my := KVPearl{
+			Keys:    kvp[i].Keys,
+			order:   kvps.order,
+			Created: kvp[i].Created,
+			Pearl:   kvp[i].Pearl,
+		}
+		kvps.kvps = append(kvps.kvps, &my)
+
+	}
+	return kvp[len(kvp)-1]
 }
 
 // AsJSON Converts KVPearls to JSONKVPearl
 func (kvps *KVPearls) AsJSON() []*JSONKVPearl {
-	out := make([]*JSONKVPearl, len(*kvps))
+	out := make([]*JSONKVPearl, len(kvps.kvps))
 	obt := kvps.orderByTime()
-	for i := range *obt {
-		out[i] = (*obt)[i].AsJSON()
+	for i := range obt.kvps {
+		out[i] = (obt.kvps)[i].AsJSON()
 	}
 	return out
 }
@@ -36,6 +86,32 @@ func (kvps *KVPearls) AsJSON() []*JSONKVPearl {
 func (kvps *KVPearls) orderByTime() *KVPearls {
 	sort.Sort(kvps)
 	return kvps
+}
+
+// Merge the KVPearls
+func (kvps *KVPearls) Merge() sortedKeys {
+	ret := keys{}
+	orderedKvps := kvps.orderByTime()
+	for okvp := range orderedKvps.kvps {
+		kvp := orderedKvps.kvps[okvp]
+		for keyStr := range kvp.Keys {
+			keyp, found := ret[keyStr]
+			if !found {
+				keyp = &Key{
+					Key:    keyStr,
+					Values: createValues(kvps.orderRef),
+				}
+				ret[keyStr] = keyp
+			}
+			orderVal := kvp.Keys[keyStr].Values.Ordered()
+			for o := range *orderVal {
+				val := (*orderVal)[o]
+				// fmt.Println(val.Value)
+				keyp.Values.getOrAddValue(val)
+			}
+		}
+	}
+	return ret.Sorted()
 }
 
 // MapByToResolve KVParsed ordered by ToResolve
@@ -101,14 +177,14 @@ func (a *ArrayByKeyValues) ToJSON() ArrayOfJSONByKeyValues {
 	for i := range *a {
 		ret[i] = JSONByKeyValues{
 			Key:  (*a)[i].Key,
-			Vals: (*a)[i].Vals.RevOrdered().asJson(),
+			Vals: (*a)[i].Vals.Ordered().asJson(),
 		}
 	}
 	sort.Sort(&ret)
 	return ret
 }
 
-func (mbkv *MapByKeyValues) add(key *Key, val *Value) {
+func (mbkv *MapByKeyValues) add(key string, val *Value, orderRef *int) {
 	unresolved := FuncsAndParam{
 		Param: "",
 		Funcs: []string{},
@@ -123,15 +199,15 @@ func (mbkv *MapByKeyValues) add(key *Key, val *Value) {
 	var bkv *ByKeyValues
 	for ibkv := range bkvs {
 		tbkv := bkvs[ibkv]
-		if tbkv.Key == key.Key {
+		if tbkv.Key == key {
 			bkv = tbkv
 			break
 		}
 	}
 	if bkv == nil {
 		bkv = &ByKeyValues{
-			Key:  key.Key,
-			Vals: createValues(),
+			Key:  key,
+			Vals: createValues(orderRef),
 		}
 		bkvs = append(bkvs, bkv)
 	}
@@ -139,7 +215,6 @@ func (mbkv *MapByKeyValues) add(key *Key, val *Value) {
 		Value:      val.Value,
 		Unresolved: &unresolved,
 		Tags:       val.Tags,
-		order:      val.order,
 	})
 	(*mbkv)[unresolved.Param] = bkvs
 }
@@ -147,7 +222,8 @@ func (mbkv *MapByKeyValues) add(key *Key, val *Value) {
 // Match KVPearls against the MapByToResolve
 func (kvps *KVPearls) Match(toResolves MapByToResolve) MapByKeyValues {
 	ret := MapByKeyValues{}
-	orderedKvps := kvps.orderByTime()
+	kvp := kvps.Merge()
+
 	// for toResolve := range toResolves {
 	// 	kvparseds := toResolves[toResolve]
 	// 	ret[toResolve] = make([]ByKeyValue, len(kvparseds))
@@ -159,40 +235,38 @@ func (kvps *KVPearls) Match(toResolves MapByToResolve) MapByKeyValues {
 	// if len(toResolves) == 0 {
 	// fmt.Printf("------- 0000\n")
 	// tmp := make([]ByKeyValue, 0)
-	for o := range *orderedKvps {
+	for o := range kvp {
 		// fmt.Printf("------- 0000:%d\n", o)
-		oval := (*orderedKvps)[o]
-		for i := range oval.Keys {
+		oval := kvp[o]
+		for i := range oval.Values {
 			// fmt.Printf("------- 0000:%d:%s\n", o, i)
-			key := oval.Keys[i]
-			rev := key.Values.RevOrdered()
-			for k := range *rev {
-				// fmt.Printf("------- 0000:%d:%s:%d\n", o, i, k)
-				val := (*rev)[k]
-				var unresolved *FuncsAndParam
-				if len(toResolves) == 0 {
-					ret.add(key, &Value{
-						Value:      val.Value,
-						Unresolved: unresolved,
-						Tags:       val.Tags,
-						order:      val.order,
-					})
-				}
-				for ires := range toResolves {
-					for ikvps := range toResolves[ires] {
-						kvp := toResolves[ires][ikvps]
-						matchKVP, match := kvp.Match(key, val)
-						if match {
-							if matchKVP.ToResolve != nil {
-								unresolved = matchKVP.ToResolve
-							}
-							ret.add(key, &Value{
-								Value:      val.Value,
-								Unresolved: unresolved,
-								Tags:       val.Tags,
-								order:      val.order,
-							})
+			// key := oval.Values[i]
+			// rev := key.Values.Ordered()
+			// fmt.Printf("------- 0000:%d:%s:%d\n", o, i, k)
+			val := oval.Values[i]
+			var unresolved *FuncsAndParam
+			if len(toResolves) == 0 {
+				ret.add(oval.Key, &Value{
+					Value:      val.Value,
+					Unresolved: unresolved,
+					Tags:       val.Tags.asTags(),
+					// order:      *kvps.orderRef,
+				}, kvps.orderRef)
+			}
+			for ires := range toResolves {
+				for ikvps := range toResolves[ires] {
+					kvp := toResolves[ires][ikvps]
+					matchKVP, match := kvp.Match(oval.Key, val)
+					if match {
+						if matchKVP.ToResolve != nil {
+							unresolved = matchKVP.ToResolve
 						}
+						ret.add(oval.Key, &Value{
+							Value:      val.Value,
+							Unresolved: unresolved,
+							Tags:       val.Tags.asTags(),
+							// order:      *kvps.orderRef,
+						}, kvps.orderRef)
 					}
 				}
 			}

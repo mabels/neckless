@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"neckless.adviser.com/gem"
-	"neckless.adviser.com/kvpearl"
 	"neckless.adviser.com/member"
 )
 
@@ -214,7 +213,7 @@ func createTestData(t *testing.T) {
 func TestKvs(t *testing.T) {
 	createTestData(t)
 	nio, _ := cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --json")
-	var mya kvpearl.ArrayOfJSONByKeyValues
+	var mya []flatKeyValue
 	// inputJS := string(nio.out.first().buf.Bytes())
 	// t.Error(inputJS)
 	json.Unmarshal(nio.out.first().buf.Bytes(), &mya)
@@ -224,13 +223,13 @@ func TestKvs(t *testing.T) {
 	if strings.Compare(mya[0].Key, "M") != 0 {
 		t.Error("not M")
 	}
-	if strings.Compare(mya[0].Vals[0].Value, "3") != 0 {
+	if !(mya[0].Value == "3") {
 		t.Error("not M")
 	}
 	if strings.Compare(mya[1].Key, "N") != 0 {
 		t.Error("not N")
 	}
-	if strings.Compare(mya[1].Vals[0].Value, "4711") != 0 {
+	if strings.Compare(mya[1].Value, "4711") != 0 {
 		t.Error("not N")
 	}
 
@@ -288,37 +287,17 @@ func TestLsGhAddMask(t *testing.T) {
 }
 
 func genRef(param string) string {
-	unresolved := kvpearl.ParseFuncsAndParams(param)
-	ref := kvpearl.ArrayOfJSONByKeyValues{
-		kvpearl.JSONByKeyValues{
-			Key: "M",
-			Vals: kvpearl.JSONValues{
-				&kvpearl.JSONValue{
-					Value:      "3",
-					Unresolved: unresolved,
-					Tags:       []string{},
-				},
-				&kvpearl.JSONValue{
-					Value:      "2",
-					Unresolved: unresolved,
-					Tags:       []string{},
-				},
-				&kvpearl.JSONValue{
-					Value:      "1",
-					Unresolved: unresolved,
-					Tags:       []string{},
-				},
-			},
+	// unresolved := kvpearl.ParseFuncsAndParams(param)
+	ref := []flatKeyValue{
+		{
+			Key:   "M",
+			Value: "3",
+			Tags:  []string{},
 		},
-		kvpearl.JSONByKeyValues{
-			Key: "N",
-			Vals: kvpearl.JSONValues{
-				&kvpearl.JSONValue{
-					Value:      "4711",
-					Unresolved: unresolved,
-					Tags:       []string{},
-				},
-			},
+		{
+			Key:   "N",
+			Value: "4711",
+			Tags:  []string{},
 		},
 	}
 	jsb, _ := json.MarshalIndent(ref, "", "  ")
@@ -390,30 +369,20 @@ func TestActions(t *testing.T) {
 	if len(strings.TrimSpace(nio.out.first().buf.String())) != 6 {
 		t.Error(nio.out.first().buf.String())
 	}
-	ref := kvpearl.ArrayOfJSONByKeyValues{
-		kvpearl.JSONByKeyValues{
-			Key: "TOTP",
-			Vals: kvpearl.JSONValues{
-				&kvpearl.JSONValue{
-					Value: "441669",
-					Unresolved: &kvpearl.FuncsAndParam{
-						Param: "",
-						Funcs: []string{
-							"Totp",
-						},
-					},
-					Tags: []string{},
-				},
-			},
+	ref := []flatKeyValue{
+		flatKeyValue{
+			Key:   "TOTP",
+			Value: "setit",
+			Tags:  []string{},
 		},
 	}
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --json TOTP@Totp()")
-	var myRef kvpearl.ArrayOfJSONByKeyValues
+	var myRef []flatKeyValue
 	err = json.Unmarshal(nio.out.first().buf.Bytes(), &myRef)
 	if err != nil {
 		t.Error("should not happend")
 	}
-	ref[0].Vals[0].Value = myRef[0].Vals[0].Value
+	ref[0].Value = myRef[0].Value
 	jsRef, _ := json.MarshalIndent(ref, "", "  ")
 	if string(jsRef) == nio.out.first().buf.String() {
 		t.Error(nio.out.first().buf.String())

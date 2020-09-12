@@ -69,7 +69,7 @@ func testTime() time.Time {
 // }
 
 func TestCreate(t *testing.T) {
-	c := Create( /* "hello", "doof", "hello", "zwei", "doof" */ )
+	c := CreateKVPearls().Add( /* "hello", "doof", "hello", "zwei", "doof" */ )
 	// ref := []string{"doof", "hello", "zwei"}
 	// for i := range ref {
 	// 	if strings.Compare(c.Tags[i], ref[i]) != 0 {
@@ -137,8 +137,9 @@ func compareKVPearl(t *testing.T, c *KVPearl) {
 }
 
 func TestSet(t *testing.T) {
+	o := CreateKVPearls()
 	for i := 0; i < 100; i++ {
-		c := Create( /*"hello", "doof", "hello", "zwei", "doof"*/ )
+		c := o.Add( /*"hello", "doof", "hello", "zwei", "doof"*/ )
 		// if len(c.Tags) != 3 {
 		// 	t.Error("no expected", len(c.Tags), c.Tags)
 		// }
@@ -155,7 +156,7 @@ func TestSet(t *testing.T) {
 }
 
 func TestJson(t *testing.T) {
-	c := Create( /* "hello", "doof", "hello", "zwei", "doof" */ )
+	c := CreateKVPearls().Add( /* "hello", "doof", "hello", "zwei", "doof" */ )
 	// if len(c.Tags) != 3 {
 	// 	t.Error("no expected", len(c.Tags), c.Tags)
 	// }
@@ -200,7 +201,7 @@ func TestJson(t *testing.T) {
 }
 
 func TestPearl(t *testing.T) {
-	c := Create( /*"hello", "doof", "hello", "zwei", "doof"*/ )
+	c := CreateKVPearls().Add( /*"hello", "doof", "hello", "zwei", "doof"*/ )
 	// if len(c.Tags) != 3 {
 	// 	t.Error("no expected", len(c.Tags), c.Tags)
 	// }
@@ -228,112 +229,109 @@ func TestPearl(t *testing.T) {
 	compareKVPearl(t, kvp)
 }
 
-func TestLs(t *testing.T) {
-	o := KVPearls{
-		Create().Set(SetArg{Key: "AB", Val: "BA"}).Set(SetArg{Key: "ZA", Val: "AZ"}),
-		Create().Set(SetArg{Key: "K1", Val: "V1"}).Set(SetArg{Key: "K1", Val: "V4"}).Set(SetArg{Key: "K2", Val: "VV"}).Set(SetArg{Key: "K3", Val: "Geheim"}),
-		Create().Set(SetArg{Key: "K1", Val: "1V1"}).Set(SetArg{Key: "K1", Val: "V4"}).Set(SetArg{Key: "K2", Val: "1VV"}).Set(SetArg{Key: "K3", Val: "SehrGeheim"}),
-		Create().Set(SetArg{Key: "K6", Val: "1V1"}).Set(SetArg{Key: "K7", Val: "V4"}).Set(SetArg{Key: "K8", Val: "1VV"}).Set(SetArg{Key: "K1", Val: "SehrGeheim"}),
-		Create(),
-		Create().Set(SetArg{Key: "YU", Val: "UY"}).Set(SetArg{Key: "AA", Val: "AA"}),
-	}
-	u := o.Ls()
-	if len(u) != 10 {
-		t.Error("not the right len", u)
-	}
-	if strings.Compare(u[0].Key, "AA") != 0 {
-		t.Error("not the right key", u)
-	}
-	if strings.Compare(u[len(u)-1].Key, "ZA") != 0 {
-		t.Error("not the right key", u)
-	}
-	if strings.Compare(u[2].Key, "K1") != 0 || strings.Compare(u[2].Value, "SehrGeheim") != 0 {
-		t.Error("not the right key", u[2])
-	}
-	if strings.Compare(u[3].Key, "K2") != 0 || strings.Compare(u[3].Value, "1VV") != 0 {
-		t.Error("not the right key", u[2])
-	}
-	if strings.Compare(u[7].Key, "K8") != 0 || strings.Compare(u[7].Value, "1VV") != 0 {
-		t.Error("not the right key", u[2])
-	}
-	// t.Error(u)
+// func TestLs(t *testing.T) {
+// 	o := CreateKVPearls()
+// 	o.Add().Set(SetArg{Key: "AB", Val: "BA"}).Set(SetArg{Key: "ZA", Val: "AZ"})
+// 	o.Add().Set(SetArg{Key: "K1", Val: "V1"}).Set(SetArg{Key: "K1", Val: "V4"}).Set(SetArg{Key: "K2", Val: "VV"}).Set(SetArg{Key: "K3", Val: "Geheim"})
+// 	o.Add().Set(SetArg{Key: "K1", Val: "1V1"}).Set(SetArg{Key: "K1", Val: "V4"}).Set(SetArg{Key: "K2", Val: "1VV"}).Set(SetArg{Key: "K3", Val: "SehrGeheim"})
+// 	o.Add().Set(SetArg{Key: "K6", Val: "1V1"}).Set(SetArg{Key: "K7", Val: "V4"}).Set(SetArg{Key: "K8", Val: "1VV"}).Set(SetArg{Key: "K1", Val: "SehrGeheim"})
+// 	o.Add()
+// 	o.Add().Set(SetArg{Key: "YU", Val: "UY"}).Set(SetArg{Key: "AA", Val: "AA"})
+// 	u := o.Ls()
+// 	if len(u) != 10 {
+// 		t.Error("not the right len", u)
+// 	}
+// 	if strings.Compare(u[0].Key, "AA") != 0 {
+// 		t.Error("not the right key", u)
+// 	}
+// 	if strings.Compare(u[len(u)-1].Key, "ZA") != 0 {
+// 		t.Error("not the right key", u)
+// 	}
+// 	if strings.Compare(u[2].Key, "K1") != 0 || strings.Compare(u[2].Value, "SehrGeheim") != 0 {
+// 		t.Error("not the right key", u[2])
+// 	}
+// 	if strings.Compare(u[3].Key, "K2") != 0 || strings.Compare(u[3].Value, "1VV") != 0 {
+// 		t.Error("not the right key", u[2])
+// 	}
+// 	if strings.Compare(u[7].Key, "K8") != 0 || strings.Compare(u[7].Value, "1VV") != 0 {
+// 		t.Error("not the right key", u[2])
+// 	}
+// 	// t.Error(u)
 
-}
+// }
 
-func TestGet(t *testing.T) {
-	o := KVPearls{
-		Create().Set(SetArg{Key: "K1", Val: "V1"}).Set(SetArg{Key: "K1", Val: "V4"}).Set(SetArg{Key: "K2", Val: "VV"}).Set(SetArg{Key: "K3", Val: "Geheim"}),
-		Create().Set(SetArg{Key: "K1", Val: "1V1"}).Set(SetArg{Key: "K1", Val: "V4"}).Set(SetArg{Key: "K2", Val: "1VV"}).Set(SetArg{Key: "K3", Val: "SehrGeheim"}),
-		Create().Set(SetArg{Key: "K6", Val: "1V1"}).Set(SetArg{Key: "K7", Val: "V4"}).Set(SetArg{Key: "K8", Val: "1VV"}).Set(SetArg{Key: "K1", Val: "SehrGeheim"}),
-	}
-	ret := o.Get("XX")
-	if ret != nil {
-		t.Error("should be nil")
-	}
-	ret = o.Get("K1")
-	// t.Error(ret)
-	if strings.Compare("SehrGeheim", ret.Value) != 0 {
-		t.Error("should be", ret)
-	}
-}
+// func TestGet(t *testing.T) {
+// 	o := CreateKVPearls()
+// 	o.Add().Set(SetArg{Key: "K1", Val: "V1"}).Set(SetArg{Key: "K1", Val: "V4"}).Set(SetArg{Key: "K2", Val: "VV"}).Set(SetArg{Key: "K3", Val: "Geheim"})
+// 	o.Add().Set(SetArg{Key: "K1", Val: "1V1"}).Set(SetArg{Key: "K1", Val: "V4"}).Set(SetArg{Key: "K2", Val: "1VV"}).Set(SetArg{Key: "K3", Val: "SehrGeheim"})
+// 	o.Add().Set(SetArg{Key: "K6", Val: "1V1"}).Set(SetArg{Key: "K7", Val: "V4"}).Set(SetArg{Key: "K8", Val: "1VV"}).Set(SetArg{Key: "K1", Val: "SehrGeheim"})
+// 	ret := o.Get("XX")
+// 	if ret != nil {
+// 		t.Error("should be nil")
+// 	}
+// 	ret = o.Get("K1")
+// 	// t.Error(ret)
+// 	if strings.Compare("SehrGeheim", ret.Value) != 0 {
+// 		t.Error("should be", ret)
+// 	}
+// }
 
-func TestLsTags(t *testing.T) {
-	o := KVPearls{
-		Create().Set(SetArg{Key: "K1", Val: "V1", Tags: []string{"PROD"}}).Set(SetArg{Key: "K1", Val: "V4"}).Set(SetArg{Key: "K2", Val: "VV"}).Set(SetArg{Key: "K3", Val: "Geheim", Tags: []string{"PROD"}}),
-		Create().Set(SetArg{Key: "K1", Val: "1V1", Tags: []string{"TEST"}}).Set(SetArg{Key: "K1", Val: "V4", Tags: []string{"WURST", "TEST"}}).Set(SetArg{Key: "K2", Val: "1VV"}).Set(SetArg{Key: "K3", Val: "SehrGeheim"}),
-		Create().Set(SetArg{Key: "K6", Val: "1V1"}).Set(SetArg{Key: "K7", Val: "V4"}).Set(SetArg{Key: "K8", Val: "1VV", Tags: []string{"PROD", "DEV"}}).Set(SetArg{Key: "K1", Val: "SehrGeheim"}),
-	}
-	u := o.Ls("PROD")
-	if len(u) != 3 {
-		t.Error("unknown length", u)
-	}
-	if strings.Compare("K1", u[0].Key) != 0 || strings.Compare("V1", u[0].Value) != 0 {
-		t.Error("len == 1", u)
-	}
-	if strings.Compare("K8", u[2].Key) != 0 || strings.Compare("1VV", u[2].Value) != 0 {
-		t.Error("len == 1", u)
-	}
+// func TestLsTags(t *testing.T) {
+// 	o := CreateKVPearls()
+// 	o.Add().Set(SetArg{Key: "K1", Val: "V1", Tags: []string{"PROD"}}).Set(SetArg{Key: "K1", Val: "V4"}).Set(SetArg{Key: "K2", Val: "VV"}).Set(SetArg{Key: "K3", Val: "Geheim", Tags: []string{"PROD"}})
+// 	o.Add().Set(SetArg{Key: "K1", Val: "1V1", Tags: []string{"TEST"}}).Set(SetArg{Key: "K1", Val: "V4", Tags: []string{"WURST", "TEST"}}).Set(SetArg{Key: "K2", Val: "1VV"}).Set(SetArg{Key: "K3", Val: "SehrGeheim"})
+// 	o.Add().Set(SetArg{Key: "K6", Val: "1V1"}).Set(SetArg{Key: "K7", Val: "V4"}).Set(SetArg{Key: "K8", Val: "1VV", Tags: []string{"PROD", "DEV"}}).Set(SetArg{Key: "K1", Val: "SehrGeheim"})
+// 	u := o.Ls("PROD")
+// 	if len(u) != 3 {
+// 		t.Error("unknown length", u)
+// 	}
+// 	if strings.Compare("K1", u[0].Key) != 0 || strings.Compare("V1", u[0].Value) != 0 {
+// 		t.Error("len == 1", u)
+// 	}
+// 	if strings.Compare("K8", u[2].Key) != 0 || strings.Compare("1VV", u[2].Value) != 0 {
+// 		t.Error("len == 1", u)
+// 	}
 
-	u = o.Ls("TEST")
-	if len(u) != 1 {
-		t.Error("len == 1", u)
-	}
-	// jo, _ := json.MarshalIndent(u, "", "  ")
-	// t.Error(string(jo))
-	if strings.Compare("K1", u[0].Key) != 0 || strings.Compare("V4", u[0].Value) != 0 {
-		t.Error("len == 1", u[0].Value)
-	}
-}
+// 	u = o.Ls("TEST")
+// 	if len(u) != 1 {
+// 		t.Error("len == 1", u)
+// 	}
+// 	// jo, _ := json.MarshalIndent(u, "", "  ")
+// 	// t.Error(string(jo))
+// 	if strings.Compare("K1", u[0].Key) != 0 || strings.Compare("1V1", u[0].Value) != 0 {
+// 		t.Error("len == 1", u[0].Value)
+// 	}
+// }
 
-func TestGetTags(t *testing.T) {
-	o := KVPearls{
-		Create().Set(SetArg{Key: "K1", Val: "V1", Tags: []string{"PROD"}}).Set(SetArg{Key: "K1", Val: "V4"}).Set(SetArg{Key: "K2", Val: "VV"}).Set(SetArg{Key: "K3", Val: "Geheim", Tags: []string{"PROD"}}),
-		Create().Set(SetArg{Key: "K1", Val: "1V1", Tags: []string{"TEST"}}).Set(SetArg{Key: "K1", Val: "V4", Tags: []string{"WURST", "TEST"}}).Set(SetArg{Key: "K2", Val: "1VV"}).Set(SetArg{Key: "K3", Val: "SehrGeheim"}),
-		Create().Set(SetArg{Key: "K6", Val: "1V1"}).Set(SetArg{Key: "K7", Val: "V4"}).Set(SetArg{Key: "K8", Val: "1VV"}).Set(SetArg{Key: "K1", Val: "SehrGeheim"}),
-	}
-	ret := o.Get("XX")
-	if ret != nil {
-		t.Error("should be nil")
-	}
-	ret = o.Get("K1")
-	if strings.Compare("SehrGeheim", ret.Value) != 0 {
-		t.Error("should be", ret)
-	}
-	ret = o.Get("K1", "PROD")
-	if strings.Compare("V1", ret.Value) != 0 {
-		t.Error("should be", ret)
-	}
-	ret = o.Get("K1", "TEST")
-	if strings.Compare("V4", ret.Value) != 0 {
-		t.Error("should be", ret)
-	}
-	ret = o.Get("K1", "PROD", "TEST")
-	if strings.Compare("V4", ret.Value) != 0 {
-		t.Error("should be", ret)
-	}
-}
+// func TestGetTags(t *testing.T) {
+// 	o := CreateKVPearls()
+// 	o.Add().Set(SetArg{Key: "K1", Val: "V1", Tags: []string{"PROD"}}).Set(SetArg{Key: "K1", Val: "V4"}).Set(SetArg{Key: "K2", Val: "VV"}).Set(SetArg{Key: "K3", Val: "Geheim", Tags: []string{"PROD"}})
+// 	o.Add().Set(SetArg{Key: "K1", Val: "1V1", Tags: []string{"TEST"}}).Set(SetArg{Key: "K1", Val: "V4", Tags: []string{"WURST", "TEST"}}).Set(SetArg{Key: "K2", Val: "1VV"}).Set(SetArg{Key: "K3", Val: "SehrGeheim"})
+// 	o.Add().Set(SetArg{Key: "K6", Val: "1V1"}).Set(SetArg{Key: "K7", Val: "V4"}).Set(SetArg{Key: "K8", Val: "1VV"}).Set(SetArg{Key: "K1", Val: "SehrGeheim"})
+// 	ret := o.Get("XX")
+// 	if ret != nil {
+// 		t.Error("should be nil")
+// 	}
+// 	ret = o.Get("K1")
+// 	if strings.Compare("SehrGeheim", ret.Value) != 0 {
+// 		t.Error("should be", ret)
+// 	}
+// 	ret = o.Get("K1", "PROD")
+// 	if strings.Compare("V1", ret.Value) != 0 {
+// 		t.Error("should be", ret)
+// 	}
+// 	ret = o.Get("K1", "TEST")
+// 	if strings.Compare("V4", ret.Value) != 0 {
+// 		t.Error("should be", ret)
+// 	}
+// 	ret = o.Get("K1", "PROD", "TEST")
+// 	if strings.Compare("V4", ret.Value) != 0 {
+// 		t.Error("should be", ret)
+// 	}
+// }
 
 func TestParse(t *testing.T) {
+	kvps := CreateKVPearls()
 	for i := 0; i < 100; i++ {
 		_, err := Parse("")
 		if err == nil {
@@ -343,7 +341,7 @@ func TestParse(t *testing.T) {
 		if err == nil {
 			t.Error("no error not allowed")
 		}
-		kvp := Create()
+		kvp := kvps.Add()
 		p, err := Parse("mmm=")
 		if err != nil {
 			t.Error("no error not allowed")
@@ -510,32 +508,42 @@ func TestParse(t *testing.T) {
 }
 
 func TestMerge(t *testing.T) {
-	kvps := KVPearls{
-		Create().Set(SetArg{Key: "K1", Val: "V1", Tags: []string{"PROD"}}).Set(SetArg{Key: "K1", Val: "V4"}).Set(SetArg{Key: "K2", Val: "VV"}).Set(SetArg{Key: "K3", Val: "Geheim", Tags: []string{"PROD"}}),
-		Create().Set(SetArg{Key: "K1", Val: "1V1", Tags: []string{"TEST"}}).Set(SetArg{Key: "K1", Val: "V4", Tags: []string{"WURST", "TEST"}}).Set(SetArg{Key: "K2", Val: "1VV"}).Set(SetArg{Key: "K3", Val: "SehrGeheim"}),
-		Create().Set(SetArg{Key: "K6", Val: "1V1"}).Set(SetArg{Key: "K7", Val: "V4"}).Set(SetArg{Key: "K8", Val: "1VV"}).Set(SetArg{Key: "K1", Val: "SehrGeheim"}),
+	for i := 0; i < 100; i++ {
+		kvps := CreateKVPearls()
+		kvps.Add().Set(SetArg{Key: "K1", Val: "V1", Tags: []string{"PROD"}}).Set(SetArg{Key: "K1", Val: "V4"}).Set(SetArg{Key: "K2", Val: "VV"}).Set(SetArg{Key: "K3", Val: "Geheim", Tags: []string{"PROD"}})
+		kvps.Add().Set(SetArg{Key: "K1", Val: "1V1", Tags: []string{"TEST"}}).Set(SetArg{Key: "K1", Val: "V4", Tags: []string{"WURST", "TEST"}}).Set(SetArg{Key: "K2", Val: "1VV"}).Set(SetArg{Key: "K3", Val: "SehrGeheim"})
+		kvps.Add().Set(SetArg{Key: "K6", Val: "1V1"}).Set(SetArg{Key: "K7", Val: "V4"}).Set(SetArg{Key: "K8", Val: "1VV"}).Set(SetArg{Key: "K1", Val: "SehrGeheim"})
+		kvp := kvps.Match(MapByToResolve{})[""]
+		if len(kvp) != 6 {
+			t.Error(len(kvp))
+		}
+		if kvp[0].Key != "K1" {
+			t.Errorf("should be K1:%s", kvp[0].Key)
+		}
+		if kvp[1].Key != "K2" {
+			t.Errorf("should be K2:%s", kvp[1].Key)
+		}
+		if kvp[5].Key != "K8" {
+			t.Errorf("should be K8:%s", kvp[5].Key)
+		}
+		// js, _ := json.MarshalIndent(kvp.ToJSON(), "", "  ")
+		// t.Error(string(js))
+		if strings.Compare(kvp[0].Vals.get("SehrGeheim").Value, "SehrGeheim") != 0 {
+			t.Error("failed order")
+		}
+		if strings.Compare(kvp[1].Vals.get("1VV").Value, "1VV") != 0 {
+			t.Error("failed order")
+		}
+		// t.Error(string(js))
+		// kvp.Keys
+		// kvp.FingerPrint
+		// kvp.Created
 	}
-	kvp := kvps.Match(MapByToResolve{})[""]
-	if len(kvp) != 6 {
-		t.Error(len(kvp))
-	}
-	// js, _ := json.MarshalIndent(kvp, "", "  ")
-	// t.Error(string(js))
-	if strings.Compare(kvp[0].Vals.get("SehrGeheim").Value, "SehrGeheim") != 0 {
-		t.Error("failed order")
-	}
-	if strings.Compare(kvp[1].Vals.get("1VV").Value, "1VV") != 0 {
-		t.Error("failed order")
-	}
-	// t.Error(string(js))
-	// kvp.Keys
-	// kvp.FingerPrint
-	// kvp.Created
 
 }
 
 func TestResolv(t *testing.T) {
-	kvp := Create()
+	kvp := CreateKVPearls().Add()
 	p, err := Parse("mmm@ooo")
 	if err != nil {
 		t.Error(err)
@@ -578,7 +586,7 @@ func TestResolv(t *testing.T) {
 }
 
 func TestResolvWithCommaTags(t *testing.T) {
-	kvp := Create()
+	kvp := CreateKVPearls().Add()
 	p, err := Parse("mmm@ooo,T1,T2")
 	if err != nil {
 		t.Error(err)
@@ -701,18 +709,25 @@ func testSA(t *testing.T, err error, sa *KVParsed, vals ...string) {
 }
 
 func TestOrderPreserve(t *testing.T) {
-	inKvp := Create()
-	inKvp.Set(SetArg{Key: "M1", Val: "first"})
-	inKvp.Set(SetArg{Key: "M1", Val: "second"})
-	inKvp.Set(SetArg{Key: "M1", Val: "first"})
+	inKvp := CreateKVPearls().Add()
+	inKvp.Set(SetArg{Key: "M1", Val: "first", Tags: []string{"m1first-1"}})
+	inKvp.Set(SetArg{Key: "M1", Val: "second", Tags: []string{"m1second"}})
+	inKvp.Set(SetArg{Key: "M1", Val: "first", Tags: []string{"m1first-2"}})
 	u, _ := json.Marshal(inKvp.AsJSON())
 	outKvp, _ := FromJSON(u)
 	val := outKvp.Keys.get("M1").Values
 	if val.len() != 2 {
 		t.Error("need to be 2")
 	}
-	if val.get("first").order < val.get("second").order {
+	if val.get("first").order <= val.get("second").order {
 		t.Error("order should be right")
+	}
+	if val.get("second").Tags.byOrder()[0] != "m1second" {
+		t.Error("second m1second")
+	}
+	if val.get("first").Tags.byOrder()[0] != "m1first-1" &&
+		val.get("first").Tags.byOrder()[1] != "m1first-2" {
+		t.Error("first m1first-1 m1first-2")
 	}
 }
 
@@ -730,7 +745,7 @@ func TestEmptyParse(t *testing.T) {
 }
 
 func TestResolvWithBracketsTags(t *testing.T) {
-	kvp := Create()
+	kvp := CreateKVPearls().Add()
 	p, err := Parse("mmm@ZZZ[T1,T2]")
 	if err != nil {
 		t.Error(err)

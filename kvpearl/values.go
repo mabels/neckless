@@ -6,45 +6,45 @@ import (
 
 // Values structure with a order
 type Values struct {
-	order  int64
-	Values map[string]*Value
+	orderRef *int
+	values   map[string]*Value
 }
 
-func createValues() Values {
+func createValues(orderRef *int) Values {
 	return Values{
-		order:  0,
-		Values: map[string]*Value{},
+		orderRef: orderRef,
+		values:   map[string]*Value{},
 	}
 }
 
-type revOrderedValues []*Value
+// type revOrderedValues []*Value
 
 // Len is part of sort.Interface.
-func (s *revOrderedValues) Len() int {
-	return len(*s)
-}
+// func (s *revOrderedValues) Len() int {
+// 	return len(*s)
+// }
 
-// Swap is part of sort.Interface.
-func (s *revOrderedValues) Swap(i, j int) {
-	(*s)[i], (*s)[j] = (*s)[j], (*s)[i]
-}
+// // Swap is part of sort.Interface.
+// func (s *revOrderedValues) Swap(i, j int) {
+// 	(*s)[i], (*s)[j] = (*s)[j], (*s)[i]
+// }
 
-// Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
-func (s *revOrderedValues) Less(i, j int) bool {
-	return (*s)[i].order > (*s)[j].order
-}
+// // Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
+// func (s *revOrderedValues) Less(i, j int) bool {
+// 	return (*s)[i].Value > (*s)[j].Value
+// }
 
-// RevOrdered give a list Values revervse by order
-func (values *Values) RevOrdered() *revOrderedValues {
-	ret := make(revOrderedValues, len(values.Values))
-	retIdx := 0
-	for i := range values.Values {
-		ret[retIdx] = values.Values[i]
-		retIdx++
-	}
-	sort.Sort(&ret)
-	return &ret
-}
+// // RevOrdered give a list Values revervse by order
+// func (values *Values) RevOrdered() *revOrderedValues {
+// 	ret := make(revOrderedValues, len(values.Values))
+// 	retIdx := 0
+// 	for i := range values.Values {
+// 		ret[retIdx] = values.Values[i]
+// 		retIdx++
+// 	}
+// 	sort.Sort(&ret)
+// 	return &ret
+// }
 
 type OrderedValues []*Value
 
@@ -64,10 +64,10 @@ func (s *OrderedValues) Less(i, j int) bool {
 }
 
 func (values *Values) Ordered() *OrderedValues {
-	ret := make(OrderedValues, len(values.Values))
+	ret := make(OrderedValues, len(values.values))
 	retIdx := 0
-	for i := range values.Values {
-		ret[retIdx] = values.Values[i]
+	for i := range values.values {
+		ret[retIdx] = values.values[i]
 		retIdx++
 	}
 	sort.Sort(&ret)
@@ -78,11 +78,11 @@ func (values *Values) Ordered() *OrderedValues {
 }
 
 func (values *Values) len() int {
-	return len(values.Values)
+	return len(values.values)
 }
 
 func (values *Values) get(val string) *Value {
-	value, found := values.Values[val]
+	value, found := values.values[val]
 	if found {
 		return value
 	}
@@ -90,31 +90,42 @@ func (values *Values) get(val string) *Value {
 }
 
 func (values *Values) getOrAddValue(val *Value) (*Value, bool) {
-	value, found := values.Values[val.Value]
+	value, found := values.values[val.Value]
+	(*values.orderRef)++
 	if !found {
-		values.order++
 		value = &Value{
 			Value:      val.Value,
 			Unresolved: val.Unresolved,
 			Tags:       val.Tags,
-			order:      values.order,
+			order:      *(values.orderRef),
 		}
-		values.Values[val.Value] = value
+		values.values[val.Value] = value
+	} else {
+		value.Tags.add(val.Tags.toArray()...)
+		value.order = *(values.orderRef)
 	}
 	return value, found
 }
 
-func (values *Values) getOrAdd(val string) (*Value, bool) {
+func (values *Values) getOrAdd(val string, inTags ...string) (*Value, bool) {
+	tags := Tags{}
+	for i := range inTags {
+		tags[inTags[i]] = i
+	}
 	return values.getOrAddValue(&Value{
 		Value:      val,
 		Unresolved: nil,
-		Tags:       Tags{},
+		Tags:       tags,
 	})
 }
 
 type JSONValues []*JSONValue
 
-func (ordered *revOrderedValues) asJson() JSONValues {
+func (jv *JSONValues) Value() *JSONValue {
+	return (*jv)[len(*jv)-1]
+}
+
+func (ordered *OrderedValues) asJson() JSONValues {
 	ret := make(JSONValues, len(*ordered))
 	for i := range *ordered {
 		ret[i] = (*ordered)[i].asJSON()

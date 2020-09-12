@@ -86,7 +86,7 @@ func kvAddCmd(narg *NecklessArgs) *cobra.Command {
 			for i := range errs {
 				fmt.Fprintln(narg.Nio.err.first().buf, errs[i])
 			}
-			kvp := kvpearl.Create()
+			kvp := kvpearl.CreateKVPearls().Add()
 			for i := range sas {
 				kvp.Set(*sas[i])
 			}
@@ -185,6 +185,12 @@ func runActions(kv *kvpearl.JSONValue) (string, error) {
 	return val, nil
 }
 
+type flatKeyValue struct {
+	Key   string
+	Value string
+	Tags  []string
+}
+
 func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 	cmd := &cobra.Command{
 		SilenceErrors: true,
@@ -216,12 +222,12 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 				return err
 			}
 			// fmt.Fprintf(arg.Nio.err, "%d:%s\n", len(closedKvps), pkms[0].Id)
-			kvps := kvpearl.KVPearls{}
+			kvps := kvpearl.CreateKVPearls()
 			for i := range closedKvps {
 				closedKvp := closedKvps[i]
 				kvp, err := kvpearl.OpenPearl(member.ToPrivateKeys(pkms), closedKvp)
 				if err == nil {
-					kvps = append(kvps, kvp)
+					kvps.Add(kvp)
 				} else {
 					fmt.Fprintln(narg.Nio.err.first().buf, err)
 				}
@@ -243,24 +249,29 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 				kvs := outputs[fname]
 				outValues := kvs.ToJSON()
 				if *narg.Kvs.Ls.json {
+					jsOut := make([]flatKeyValue, len(outValues))
 					for i := range outValues {
 						kv := outValues[i]
-						for j := range kv.Vals {
-							val, err := runActions(kv.Vals[j])
-							if err != nil {
-								return err
-							}
-							kv.Vals[j].Value = val
+						value := kv.Vals.Value()
+						val, err := runActions(value)
+						if err != nil {
+							return err
 						}
+						jsOut[i] = flatKeyValue{
+							Key:   kv.Key,
+							Value: val,
+							Tags:  value.Tags,
+						}
+						// kv.Vals[j].Value = val
 					}
-					jsStr, err := json.MarshalIndent(outValues, "", "  ")
+					jsStr, err := json.MarshalIndent(jsOut, "", "  ")
 					if err != nil {
 						fmt.Fprintf(narg.Nio.err.first().buf, "%s", err)
 					}
 					fmt.Fprintln(narg.Nio.out.add(&fname).buf, string(jsStr))
 				} else if *narg.Kvs.Ls.onlyValue {
 					for i := range outValues {
-						val, err := runActions(outValues[i].Vals[0])
+						val, err := runActions(outValues[i].Vals.Value())
 						if err != nil {
 							return err
 						}
@@ -275,7 +286,7 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 					}
 					for i := range outValues {
 						kv := outValues[i]
-						val, err := runActions(kv.Vals[0])
+						val, err := runActions(kv.Vals.Value())
 						if err != nil {
 							return err
 						}
@@ -286,7 +297,7 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 							fmt.Fprintf(narg.Nio.out.add(&fname).buf, "export %s%s", kv.Key, eol)
 						}
 						if *narg.Kvs.Ls.ghAddMask {
-							fmt.Fprintf(narg.Nio.out.add(&fname).buf, "echo ::add-mask::%s%s", kv.Vals[0].Value, eol)
+							fmt.Fprintf(narg.Nio.out.add(&fname).buf, "echo ::add-mask::%s%s", kv.Vals.Value().Value, eol)
 						}
 					}
 				}

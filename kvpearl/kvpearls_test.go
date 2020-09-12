@@ -1,6 +1,7 @@
 package kvpearl
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"testing"
@@ -29,28 +30,33 @@ func (mptr *MapByToResolve) add(key string, tags ...string) *MapByToResolve {
 }
 
 func (kvps *KVPearls) add(key string, tags ...string) *KVPearls {
-	values := createValues()
-	values.order++
+	order := 45
+	values := createValues(&order)
 	mytags := Tags{}
 	for i := range tags {
 		mytags[tags[i]] = 1
 	}
+	(*kvps.orderRef)++
 	values.getOrAddValue(&Value{
-		Value: fmt.Sprintf("%d:%s", values.order, key),
+		Value: fmt.Sprintf("%d:%s", *kvps.orderRef, key),
 		Tags:  mytags,
-		order: values.order,
+		// order: *kvps.orderRef,
 	})
 	keys := keys{}
 	keys[key] = &Key{
 		Key:    key,
 		Values: values,
 	}
-	ret := append(*kvps, &KVPearl{Keys: keys, Created: time.Now()})
-	return &ret
+	kvps.kvps = append(kvps.kvps, &KVPearl{
+		Keys:    keys,
+		order:   kvps.order,
+		Created: time.Now(),
+	})
+	return kvps
 }
 
 func TestEmptyMatchTag(t *testing.T) {
-	ma := KVPearls{}
+	ma := CreateKVPearls()
 	mptr := MapByToResolve{}
 	mptr.add("key")
 	mkvp := ma.Match(mptr)[""]
@@ -60,7 +66,7 @@ func TestEmptyMatchTag(t *testing.T) {
 }
 
 func TestEmptyMatchEmptyTags(t *testing.T) {
-	ma := (&KVPearls{}).add("test1").add("test2")
+	ma := CreateKVPearls().add("test1").add("test2")
 
 	m0 := MapByToResolve{}
 	if mkvp := ma.Match(m0)[""]; len(mkvp) != 2 {
@@ -78,8 +84,51 @@ func TestEmptyMatchEmptyTags(t *testing.T) {
 	}
 }
 
+func TestMergeSorted(t *testing.T) {
+	kvps := CreateKVPearls()
+	kvps.Add().Set(SetArg{
+		Key:        "test1",
+		Unresolved: &FuncsAndParam{},
+		Val:        "vtest1",
+		Tags:       []string{"Test1"},
+	})
+	kvps.Add().Set(SetArg{
+		Key:        "test1",
+		Unresolved: &FuncsAndParam{},
+		Val:        "vtest2",
+		Tags:       []string{"Test1"},
+	})
+	kvps.Add().Set(SetArg{
+		Key:        "test1",
+		Unresolved: &FuncsAndParam{},
+		Val:        "vtest1",
+		Tags:       []string{"Test2"},
+	})
+	kvps.Add().Set(SetArg{
+		Key:        "test1",
+		Unresolved: &FuncsAndParam{},
+		Val:        "vtest3",
+		Tags:       []string{"Test3"},
+	}).Set(SetArg{Key: "test0", Val: "vtest0"})
+	so := kvps.Merge()
+	if len(so) != 2 {
+		t.Error("should be length 3")
+	}
+	if !(so[0].Key == "test0" && len(so[0].Values) == 1 && so[0].Values[0].Value == "vtest0") {
+		t.Error("is not s[0]")
+	}
+	if !(so[1].Key == "test1" && len(so[1].Values) == 3 &&
+		so[1].Values[0].Value == "vtest2" && so[1].Values[0].Tags[0] == "Test1" &&
+		so[1].Values[1].Value == "vtest1" && so[1].Values[1].Tags[0] == "Test1" && so[1].Values[1].Tags[1] == "Test2" &&
+		so[1].Values[2].Value == "vtest3" && so[1].Values[2].Tags[0] == "Test3") {
+		js, _ := json.MarshalIndent(so[1], "", "  ")
+		t.Errorf("is not s[1]:%s", string(js))
+	}
+
+}
+
 func TestEmptyMatchTags(t *testing.T) {
-	ma := (&KVPearls{}).add("test1", "t1T1", "t1T2").add("test2", "t2T1", "t2T2")
+	ma := CreateKVPearls().add("test1", "t1T1", "t1T2").add("test2", "t2T1", "t2T2")
 
 	mx := MapByToResolve{}
 	mx.add("xx")
@@ -133,7 +182,7 @@ func TestEmptyMatchTags(t *testing.T) {
 }
 
 func TestNoTags(t *testing.T) {
-	ma := (&KVPearls{}).add("test1").add("test2")
+	ma := CreateKVPearls().add("test1").add("test2")
 	xxx := MapByToResolve{}
 	xxx.add("xxx")
 	if len(ma.Match(xxx)[""]) != 0 {

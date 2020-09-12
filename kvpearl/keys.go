@@ -6,6 +6,7 @@ import (
 )
 
 type keys map[string](*Key)
+type sortedKeys []JSONKey
 
 func (ks *keys) get(val string) *Key {
 	key, found := (*ks)[val]
@@ -15,19 +16,17 @@ func (ks *keys) get(val string) *Key {
 	return nil
 }
 
-func (ks *keys) getOrAdd(val string) (*Key, bool) {
+func (ks *keys) getOrAdd(val string, orderRef *int) (*Key, bool) {
 	key, found := (*ks)[val]
 	if !found {
 		key = &Key{
 			Key:    val,
-			Values: createValues(),
+			Values: createValues(orderRef),
 		}
 		(*ks)[val] = key
 	}
 	return key, found
 }
-
-type sortedKeys [](*Key)
 
 // Len is part of sort.Interface.
 func (sk *sortedKeys) Len() int {
@@ -44,13 +43,13 @@ func (sk *sortedKeys) Less(i, j int) bool {
 	return strings.Compare((*sk)[i].Key, (*sk)[j].Key) < 0
 }
 
-func (sk *sortedKeys) asJSON() []*JSONKey {
-	ret := make([]*JSONKey, len(*sk))
-	for i := range *sk {
-		ret[i] = (*sk)[i].asJSON()
-	}
-	return ret
-}
+// func (sk *sortedKeys) asJSON() []JSONKey {
+// 	ret := make([]JSONKey, len(*sk))
+// 	for i := range *sk {
+// 		ret[i] = (*sk)[i].asJSON()
+// 	}
+// 	return ret
+// }
 
 func (sk *sortedKeys) AsStrings() []string {
 	ret := make([]string, len(*sk))
@@ -60,14 +59,14 @@ func (sk *sortedKeys) AsStrings() []string {
 	return ret
 }
 
-func (ks *keys) Sorted() *sortedKeys {
+func (ks *keys) Sorted() sortedKeys {
 	jsKeys := make(sortedKeys, len(*ks))
 	keyIdx := 0
 	for i := range *ks {
 		key := (*ks)[i]
-		jsKeys[keyIdx] = key
+		jsKeys[keyIdx] = key.asJSON()
 		keyIdx++
 	}
 	sort.Sort(&jsKeys)
-	return &jsKeys
+	return jsKeys
 }

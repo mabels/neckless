@@ -203,18 +203,18 @@ func Parse(arg string) (*KVParsed, error) {
 }
 
 // Match a key and value agains a KVParsed
-func (kvp *KVParsed) Match(key *Key, val *Value) (*KVParsed, bool) {
+func (kvp *KVParsed) Match(key string, val *JSONValue) (*KVParsed, bool) {
 	// findKey := false
 	// for ikvps := range kvps {
 	// kvp := kvps[ikvps]
-	if kvp.KeyRegex.MatchString(key.Key) {
+	if kvp.KeyRegex.MatchString(key) {
 		// fmt.Printf("Matched:%s:%d", kvp.Key, len(kvp.Tags))
 		if len(kvp.Tags) == 0 {
 			return kvp, true
 		}
-		for tag := range val.Tags {
+		for i := range val.Tags {
 			// fmt.Printf("%s:%s\n", tag, kvp.Tags)
-			_, found := kvp.Tags[tag]
+			_, found := kvp.Tags[val.Tags[i]]
 			if found {
 				return kvp, true
 			}
