@@ -22,14 +22,14 @@ jobs:
             path_name: neckless
             bin_name: neckless-linux
 
-          - platform: macos-latest
-            # ['self-hosted', 'macOS', 'X64']
+          - platform: ['self-hosted', 'macOS', 'X64']
+            # macos-latest
             go: '1.15'
             path_name: neckless
             bin_name: neckless-macos
 
-          - platform: windows-latest 
-            # ['self-hosted', 'Windows', 'X64']
+          - platform: ['self-hosted', 'Windows', 'X64']
+            # windows-latest
             go: '1.15'
             path_name: neckless.exe
             bin_name: neckless-win.exe
