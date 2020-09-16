@@ -6,6 +6,8 @@ import (
 )
 
 type keys map[string](*Key)
+
+// SortedKeys respesent the sorted key list
 type SortedKeys []JSONKey
 
 func (ks *keys) get(val string) *Key {
@@ -51,13 +53,14 @@ func (sk *SortedKeys) Less(i, j int) bool {
 // 	return ret
 // }
 
-func (sk *SortedKeys) AsStrings() []string {
-	ret := make([]string, len(*sk))
-	for i := range *sk {
-		ret[i] = (*sk)[i].Key
-	}
-	return ret
-}
+// Sorted
+// func (sk *SortedKeys) AsStrings() []string {
+// 	ret := make([]string, len(*sk))
+// 	for i := range *sk {
+// 		ret[i] = (*sk)[i].Key
+// 	}
+// 	return ret
+// }
 
 func (ks *keys) Sorted() SortedKeys {
 	jsKeys := make(SortedKeys, len(*ks))

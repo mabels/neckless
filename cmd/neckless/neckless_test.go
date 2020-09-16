@@ -370,7 +370,7 @@ func TestActions(t *testing.T) {
 		t.Error(nio.out.first().buf.String())
 	}
 	ref := []flatKeyValue{
-		flatKeyValue{
+		{
 			Key:   "TOTP",
 			Value: "setit",
 			Tags:  []string{},
