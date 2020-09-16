@@ -20,19 +20,19 @@ jobs:
           - platform: ubuntu-latest
             go: '1.15'
             path_name: neckless
-            bin_name: neckless-linux
+            bin_name: ./neckless-linux
 
           - platform: ['self-hosted', 'macOS', 'X64']
             # macos-latest
             go: '1.15'
             path_name: neckless
-            bin_name: neckless-macos
+            bin_name: ./neckless-macos
 
           - platform: ['self-hosted', 'Windows', 'X64']
             # windows-latest
             go: '1.15'
             path_name: neckless.exe
-            bin_name: neckless-win.exe
+            bin_name: ./neckless-win.exe
 
     name: Build Go ${{ matrix.go }} ${{ matrix.platform }} neckless
     steps:
