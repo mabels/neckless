@@ -58,18 +58,18 @@ jobs:
         - platform: ubuntu-latest
           path_name: neckless
           go: '1.15'
-          bin_name: neckless-linux-amd64
+          bin_name: ./neckless-linux-amd64
 
         - platform: macos-latest
           #['self-hosted', 'macOS', 'X64']
           path_name: neckless
           go: '1.15'
-          bin_name: neckless-mac
+          bin_name: ./neckless-mac
 
         - platform: windows-latest
           path_name: neckless.exe
           go: '1.15'
-          bin_name: neckless-win.exe
+          bin_name: ./neckless-win.exe
 
     runs-on: ${{ matrix.platform }}
 
