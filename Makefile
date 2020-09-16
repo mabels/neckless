@@ -1,6 +1,6 @@
 BIN_NAME ?= "neckless"
 VERSION ?= dev
-GITCOMMIT=$(shell git rev-list -1 HEAD)
+GITCOMMIT ?= $(shell git rev-list -1 HEAD)
 
 all: test build
 

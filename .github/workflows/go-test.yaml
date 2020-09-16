@@ -45,9 +45,8 @@ jobs:
 
       - name: Build Plain Executable for ${{ matrix.os }}
         run: |
-          env | sort
           make test
-          make build BIN_NAME=${{ matrix.bin_name }}
+          make build BIN_NAME=${{ matrix.bin_name }} GITCOMMIT=${{ github.sha }}
 
       # - env:
       #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
