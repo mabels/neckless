@@ -34,8 +34,7 @@ func (tags *Tags) sorted() []string {
 }
 
 type tag struct {
-	tag   string
-	order int
+	tag string
 }
 
 type tagsArray []tag
@@ -52,27 +51,25 @@ func (s *tagsArray) Swap(i, j int) {
 
 // Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
 func (s *tagsArray) Less(i, j int) bool {
-	return (*s)[i].order < (*s)[j].order
+	return (*s)[i].tag < (*s)[j].tag
 }
 
-func (tags *Tags) byOrder() []string {
-	toTags := make(tagsArray, len(*tags))
-	toTagsIdx := 0
-	for i := range *tags {
-		order := (*tags)[i]
-		toTags[toTagsIdx] = tag{
-			tag:   i,
-			order: order,
-		}
-		toTagsIdx++
-	}
-	sort.Sort(&toTags)
-	ret := make([]string, len(*tags))
-	for i := range toTags {
-		ret[i] = toTags[i].tag
-	}
-	return ret
-}
+// func (tags *Tags) byOrder() []string {
+// 	toTags := make(tagsArray, len(*tags))
+// 	toTagsIdx := 0
+// 	for i := range *tags {
+// 		toTags[toTagsIdx] = tag{
+// 			tag: i,
+// 		}
+// 		toTagsIdx++
+// 	}
+// 	sort.Sort(&toTags)
+// 	ret := make([]string, len(*tags))
+// 	for i := range toTags {
+// 		ret[i] = toTags[i].tag
+// 	}
+// 	return ret
+// }
 
 func tags2Map(tags []string) Tags {
 	ret := Tags{}
@@ -88,10 +85,25 @@ func tags2Map(tags []string) Tags {
 }
 
 func tagstring2Map(strTags string) Tags {
+	as := tagstring2Array(strTags)
+	ret := map[string]int{}
+	for a := range as {
+		ret[as[a]] = a
+	}
+	return ret
+}
+
+func tagstring2Array(strTags string) []string {
 	stripped := strings.TrimSpace(strTags)
+	ret := []string{}
 	if len(stripped) > 0 {
 		cs := strings.Split(stripped, ",")
-		return tags2Map(cs)
+		for c := range cs {
+			s := strings.TrimSpace(cs[c])
+			if len(s) > 0 {
+				ret = append(ret, cs[c])
+			}
+		}
 	}
-	return map[string]int{}
+	return ret
 }

@@ -709,25 +709,27 @@ func testSA(t *testing.T, err error, sa *KVParsed, vals ...string) {
 }
 
 func TestOrderPreserve(t *testing.T) {
-	inKvp := CreateKVPearls().Add()
-	inKvp.Set(SetArg{Key: "M1", Val: "first", Tags: []string{"m1first-1"}})
-	inKvp.Set(SetArg{Key: "M1", Val: "second", Tags: []string{"m1second"}})
-	inKvp.Set(SetArg{Key: "M1", Val: "first", Tags: []string{"m1first-2"}})
-	u, _ := json.Marshal(inKvp.AsJSON())
-	outKvp, _ := FromJSON(u)
-	val := outKvp.Keys.get("M1").Values
-	if val.len() != 2 {
-		t.Error("need to be 2")
-	}
-	if val.get("first").order <= val.get("second").order {
-		t.Error("order should be right")
-	}
-	if val.get("second").Tags.byOrder()[0] != "m1second" {
-		t.Error("second m1second")
-	}
-	if val.get("first").Tags.byOrder()[0] != "m1first-1" &&
-		val.get("first").Tags.byOrder()[1] != "m1first-2" {
-		t.Error("first m1first-1 m1first-2")
+	for i := 0; i < 100; i++ {
+		inKvp := CreateKVPearls().Add()
+		inKvp.Set(SetArg{Key: "M1", Val: "first", Tags: []string{"m1first-1"}})
+		inKvp.Set(SetArg{Key: "M1", Val: "second", Tags: []string{"m1second"}})
+		inKvp.Set(SetArg{Key: "M1", Val: "first", Tags: []string{"m1first-2"}})
+		u, _ := json.Marshal(inKvp.AsJSON())
+		outKvp, _ := FromJSON(u)
+		val := outKvp.Keys.get("M1").Values
+		if val.len() != 2 {
+			t.Error("need to be 2")
+		}
+		if val.get("first").order <= val.get("second").order {
+			t.Error("order should be right")
+		}
+		if val.get("second").Tags.sorted()[0] != "m1second" {
+			t.Error("second m1second")
+		}
+		if !(val.get("first").Tags.sorted()[0] == "m1first-1" &&
+			val.get("first").Tags.sorted()[1] == "m1first-2") {
+			t.Errorf("first m1first-1 m1first-2:%d", i)
+		}
 	}
 }
 

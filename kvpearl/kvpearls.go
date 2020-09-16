@@ -89,7 +89,7 @@ func (kvps *KVPearls) orderByTime() *KVPearls {
 }
 
 // Merge the KVPearls
-func (kvps *KVPearls) Merge() sortedKeys {
+func (kvps *KVPearls) Merge() SortedKeys {
 	ret := keys{}
 	orderedKvps := kvps.orderByTime()
 	for okvp := range orderedKvps.kvps {
@@ -177,7 +177,7 @@ func (a *ArrayByKeyValues) ToJSON() ArrayOfJSONByKeyValues {
 	for i := range *a {
 		ret[i] = JSONByKeyValues{
 			Key:  (*a)[i].Key,
-			Vals: (*a)[i].Vals.Ordered().asJson(),
+			Vals: (*a)[i].Vals.Ordered().asJSON(),
 		}
 	}
 	sort.Sort(&ret)

@@ -97,15 +97,15 @@ func parseComma(arg string) (*KVParsed, error) {
 	if len(split) != 4 {
 		return nil, errors.New("found no key value")
 	}
-	commas := tagstring2Map(split[3])
+	commas := tagstring2Array(split[3])
 	value := ""
 	tags := Tags{}
 	if len(commas) == 1 {
-		value = commas.byOrder()[0]
+		value = commas[0]
 	}
 	if len(commas) > 1 {
-		value = commas.byOrder()[0]
-		tags = tags2Map(commas.byOrder()[1:])
+		value = commas[0]
+		tags = tags2Map(commas[1:])
 	}
 	// value, unresolved, err := processResolv(split[2], split[1], value)
 	// if unresolved != nil {

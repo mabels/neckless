@@ -71,6 +71,6 @@ func (key *Key) setValue(unresolved *FuncsAndParam, val string, tags map[string]
 func (key *Key) asJSON() JSONKey {
 	return JSONKey{
 		Key:    key.Key,
-		Values: key.Values.Ordered().asJson(),
+		Values: key.Values.Ordered().asJSON(),
 	}
 }

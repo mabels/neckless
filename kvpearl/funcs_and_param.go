@@ -12,6 +12,7 @@ type FuncsAndParam struct {
 	Funcs []string
 }
 
+// ActionFN is the type of an action function
 type ActionFN func(string) (string, error)
 
 func noopFN(val string) (string, error) {

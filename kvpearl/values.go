@@ -46,6 +46,7 @@ func createValues(orderRef *int) Values {
 // 	return &ret
 // }
 
+// OrderedValues is the type which allow to handle tags in the right order
 type OrderedValues []*Value
 
 // Len is part of sort.Interface.
@@ -63,6 +64,7 @@ func (s *OrderedValues) Less(i, j int) bool {
 	return (*s)[i].order < (*s)[j].order
 }
 
+// Ordered convert the Values to OrderedValues
 func (values *Values) Ordered() *OrderedValues {
 	ret := make(OrderedValues, len(values.values))
 	retIdx := 0
@@ -119,16 +121,18 @@ func (values *Values) getOrAdd(val string, inTags ...string) (*Value, bool) {
 	})
 }
 
+// JSONValues defines the JSON Respresantation of Values
 type JSONValues []*JSONValue
 
+// Value gets the actual defined value
 func (jv *JSONValues) Value() *JSONValue {
 	return (*jv)[len(*jv)-1]
 }
 
-func (ordered *OrderedValues) asJson() JSONValues {
-	ret := make(JSONValues, len(*ordered))
-	for i := range *ordered {
-		ret[i] = (*ordered)[i].asJSON()
+func (s *OrderedValues) asJSON() JSONValues {
+	ret := make(JSONValues, len(*s))
+	for i := range *s {
+		ret[i] = (*s)[i].asJSON()
 	}
 	return ret
 }

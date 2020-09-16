@@ -8,6 +8,7 @@ type Value struct {
 	Tags       Tags
 }
 
+// JSONTags is the Sorted Array Representation a tags
 type JSONTags []string
 
 // JSONValue the Value resprestation
