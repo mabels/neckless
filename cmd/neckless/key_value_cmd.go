@@ -297,7 +297,7 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 							fmt.Fprintf(narg.Nio.out.add(&fname).buf, "export %s%s", kv.Key, eol)
 						}
 						if *narg.Kvs.Ls.ghAddMask {
-							fmt.Fprintf(narg.Nio.out.add(&fname).buf, "echo ::add-mask::%s%s", kv.Vals.Value().Value, eol)
+							fmt.Fprintf(narg.Nio.out.add(&fname).buf, "echo ::add-mask::%s%s", string(val), eol)
 						}
 					}
 				}
