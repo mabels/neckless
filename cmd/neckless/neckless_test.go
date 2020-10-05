@@ -388,3 +388,26 @@ func TestActions(t *testing.T) {
 		t.Error(nio.out.first().buf.String())
 	}
 }
+
+func TestSingleUser(t *testing.T) {
+	os.Remove("casket.SingleUser.json")
+	os.Remove("gem.SingleUser.json")
+	_, err := cmdNeckless(t, "casket --file casket.SingleUser.json create --person --name Person.User1 --email test@test.com")
+	if err != nil {
+		t.Error(err)
+	}
+	nio, err := cmdNeckless(t, "casket --file casket.SingleUser.json get")
+	if err != nil {
+		t.Error(err)
+	}
+	nio, err = cmdNeckless(t, "gem --casketFile casket.SingleUser.json --file gem.SingleUser.json add", nio.out.first().buf.String())
+	if err != nil {
+		t.Error(err)
+	}
+	nio, err = cmdNeckless(t, "kv --casketFile casket.SingleUser.json --file gem.SingleUser.json add MENO=DOOF", nio.out.first().buf.String())
+	if err != nil {
+		t.Error(err)
+	}
+	// t.Error(nio.err.first().buf.String())
+	// t.Error(nio.out.first().buf.String())
+}

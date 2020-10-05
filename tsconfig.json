@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "commonjs",
+    "outDir": "dist",
+    "experimentalDecorators": true,
+    "noImplicitAny": true,
+    "pretty": true,
+    "sourceMap": true,
+    "declaration": true,
+    "moduleResolution": "node",
+    "stripInternal": true,
+    "plugins": [{ "name": "typescript-tslint-plugin" }]
+  },
+  "include": [
+    "./**/*.ts"
+  ],
+  "exclude": [
+    "**/*.test-helper.ts",
+    "**/*.test-helper.tsx",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "./node_modules"
+  ]
+}

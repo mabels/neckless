@@ -49,15 +49,15 @@ type SealedContainer struct {
 	Payload  []byte
 }
 
-func keyFromSeed(seed [][]byte) ([]byte, []byte) {
-	randkey, _ := key.CreateRandomKey()
-	randnonce, _ := key.CreateRandomKey()
-	key := sha256.Sum256(bytes.Join(append(seed, randkey[:]), []byte{}))
-	nonce := sha256.Sum256(bytes.Join(append(seed, randnonce[:]), []byte{}))
-	return key[:], nonce[:]
-}
+// func keyFromSeed(seed [][]byte) ([]byte, []byte) {
+// 	randkey, _ := key.CreateRandomKey()
+// 	randnonce, _ := key.CreateRandomKey()
+// 	key := sha256.Sum256(bytes.Join(append(seed, randkey[:]), []byte{}))
+// 	nonce := sha256.Sum256(bytes.Join(append(seed, randnonce[:]), []byte{}))
+// 	return key[:], nonce[:]
+// }
 
-//	// key, nouce := keyFromSeed(seed)
+// //	// key, nouce := keyFromSeed(seed)
 
 type SealRequest struct {
 	Key      key.RawKey
