@@ -1,0 +1,29 @@
+name: 'Setup Neckless'
+description: 'Github Action provides the neckless tool'
+inputs:
+  version:  # id of input
+    description: 'the version of neckless'
+    required: false
+    default: 'v0.1.3'
+  url:  # id of input
+    description: 'base url to download'
+    required: false
+    default: 'https://github.com/mabels/neckless/releases/download'
+  filename:
+    description: 'filename of neckless'
+    required: false
+    default: 'default.neckless'
+  os:
+    description: 'os of neckless'
+    required: false
+    default: 'linux'
+  cpu:
+    description: 'cpu of neckless'
+    required: false
+    default: 'amd64'
+#outputs:
+#  tools: # id of output
+#    description: 'tools are ready'
+runs:
+  using: 'node12'
+  main: 'github-action.js'
