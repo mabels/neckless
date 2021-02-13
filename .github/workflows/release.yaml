@@ -27,13 +27,13 @@ jobs:
           prerelease: false
       - shell: bash
         run: |
-          echo UPLOAD_URL=${{ toJson(steps.create_release.outputs.upload_url) }} > $GITHUB_ENV
+          echo UPLOAD_URL=${{ toJson(steps.create_release.outputs.upload_url) }} > upload_url.env
 
-#     - name: Upload upload_url.env
-#       uses: actions/upload-artifact@v1
-#       with:
-#         name: upload_url
-#         path: upload_url.env
+      - name: Upload upload_url.env
+        uses: actions/upload-artifact@v1
+        with:
+          name: upload_url
+          path: upload_url.env
 
   build-release:
     name: Build Release ${{ matrix.go }} ${{ join(matrix.platform, ',') }} neckless
@@ -77,22 +77,14 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-#     - name: Download upload_url.env
-#       id: upload_url
-#       uses: actions/download-artifact@v1
-#       with:
-#         name: upload_url
-#     - shell: bash
-#       run: |
-#         source ./upload_url/upload_url.env
-#         echo "========"
-#         cat ./upload_url/upload_url.env
-#         echo "========"
-#         export UPLOAD_URL
-#         echo "========"
-#         echo $UPLOAD_URL
-#         echo "========"
-#         echo "::set-env name=UPLOAD_URL::$UPLOAD_URL"
+      - name: Download upload_url.env
+        id: upload_url
+        uses: actions/download-artifact@v1
+        with:
+          name: upload_url
+      - shell: bash
+        run: |
+          cat ./upload_url/upload_url.env > $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v2
