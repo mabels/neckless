@@ -12,24 +12,20 @@ jobs:
     strategy:
       matrix:
         include:
-          #- platform: ARM64
-          #  go: '1.15'
-          #  path_name: neckless
-          #  bin_name: neckless-linux-arm64
-
           - platform: ubuntu-latest
             go: '1.15'
             path_name: neckless
             bin_name: ./neckless-linux
 
-          - platform: ['self-hosted', 'macOS', 'X64']
+          - platform: [ macos-latest ]
+            #'self-hosted', 'macOS', 'X64']
             # macos-latest
             go: '1.15'
             path_name: neckless
             bin_name: ./neckless-macos
 
-          - platform: ['self-hosted', 'Windows', 'X64']
-            # windows-latest
+          - platform: [ windows-latest ]
+            #'self-hosted', 'Windows', 'X64']
             go: '1.15'
             path_name: neckless.exe
             bin_name: ./neckless-win.exe
