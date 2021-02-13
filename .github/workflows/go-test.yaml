@@ -30,7 +30,7 @@ jobs:
             path_name: neckless.exe
             bin_name: ./neckless-win.exe
 
-    name: Build Go ${{ matrix.go }} ${{ matrix.platform.stringList }} neckless
+    name: Build Go ${{ matrix.go }} ${{ join(matrix.platform, ',') }} neckless
     steps:
       - uses: actions/checkout@v2
 
