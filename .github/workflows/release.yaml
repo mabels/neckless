@@ -86,7 +86,6 @@ jobs:
           name: upload_url
       - shell: bash
         run: |
-          // find . -type f -ls
           source ./upload_url/upload_url.env
           echo "========"
           cat ./upload_url/upload_url.env
