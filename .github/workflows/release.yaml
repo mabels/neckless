@@ -45,15 +45,17 @@ jobs:
         #platform: [ubuntu-latest]
         # , macos-latest, windows-latest]
         include:
-        #- platform: ARM
-        #  path_name: neckless
-        #  go: '1.15'
-        #  bin_name: neckless-linux-arm
+        - platform: ['self-hosted', 'linux', 'ARM']
+          path_name: neckless
+          go: '1.15'
+          bin_name: ./neckless-linux-arm
+          asset_name: neckless-linux-arm
 
-        #- platform: ARM64
-        #  path_name: neckless
-        #  go: '1.15'
-        #  bin_name: neckless-linux-arm64
+        - platform: ['self-hosted', 'linux', 'ARM64']
+          path_name: neckless
+          go: '1.15'
+          bin_name: ./neckless-linux-arm64
+          asset_name: neckless-linux-arm64
 
         - platform: ubuntu-latest
           path_name: neckless
@@ -97,6 +99,7 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v2
+
       - name: Setup go
         uses: actions/setup-go@v1
         with:
