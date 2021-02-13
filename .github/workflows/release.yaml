@@ -76,7 +76,7 @@ jobs:
           bin_name: ./neckless-win.exe
           asset_name: neckless-win
 
-    runs-on: ${{ matrix.platform }}
+    runs-on: ${{ matrix.platform.stringList }}
 
     steps:
       - name: Download upload_url.env
