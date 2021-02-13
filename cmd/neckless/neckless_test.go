@@ -252,7 +252,7 @@ func TestKvs(t *testing.T) {
 	if strings.Compare(strings.TrimSpace(nio.out.get("bla").buf.String()), "YU=\"22\"") != 0 {
 		t.Error("not expected", nio.out.first().buf.String())
 	}
-	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls T2@bla YU@blu")
+	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --tag T2 T2@bla YU@blu")
 	if len(nio.out.first().buf.String()) != 0 {
 		t.Error("not expected", nio.out.first().buf.String())
 	}
@@ -262,7 +262,7 @@ func TestKvs(t *testing.T) {
 	if strings.Compare(strings.TrimSpace(nio.out.get("blu").buf.String()), "YU=\"22\"") != 0 {
 		t.Error("not expected", nio.out.first().buf.String())
 	}
-	nio.out.first().buf.String() // make the compiler happy
+	// nio.out.first().buf.String() // make the compiler happy
 }
 
 func TestLsGhAddMask(t *testing.T) {
@@ -496,4 +496,64 @@ func TestSingleUserID(t *testing.T) {
 	}
 	// t.Error(nio.err.first().buf.String())
 	// t.Error(nio.out.first().buf.String())
+}
+
+func equalFlatKeyValues(t *testing.T, buf *bytes.Buffer, values []FlatKeyValue, caze string) {
+	var fromJSON []FlatKeyValue
+	if err := json.Unmarshal(buf.Bytes(), &fromJSON); err != nil {
+		t.Error(caze, err)
+	}
+	if len(values) != len(fromJSON) {
+		t.Error(caze, "Return should equal length:", len(values), len(fromJSON))
+	}
+	for i := range values {
+		v1 := values[i]
+		v2 := fromJSON[i]
+		if strings.Compare(v1.Key, v2.Key) != 0 {
+			t.Error(caze, "Key should be the same:", i, v1.Key, v2.Key)
+		}
+		if strings.Compare(v1.Value, v2.Value) != 0 {
+			t.Error(caze, "Value should be the same:", i, v1.Value, v2.Value)
+		}
+	}
+}
+
+func TestLsEmptyTag(t *testing.T) {
+	createTestData(t)
+	// --onlyValue           select device keys
+	nio, _ := cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add M1=34, M2=35[,] M3=36[YU] M4=37[XU] M5=38[,ZU] M6=39[,AU]")
+
+	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --json M[123456]")
+
+	equalFlatKeyValues(t, nio.out.first().buf, []FlatKeyValue{
+		{Key: "M1", Value: "34"},
+		{Key: "M2", Value: "35"},
+		{Key: "M5", Value: "38"},
+		{Key: "M6", Value: "39"},
+	}, "1")
+	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --json --emptyTag M[123456]")
+	equalFlatKeyValues(t, nio.out.first().buf, []FlatKeyValue{
+		{Key: "M1", Value: "34"},
+		{Key: "M2", Value: "35"},
+		{Key: "M5", Value: "38"},
+		{Key: "M6", Value: "39"},
+	}, "2")
+
+	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --json --tag YU --tag XU --tag ZU --tag AU M[123456]")
+	equalFlatKeyValues(t, nio.out.first().buf, []FlatKeyValue{
+		{Key: "M3", Value: "36"},
+		{Key: "M4", Value: "37"},
+		{Key: "M5", Value: "38"},
+		{Key: "M6", Value: "39"},
+	}, "3")
+
+	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --json --emptyTag --tag YU --tag XU M[123456]")
+	equalFlatKeyValues(t, nio.out.first().buf, []FlatKeyValue{
+		{Key: "M1", Value: "34"},
+		{Key: "M2", Value: "35"},
+		{Key: "M3", Value: "36"},
+		{Key: "M4", Value: "37"},
+		{Key: "M5", Value: "38"},
+		{Key: "M6", Value: "39"},
+	}, "4")
 }

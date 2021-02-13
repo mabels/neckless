@@ -26,6 +26,7 @@ type KeyValueLsArgs struct {
 	ghAddMask  *bool
 	onlyValue  *bool
 	tags       *[]string
+	emptyTag   *bool
 	writeFname string
 }
 
@@ -64,6 +65,9 @@ func toKVreadFile(args []string) ([]*kvpearl.SetArg, []error) {
 			if err != nil {
 				errs = append(errs, err)
 			}
+			// jskvp, _ := json.Marshal(kvp)
+			// jssa, _ := json.Marshal(sa)
+			// fmt.Println(">>>>>>>", args[i], string(jskvp), string(jssa))
 			sas = append(sas, sa)
 		}
 	}
@@ -186,15 +190,17 @@ func parseArgs2KVpearl(args []string, write string, tags []string) (kvpearl.MapB
 			}
 			ret.Add(sa)
 		} else {
-			sa, err := kvpearl.Parse(args[i])
+			kvp, err := kvpearl.Parse(args[i])
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
+			kvp.Tags.Add(tags...)
+			// fmt.Println("kdfkfkdskfkd=", args[i], tags, kvp.Tags)
 			// if sa.ToResolve == nil || len(sa.ToResolve.Param) == 0 {
 			// 	sa.ToResolve = kvpearl.ParseFuncsAndParams(write)
 			// }
-			ret.Add(sa)
+			ret.Add(kvp)
 		}
 	}
 	return ret, errs
@@ -239,6 +245,10 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 				}
 				return errors.New(strings.Join(out, "|"))
 			}
+			if *narg.Kvs.Ls.emptyTag {
+				*narg.Kvs.Ls.tags = append(*narg.Kvs.Ls.tags, "")
+			}
+			// fmt.Println(">>>>>>>>", narg.Kvs.Ls.tags)
 			closedKvps := nl.FilterByType(kvpearl.Type)
 			pkms, err := GetPkms(GetPkmsArgs{
 				casketFname: narg.Kvs.CasketFname,
@@ -273,8 +283,8 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 				err = errs[i]
 			}
 			// fmt.Fprintf(narg.Nio.err.first().buf, "1====%s\n", err)
-			// myOut, _ := json.MarshalIndent(keys, "", "  ")
-			// fmt.Printf("%s:%s\n", args, string(myOut))
+			myOut, _ := json.MarshalIndent(keys, "", "  ")
+			fmt.Printf("%s:%s\n", args, string(myOut))
 			// tags := narg.Kvs.Ls.tags
 			// fmt.Fprintf(arg.Nio.out, "# %s\n", strings.Join(tags, ","))
 			outputs := kvps.Match(keys)
@@ -355,6 +365,7 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 	narg.Kvs.Ls.onlyValue = flags.Bool("onlyValue", false, "select device keys")
 	narg.Kvs.Ls.shKeyValue = flags.Bool("shKeyValue", false, "select device keys")
 	narg.Kvs.Ls.ghAddMask = flags.Bool("ghAddMask", false, "set Value as github mask")
+	narg.Kvs.Ls.emptyTag = flags.Bool("emptyTag", false, "add empty to tag list")
 	narg.Kvs.Ls.tags = flags.StringSlice("tag", []string{}, "list of tags to filter")
 	flags.StringVar(&narg.Kvs.Ls.writeFname, "write", "", "name of the file to write to")
 	return cmd

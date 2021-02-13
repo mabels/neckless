@@ -103,7 +103,7 @@ func (values *Values) getOrAddValue(val *Value) (*Value, bool) {
 		}
 		values.values[val.Value] = value
 	} else {
-		value.Tags.add(val.Tags.toArray()...)
+		value.Tags.Add(val.Tags.toArray()...)
 		value.order = *(values.orderRef)
 	}
 	return value, found

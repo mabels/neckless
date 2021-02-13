@@ -474,13 +474,16 @@ func TestParse(t *testing.T) {
 		if strings.Compare(kvp.Keys.get("mmm").Values.get("sss").Value, "sss") != 0 {
 			t.Error("no error not allowed")
 		}
-		if strings.Compare(kvp.Keys.get("mmm").Values.get("sss").Tags.sorted()[0], "AA") != 0 {
+		if vals := kvp.Keys.get("mmm").Values.get("sss").Tags.sorted(); strings.Compare(vals[0], "") != 0 {
+			t.Errorf("no error not allowed:%s:%d:%s", vals[0], len(vals), vals)
+		}
+		if vals := kvp.Keys.get("mmm").Values.get("sss").Tags.sorted(); strings.Compare(vals[1], "AA") != 0 {
+			t.Errorf("no error not allowed:%s:%d:%s", vals[0], len(vals), vals)
+		}
+		if strings.Compare(kvp.Keys.get("mmm").Values.get("sss").Tags.sorted()[2], "BB") != 0 {
 			t.Error("no error not allowed")
 		}
-		if strings.Compare(kvp.Keys.get("mmm").Values.get("sss").Tags.sorted()[1], "BB") != 0 {
-			t.Error("no error not allowed")
-		}
-		if len(kvp.Keys.get("mmm").Values.get("sss").Tags) != 2 {
+		if len(kvp.Keys.get("mmm").Values.get("sss").Tags) != 3 {
 			t.Error("no error not allowed", kvp.Keys.get("mmm").Values.get("sss").Tags)
 		}
 		p, err = Parse("mmm=zzz,AA,,BB,")
@@ -495,13 +498,16 @@ func TestParse(t *testing.T) {
 		if strings.Compare(kvp.Keys.get("mmm").Values.get("zzz").Value, "zzz") != 0 {
 			t.Error("no error not allowed")
 		}
-		if strings.Compare(kvp.Keys.get("mmm").Values.get("zzz").Tags.sorted()[0], "AA") != 0 {
+		if strings.Compare(kvp.Keys.get("mmm").Values.get("zzz").Tags.sorted()[0], "") != 0 {
 			t.Error("no error not allowed")
 		}
-		if strings.Compare(kvp.Keys.get("mmm").Values.get("zzz").Tags.sorted()[1], "BB") != 0 {
+		if strings.Compare(kvp.Keys.get("mmm").Values.get("zzz").Tags.sorted()[1], "AA") != 0 {
 			t.Error("no error not allowed")
 		}
-		if len(kvp.Keys.get("mmm").Values.get("zzz").Tags) != 2 {
+		if strings.Compare(kvp.Keys.get("mmm").Values.get("zzz").Tags.sorted()[2], "BB") != 0 {
+			t.Error("no error not allowed")
+		}
+		if len(kvp.Keys.get("mmm").Values.get("zzz").Tags) != 3 {
 			t.Error("no error not allowed", kvp.Keys.get("mmm").Values.get("zzz").Tags)
 		}
 	}
@@ -675,36 +681,38 @@ func TestResolvWithCommaTags(t *testing.T) {
 		t.Error("should tags T2")
 	}
 }
-func testSA(t *testing.T, err error, sa *KVParsed, vals ...string) {
+func testSA(t *testing.T, pos string, err error, sa *KVParsed, vals ...string) {
+	// jssa, _ := json.Marshal(sa)
+	// t.Error(string(jssa))
 	if err != nil {
-		t.Error("not expected here", err)
+		t.Error(pos, "not expected here", err)
 	}
 	if sa.Key == nil {
-		t.Error("should be mmm")
+		t.Error(pos, "should be mmm")
 	}
 	if *sa.Key != "mmm" {
-		t.Error("should be mmm")
+		t.Error(pos, "should be mmm")
 	}
 	if sa.KeyRegex.String() != "^mmm$" {
-		t.Error("should be ^mmm$")
+		t.Error(pos, "should be ^mmm$")
 	}
 	if sa.ToResolve == nil {
-		t.Error("should be unresolved nil")
+		t.Error(pos, "should be unresolved nil")
 	}
 	if len(vals) == 0 {
 		if sa.Val != nil {
-			t.Error("should be val")
+			t.Error(pos, "should be val")
 		}
 	} else {
 		if *sa.Val != vals[0] {
-			t.Error("should be val")
+			t.Error(pos, "should be val")
 		}
 	}
 	// if *sa.Val != "" {
 	// t.Error("should be \"\"")
 	// }
 	if len(sa.Tags) != 0 {
-		t.Error("should be 0")
+		t.Error(pos, "should be 0:", sa.Tags)
 	}
 }
 
@@ -735,15 +743,29 @@ func TestOrderPreserve(t *testing.T) {
 
 func TestEmptyParse(t *testing.T) {
 	sa, err := Parse("mmm@[]")
-	testSA(t, err, sa)
+	testSA(t, "1", err, sa)
 	sa, err = Parse("mmm@[]")
 	sa, err = sa.Resolv(func(string, FuncsAndParam) (*string, error) { m := "rrr"; return &m, nil })
-	testSA(t, err, sa, "rrr")
+	testSA(t, "2", err, sa, "rrr")
 	sa, err = Parse("mmm@,")
-	testSA(t, err, sa)
+	testSA(t, "3", err, sa)
 	sa, err = Parse("mmm@,")
 	sa, err = sa.Resolv(func(string, FuncsAndParam) (*string, error) { m := "rrr"; return &m, nil })
-	testSA(t, err, sa, "rrr")
+	testSA(t, "4", err, sa, "rrr")
+	sa, err = Parse("mmm@[,]")
+	if err != nil {
+		t.Error(err)
+	}
+	if !(len(sa.Tags.toArray()) == 1 && len(sa.Tags.toArray()[0]) == 0) {
+		t.Error("There should be an empty")
+	}
+	sa, err = Parse("mmm@,, ,")
+	if err != nil {
+		t.Error(err)
+	}
+	if !(len(sa.Tags.toArray()) == 1 && len(sa.Tags.toArray()[0]) == 0) {
+		t.Error("There should be an empty")
+	}
 }
 
 func TestResolvWithBracketsTags(t *testing.T) {

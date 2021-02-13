@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 )
 
 // KVParsed is the Parsed KeyValue from the CommandLine
@@ -68,6 +69,7 @@ func ParseFuncsAndParams(toParse string) *FuncsAndParam {
 	}
 	return interalParseFuncsAndParams(toParse, &ret)
 }
+
 func interalParseFuncsAndParams(toParse string, ret *FuncsAndParam) *FuncsAndParam {
 	m := funcMatch.FindStringSubmatch(toParse)
 	if len(m) != 3 {
@@ -105,7 +107,9 @@ func parseComma(arg string) (*KVParsed, error) {
 	}
 	if len(commas) > 1 {
 		value = commas[0]
-		tags = tags2Map(commas[1:])
+		if !(len(commas) == 2 && len(strings.TrimSpace(commas[1])) == 0) {
+			tags = tags2Map(commas[1:])
+		}
 	}
 	// value, unresolved, err := processResolv(split[2], split[1], value)
 	// if unresolved != nil {
@@ -202,22 +206,41 @@ func Parse(arg string) (*KVParsed, error) {
 	return parsed, err
 }
 
+func matchByLookup(s1 tagLookup, s2 tagLookup) bool {
+	foundEmpty := false
+	for i := range s1.list {
+		tag := s1.list[i]
+		if len(tag) == 0 && len(s2.list) == 0 {
+			foundEmpty = true
+		}
+		// fmt.Printf("%s:%s\n", tag, kvp.Tags)
+		_, found := s2.lookup[tag]
+		if found {
+			return true
+		}
+	}
+	return foundEmpty
+}
+
 // Match a key and value agains a KVParsed
 func (kvp *KVParsed) Match(key string, val *JSONValue) (*KVParsed, bool) {
 	// findKey := false
 	// for ikvps := range kvps {
 	// kvp := kvps[ikvps]
+
 	if kvp.KeyRegex.MatchString(key) {
 		// fmt.Printf("Matched:%s:%d", kvp.Key, len(kvp.Tags))
-		if len(kvp.Tags) == 0 {
+		valLookup := tagstrings2Lookup(val.Tags)
+		if len(kvp.Tags) == 0 && len(valLookup.list) == 0 {
 			return kvp, true
 		}
-		for i := range val.Tags {
-			// fmt.Printf("%s:%s\n", tag, kvp.Tags)
-			_, found := kvp.Tags[val.Tags[i]]
-			if found {
-				return kvp, true
-			}
+		kvpLookup := tagstrings2Lookup(kvp.Tags.toArray())
+
+		if matchByLookup(valLookup, kvpLookup) {
+			return kvp, true
+		}
+		if matchByLookup(kvpLookup, valLookup) {
+			return kvp, true
 		}
 	}
 	return nil, false

@@ -54,11 +54,11 @@ func (key *Key) setValue(unresolved *FuncsAndParam, val string, tags map[string]
 	clearTags := []string{}
 	for i := range tags {
 		trimmed := strings.TrimSpace(i)
-		if len(trimmed) != 0 {
-			clearTags = append(clearTags, trimmed)
-		}
+		// if len(trimmed) != 0 {
+		clearTags = append(clearTags, trimmed)
+		// }
 	}
-	value.Tags.add(clearTags...)
+	value.Tags.Add(clearTags...)
 
 	// sort.Sort(&ValueSorter{
 	// values: key.Values,

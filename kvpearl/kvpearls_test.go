@@ -128,7 +128,7 @@ func TestMergeSorted(t *testing.T) {
 }
 
 func TestEmptyMatchTags(t *testing.T) {
-	ma := CreateKVPearls().add("test1", "t1T1", "t1T2").add("test2", "t2T1", "t2T2")
+	ma := CreateKVPearls().add("test1", "t1T1", "t1T2", "").add("test2", "t2T1", "t2T2", "")
 
 	mx := MapByToResolve{}
 	mx.add("xx")
@@ -137,13 +137,16 @@ func TestEmptyMatchTags(t *testing.T) {
 	}
 	m1 := MapByToResolve{}
 	m1.add("test1")
+	// jsma, _ := json.Marshal(ma.AsJSON())
+	// jsm1, _ := json.Marshal(m1)
+	// t.Error(">>>>>", string(jsma), string(jsm1))
 	if len(ma.Match(m1)[""]) != 1 {
 		t.Error("should be true", len(ma.Match(m1)))
 	}
 	m2 := MapByToResolve{}
 	m2.add("test2")
 	if len(ma.Match(m2)[""]) != 1 {
-		t.Error("should be true")
+		t.Error("should be true", len(ma.Match(m1)))
 	}
 
 	unMatch1 := MapByToResolve{}

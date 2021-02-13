@@ -8,12 +8,13 @@ import (
 // Tags uniq Tags list
 type Tags map[string]int
 
-func (tags *Tags) add(toAdd ...string) {
+// Add tags
+func (tags *Tags) Add(toAdd ...string) {
 	for i := range toAdd {
 		trimmed := strings.TrimSpace(toAdd[i])
-		if len(trimmed) != 0 {
-			(*tags)[trimmed] = len(*tags) + 1
-		}
+		// if len(trimmed) != 0 {
+		(*tags)[trimmed] = len(*tags) + 1
+		// }
 	}
 }
 
@@ -54,6 +55,27 @@ func (s *tagsArray) Less(i, j int) bool {
 	return (*s)[i].tag < (*s)[j].tag
 }
 
+type tagOrder struct {
+	tag   string
+	order int
+}
+type tagOrderArray []tagOrder
+
+// Len is part of sort.Interface.
+func (s *tagOrderArray) Len() int {
+	return len(*s)
+}
+
+// Swap is part of sort.Interface.
+func (s *tagOrderArray) Swap(i, j int) {
+	(*s)[i], (*s)[j] = (*s)[j], (*s)[i]
+}
+
+// Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
+func (s *tagOrderArray) Less(i, j int) bool {
+	return (*s)[i].order < (*s)[j].order
+}
+
 // func (tags *Tags) byOrder() []string {
 // 	toTags := make(tagsArray, len(*tags))
 // 	toTagsIdx := 0
@@ -79,16 +101,49 @@ func tags2Map(tags []string) Tags {
 		if len(tag) > 0 {
 			ret[tag] = order
 			order++
+		} else {
+			ret[tag] = len(tags)
 		}
 	}
 	return ret
+}
+
+type tagLookup struct {
+	list   []string
+	lookup map[string]int
+}
+
+func tagstrings2Lookup(tags []string) tagLookup {
+	orderMap := tags2Map(tags)
+	toSort := make(tagOrderArray, len(orderMap))
+	idx := 0
+	for i := range orderMap {
+		toSort[idx] = tagOrder{
+			tag:   i,
+			order: orderMap[i],
+		}
+		idx++
+	}
+	sort.Sort(&toSort)
+	out := make([]string, len(toSort))
+	for i := range toSort {
+		out[i] = toSort[i].tag
+	}
+	return tagLookup{
+		list:   out,
+		lookup: orderMap,
+	}
 }
 
 func tagstring2Map(strTags string) Tags {
 	as := tagstring2Array(strTags)
 	ret := map[string]int{}
 	for a := range as {
-		ret[as[a]] = a
+		if len(as[a]) > 0 {
+			ret[as[a]] = a
+		} else {
+			ret[as[a]] = len(as)
+		}
 	}
 	return ret
 }
@@ -100,9 +155,9 @@ func tagstring2Array(strTags string) []string {
 		cs := strings.Split(stripped, ",")
 		for c := range cs {
 			s := strings.TrimSpace(cs[c])
-			if len(s) > 0 {
-				ret = append(ret, cs[c])
-			}
+			// if len(s) > 0 {
+			ret = append(ret, s)
+			// }
 		}
 	}
 	return ret
