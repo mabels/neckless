@@ -46,9 +46,14 @@ func GetGems(pkms []*member.PrivateMember, nl *necklace.Necklace) ([]*gem.Gem, [
 	for i := range closedGems {
 		tmp := closedGems[i]
 		openGem, err := gem.OpenPearl(member.ToPrivateKeys(pkms), tmp)
+		// jstmp, _ := json.Marshal(tmp)
+		// jsmem, _ := json.Marshal(member.ToPrivateKeys(pkms))
 		if err != nil {
+			// fmt.Printf("GetGem:ERR:%d:%s\n%s\n%s\n", i, err, jstmp, jsmem)
 			errs = append(errs, err)
 		} else {
+			// jsopen, _ := json.Marshal(openGem)
+			// fmt.Printf("GetGem:Open:%d:%s,%s:%s\n", i, jsopen, jstmp, jsmem)
 			out = append(out, openGem)
 		}
 	}
@@ -74,6 +79,8 @@ func updateGem(myGem *gem.Gem, pkms []*member.PrivateMember, jpms []member.JsonP
 	} else {
 		pms = myGem.LsByType(member.Person)
 	}
+	// jspms, _ := json.Marshal(pms)
+	// fmt.Printf("updateGem:%s:%s\n", jspms, toIds)
 	mo := pearl.PearlOwner{
 		Signer: &pkms[0].PrivateKey,
 		Owners: member.ToPublicKeys(pms),
@@ -125,6 +132,7 @@ func gemAddCmd(arg *NecklessArgs) *cobra.Command {
 			// fmt.Fprintln(arg.Nio.err, "-3")
 			gems, _ := GetGems(pkms, &nl)
 			for i := range gems {
+				// fmt.Printf("X---->%s\n", gems)
 				prl, err := updateGem(gems[i], pkms, pubMembers, arg.Gems.Add.ToKeyIds...)
 				if err != nil {
 					return err
@@ -133,7 +141,9 @@ func gemAddCmd(arg *NecklessArgs) *cobra.Command {
 			}
 			if len(gems) == 0 {
 				myGem := gem.Create()
-				prl, err := updateGem(myGem, pkms, pubMembers)
+				prl, err := updateGem(myGem, pkms, pubMembers, arg.Gems.Add.ToKeyIds...)
+				// jsprl, _ := json.Marshal(prl)
+				// fmt.Printf("C---->%s:%s:%s\n", gems, err, jsprl)
 				if err != nil {
 					return err
 				}

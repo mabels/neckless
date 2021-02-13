@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"neckless.adviser.com/key"
 	"neckless.adviser.com/kvpearl"
 	"neckless.adviser.com/member"
 	"neckless.adviser.com/necklace"
@@ -94,7 +95,6 @@ func kvAddCmd(narg *NecklessArgs) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(narg.Nio.out.first().buf, string(jsStr))
 			nl, errnl := necklace.Read(narg.Kvs.Fname)
 			if len(errnl) > 0 {
 				out := make([]string, len(errnl))
@@ -106,20 +106,46 @@ func kvAddCmd(narg *NecklessArgs) *cobra.Command {
 			pkms, err := GetPkms(GetPkmsArgs{
 				casketFname: narg.Kvs.CasketFname,
 				filter:      member.Matcher(*narg.Kvs.PrivKeyIds...),
-				person:      true,
+				privEnvName: narg.Kvs.PrivKeyEnv,
+				privKeyVal:  narg.Kvs.PrivKeyVal,
+				person:      len(*narg.Kvs.PrivKeyIds) == 0,
 				device:      false,
 			})
+			// fmt.Printf("KEYS:%s:%s:%s", narg.Kvs.PrivKeyIds, err, pkms)
 			if err != nil {
-				return nil
+				return err
 			}
-			gems, _ := GetGems(pkms, &nl)
+			gems, errs := GetGems(pkms, &nl)
+			// fmt.Printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>:%d", len(errs))
+			if len(errs) != 0 {
+				out := make([]string, len(errs))
+				for i := range errs {
+					out[i] = errs[i].Error()
+					// fmt.Printf(">>>>>>:%s\n", out[i])
+				}
+				return errors.New(strings.Join(out, "|"))
+			}
 			// fmt.Fprintln(arg.Nio.err, len(gems), pkms[0].Id)
 			for i := range gems {
+				var owners []*key.PublicKey
+				if len(*narg.Kvs.PrivKeyIds) != 0 {
+					owners = member.ToPublicKeys(gems[i].Ls(*narg.Kvs.PrivKeyIds...))
+				} else {
+					owners = member.ToPublicKeys(gems[i].LsByType(member.Device))
+				}
+				if len(owners) == 0 {
+					jskeyIds, err := json.Marshal(narg.Kvs.PrivKeyIds)
+					if err != nil {
+						return err
+					}
+					return fmt.Errorf("Owners must be found:%s", jskeyIds)
+				}
 				mo := pearl.PearlOwner{
 					Signer: &pkms[0].PrivateKey,
-					Owners: member.ToPublicKeys(gems[i].LsByType(member.Device)),
+					Owners: owners,
 				}
-				// fmt.Println("signer:", pkms[0].Id)
+				// tmp, _ := json.MarshalIndent(gems[i].LsByType(member.Device), "", "  ")
+				// fmt.Printf("signer:%s:%s\n", member.Device, tmp)
 				// fmt.Fprintf(narg.Nio.err.first().buf, "%s:%s\n", pkms[0].Id, gems[i].LsByType(member.Device)[0].Id)
 				p, err := kvp.ClosePearl(&mo)
 				if err != nil {
@@ -128,6 +154,9 @@ func kvAddCmd(narg *NecklessArgs) *cobra.Command {
 				nl.Reset(p)
 			}
 			_, err = nl.Save(narg.Kvs.Fname)
+			if err == nil {
+				fmt.Fprintln(narg.Nio.out.first().buf, string(jsStr))
+			}
 			return err
 		},
 	}
@@ -185,7 +214,8 @@ func runActions(kv *kvpearl.JSONValue) (string, error) {
 	return val, nil
 }
 
-type flatKeyValue struct {
+// FlatKeyValue defines result of kv ls command
+type FlatKeyValue struct {
 	Key   string
 	Value string
 	Tags  []string
@@ -225,60 +255,68 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 			kvps := kvpearl.CreateKVPearls()
 			for i := range closedKvps {
 				closedKvp := closedKvps[i]
-				kvp, err := kvpearl.OpenPearl(member.ToPrivateKeys(pkms), closedKvp)
-				if err == nil {
+				kvp, merr := kvpearl.OpenPearl(member.ToPrivateKeys(pkms), closedKvp)
+				if merr == nil {
 					kvps.Add(kvp)
 				} else {
-					fmt.Fprintln(narg.Nio.err.first().buf, err)
+					// ck, _ := json.Marshal(closedKvp.AsJSON())
+					// pk, _ := json.Marshal(member.ToPrivateKeys(pkms))
+					// fmt.Fprintf(narg.Nio.err.first().buf, "PearlError\n%s\n%s\n", ck, pk)
+					fmt.Fprintf(narg.Nio.err.first().buf, "PearlError:%d:%s\n", i, merr)
+					err = merr
 				}
 			}
 			keys, errs := parseArgs2KVpearl(args, narg.Kvs.Ls.writeFname, *narg.Kvs.Ls.tags)
+			// fmt.Fprintf(narg.Nio.err.first().buf, "0====%s\n", err)
 			for i := range errs {
 				fmt.Fprintln(narg.Nio.err.first().buf, errs[i])
+				err = errs[i]
 			}
+			// fmt.Fprintf(narg.Nio.err.first().buf, "1====%s\n", err)
 			// myOut, _ := json.MarshalIndent(keys, "", "  ")
 			// fmt.Printf("%s:%s\n", args, string(myOut))
 			// tags := narg.Kvs.Ls.tags
 			// fmt.Fprintf(arg.Nio.out, "# %s\n", strings.Join(tags, ","))
 			outputs := kvps.Match(keys)
 			// out := kvps.AsJSON()
-			err = nil
+			// err = nil
 			// var err error
 			// outputs := toKVPearl2Outputs(out)
 			for fname := range outputs {
 				kvs := outputs[fname]
 				outValues := kvs.ToJSON()
 				if *narg.Kvs.Ls.json {
-					jsOut := make([]flatKeyValue, len(outValues))
+					jsOut := make([]FlatKeyValue, len(outValues))
 					for i := range outValues {
 						kv := outValues[i]
 						value := kv.Vals.Value()
-						val, err := runActions(value)
-						if err != nil {
-							return err
+						val, merr := runActions(value)
+						if merr != nil {
+							return merr
 						}
-						jsOut[i] = flatKeyValue{
+						jsOut[i] = FlatKeyValue{
 							Key:   kv.Key,
 							Value: val,
 							Tags:  value.Tags,
 						}
 						// kv.Vals[j].Value = val
 					}
-					jsStr, err := json.MarshalIndent(jsOut, "", "  ")
-					if err != nil {
-						fmt.Fprintf(narg.Nio.err.first().buf, "%s", err)
+					jsStr, merr := json.MarshalIndent(jsOut, "", "  ")
+					if merr != nil {
+						fmt.Fprintf(narg.Nio.err.first().buf, "%s", merr)
+						err = merr
 					}
 					fmt.Fprintln(narg.Nio.out.add(&fname).buf, string(jsStr))
 				} else if *narg.Kvs.Ls.onlyValue {
 					for i := range outValues {
-						val, err := runActions(outValues[i].Vals.Value())
-						if err != nil {
-							return err
+						val, merr := runActions(outValues[i].Vals.Value())
+						if merr != nil {
+							return merr
 						}
 						out := narg.Nio.out.add(&fname)
 						fmt.Fprintf(out.buf, "%s\n", val)
 					}
-					err = nil
+					// err = nil
 				} else {
 					eol := "\n"
 					if *narg.Kvs.Ls.shKeyValue {
@@ -286,12 +324,16 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 					}
 					for i := range outValues {
 						kv := outValues[i]
-						val, err := runActions(kv.Vals.Value())
-						if err != nil {
-							return err
+						val, merr := runActions(kv.Vals.Value())
+						if merr != nil {
+							return merr
 						}
-						var v []byte
-						v, err = json.Marshal(val)
+						// var v []byte
+						v, merr := json.Marshal(val)
+						if merr != nil {
+							fmt.Fprintf(narg.Nio.err.first().buf, "%s", merr)
+							err = merr
+						}
 						fmt.Fprintf(narg.Nio.out.add(&fname).buf, "%s=%s%s", kv.Key, string(v), eol)
 						if *narg.Kvs.Ls.shKeyValue {
 							fmt.Fprintf(narg.Nio.out.add(&fname).buf, "export %s%s", kv.Key, eol)
@@ -302,9 +344,8 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 					}
 				}
 			}
-			// fmt.Fprintf(arg.Nio.err, "XXXX:%d", len(out.Keys))
+			// fmt.Fprintf(narg.Nio.err.first().buf, "XXXX\n")
 			// fmt.Fprintf(arg.Nio.out, "XXXX:%d", len(out.Keys))
-
 			return err
 		},
 	}

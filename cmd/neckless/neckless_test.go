@@ -213,7 +213,7 @@ func createTestData(t *testing.T) {
 func TestKvs(t *testing.T) {
 	createTestData(t)
 	nio, _ := cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --json")
-	var mya []flatKeyValue
+	var mya []FlatKeyValue
 	// inputJS := string(nio.out.first().buf.Bytes())
 	// t.Error(inputJS)
 	json.Unmarshal(nio.out.first().buf.Bytes(), &mya)
@@ -288,7 +288,7 @@ func TestLsGhAddMask(t *testing.T) {
 
 func genRef(param string) string {
 	// unresolved := kvpearl.ParseFuncsAndParams(param)
-	ref := []flatKeyValue{
+	ref := []FlatKeyValue{
 		{
 			Key:   "M",
 			Value: "3",
@@ -369,7 +369,7 @@ func TestActions(t *testing.T) {
 	if len(strings.TrimSpace(nio.out.first().buf.String())) != 6 {
 		t.Error(nio.out.first().buf.String())
 	}
-	ref := []flatKeyValue{
+	ref := []FlatKeyValue{
 		{
 			Key:   "TOTP",
 			Value: "setit",
@@ -377,7 +377,7 @@ func TestActions(t *testing.T) {
 		},
 	}
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --json TOTP@Totp()")
-	var myRef []flatKeyValue
+	var myRef []FlatKeyValue
 	err = json.Unmarshal(nio.out.first().buf.Bytes(), &myRef)
 	if err != nil {
 		t.Error("should not happend")
@@ -389,7 +389,7 @@ func TestActions(t *testing.T) {
 	}
 }
 
-func TestSingleUser(t *testing.T) {
+func TestSingleUserPerson(t *testing.T) {
 	os.Remove("casket.SingleUser.json")
 	os.Remove("gem.SingleUser.json")
 	_, err := cmdNeckless(t, "casket --file casket.SingleUser.json create --person --name Person.User1 --email test@test.com")
@@ -404,9 +404,95 @@ func TestSingleUser(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	nio, err = cmdNeckless(t, "kv --casketFile casket.SingleUser.json --file gem.SingleUser.json add MENO=DOOF", nio.out.first().buf.String())
+	nio, err = cmdNeckless(nil, "kv --casketFile casket.SingleUser.json --file gem.SingleUser.json add MENO=DOOF")
+	if !strings.Contains(err.Error(), "Owners must be found") {
+		t.Error("Unknown Error:", nio.err.first().buf.String())
+	}
+	nio, err = cmdNeckless(nil, "kv --casketFile casket.SingleUser.json --file gem.SingleUser.json ls")
 	if err != nil {
 		t.Error(err)
+	}
+	// t.Error(nio.err.first().buf.String())
+	// t.Error(nio.out.first().buf.String())
+}
+
+func TestSingleUserDevice(t *testing.T) {
+	os.Remove("casket.SingleUser.json")
+	os.Remove("gem.SingleUser.json")
+	_, err := cmdNeckless(t, "casket --file casket.SingleUser.json create --device --name Person.User1 --email test@test.com")
+	if err != nil {
+		t.Error(err)
+	}
+	nio, err := cmdNeckless(t, "casket --file casket.SingleUser.json get")
+	if err != nil {
+		t.Error(err)
+	}
+	nio, err = cmdNeckless(t, "gem --casketFile casket.SingleUser.json --file gem.SingleUser.json add", nio.out.first().buf.String())
+	if err != nil {
+		t.Error(err)
+	}
+	nio, err = cmdNeckless(nil, "kv --casketFile casket.SingleUser.json --file gem.SingleUser.json add MENO=DOOF", nio.out.first().buf.String())
+	if !strings.Contains(err.Error(), "you need a private key") {
+		t.Error(err)
+	}
+	nio, err = cmdNeckless(t, "kv --casketFile casket.SingleUser.json --file gem.SingleUser.json ls")
+	if err != nil {
+		t.Error(err)
+	}
+	if strings.Compare(nio.out.first().buf.String(), "") != 0 {
+		t.Errorf("Compare:%s", nio.out.first().buf.String())
+	}
+}
+
+func TestSingleUserID(t *testing.T) {
+	os.Remove("casket.SingleUser.json")
+	os.Remove("gem.SingleUser.json")
+	nio, err := cmdNeckless(t, "casket --file casket.SingleUser.json create --device --name Person.User1 --email test@test.com")
+	if err != nil {
+		t.Error(err)
+	}
+	nio, err = cmdNeckless(t, "casket --file casket.SingleUser.json get")
+	if err != nil {
+		t.Error(err)
+	}
+	var jscreates []member.JsonPublicMember
+	err = json.Unmarshal(nio.out.first().buf.Bytes(), &jscreates)
+	if err != nil {
+		t.Error(err)
+	}
+	jscreate := jscreates[0]
+	nio, err = cmdNeckless(t, fmt.Sprintf(
+		"gem --casketFile casket.SingleUser.json --file gem.SingleUser.json --privkeyid %s add --toKeyId %s",
+		jscreate.Id, jscreate.Id), nio.out.first().buf.String())
+	if err != nil {
+		t.Error(err)
+	}
+	nio, err = cmdNeckless(t, fmt.Sprintf(
+		"kv --casketFile casket.SingleUser.json --file gem.SingleUser.json --privkeyid %s add MENO=DOOF",
+		jscreate.Id), nio.out.first().buf.String())
+	if err != nil {
+		t.Error(err)
+	}
+	nio, err = cmdNeckless(t, fmt.Sprintf(
+		"kv --casketFile casket.SingleUser.json --file gem.SingleUser.json --privkeyid %s ls --json",
+		jscreate.Id))
+	if err != nil {
+		t.Error(err)
+	}
+	var jsadds []FlatKeyValue
+	err = json.Unmarshal(nio.out.first().buf.Bytes(), &jsadds)
+	if err != nil {
+		t.Error(err)
+	}
+	jsadd := jsadds[0]
+	if strings.Compare(jsadd.Key, "MENO") != 0 {
+		t.Errorf("Expect MENO got %s", jsadd.Key)
+	}
+	if strings.Compare(jsadd.Value, "DOOF") != 0 {
+		t.Errorf("Expect DOOF got %s", jsadd.Value)
+	}
+	if len(jsadd.Tags) != 0 {
+		t.Errorf("Expect Tags length %d", len(jsadd.Tags))
 	}
 	// t.Error(nio.err.first().buf.String())
 	// t.Error(nio.out.first().buf.String())
