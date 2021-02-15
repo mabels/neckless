@@ -283,8 +283,8 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 				err = errs[i]
 			}
 			// fmt.Fprintf(narg.Nio.err.first().buf, "1====%s\n", err)
-			myOut, _ := json.MarshalIndent(keys, "", "  ")
-			fmt.Printf("%s:%s\n", args, string(myOut))
+			// myOut, _ := json.MarshalIndent(keys, "", "  ")
+			// fmt.Printf("%s:%s\n", args, string(myOut))
 			// tags := narg.Kvs.Ls.tags
 			// fmt.Fprintf(arg.Nio.out, "# %s\n", strings.Join(tags, ","))
 			outputs := kvps.Match(keys)

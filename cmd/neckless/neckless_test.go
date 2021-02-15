@@ -351,6 +351,15 @@ func TestLsShKeyValue(t *testing.T) {
 	}
 }
 
+func TestLsEmptyTagDefectOutput(t *testing.T) {
+	createTestData(t)
+	// --shKeyValue           select device keys
+	nio, _ := cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --emptyTag")
+	if strings.HasPrefix(nio.out.first().buf.String(), "[]:{") {
+		t.Error("i forgot something in the source")
+	}
+}
+
 func TestActions(t *testing.T) {
 	createTestData(t)
 	// --shKeyValue           select device keys
