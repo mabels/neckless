@@ -206,7 +206,7 @@ func createTestData(t *testing.T) {
 		t.Error("should be empty", nio.out.first().buf.String())
 	}
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add M=1 M=2")
-	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add N=4711 M=3")
+	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add N=4711 M=3 QUOTE=$<DOOF>")
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add TOTP=4S62BZNFXXSZLCRO")
 }
 
@@ -217,7 +217,7 @@ func TestKvs(t *testing.T) {
 	// inputJS := string(nio.out.first().buf.Bytes())
 	// t.Error(inputJS)
 	json.Unmarshal(nio.out.first().buf.Bytes(), &mya)
-	if len(mya) != 3 {
+	if len(mya) != 4 {
 		t.Error("should be", len(mya))
 	}
 	if strings.Compare(mya[0].Key, "M") != 0 {
@@ -236,20 +236,20 @@ func TestKvs(t *testing.T) {
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add YU=1[T1]")
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add YU=2[T2]")
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --tag T1 YU")
-	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "YU=\"1\"") != 0 {
+	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "YU=1") != 0 {
 		t.Error("not expected", nio.out.first().buf.String())
 	}
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --tag T2 YU")
-	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "YU=\"2\"") != 0 {
+	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "YU=2") != 0 {
 		t.Error("not expected", nio.out.first().buf.String())
 	}
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json add YU=22[T2]")
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --tag T2 YU")
-	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "YU=\"22\"") != 0 {
+	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "YU=22") != 0 {
 		t.Error("not expected", nio.out.first().buf.String())
 	}
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls YU@bla[T2]")
-	if strings.Compare(strings.TrimSpace(nio.out.get("bla").buf.String()), "YU=\"22\"") != 0 {
+	if strings.Compare(strings.TrimSpace(nio.out.get("bla").buf.String()), "YU=22") != 0 {
 		t.Error("not expected", nio.out.first().buf.String())
 	}
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --tag T2 T2@bla YU@blu")
@@ -259,7 +259,7 @@ func TestKvs(t *testing.T) {
 	if nio.out.get("bla") != nil {
 		t.Error("not expected", nio.out.first().buf.String())
 	}
-	if strings.Compare(strings.TrimSpace(nio.out.get("blu").buf.String()), "YU=\"22\"") != 0 {
+	if strings.Compare(strings.TrimSpace(nio.out.get("blu").buf.String()), "YU=22") != 0 {
 		t.Error("not expected", nio.out.first().buf.String())
 	}
 	// nio.out.first().buf.String() // make the compiler happy
@@ -269,19 +269,24 @@ func TestLsGhAddMask(t *testing.T) {
 	createTestData(t)
 	// --ghAddMask      set Value as github mask
 	nio, _ := cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --shKeyValue --ghAddMask M@bla N@bla N M")
-	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "M=\"3\";\nexport M;\necho ::add-mask::3;\nN=\"4711\";\nexport N;\necho ::add-mask::4711;") != 0 {
+	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "M=3;\nexport M;\necho ::add-mask::3;\nN=4711;\nexport N;\necho ::add-mask::4711;") != 0 {
 		t.Error(nio.out.first().buf.String())
 	}
-	if strings.Compare(strings.TrimSpace(nio.out.get("bla").buf.String()), "M=\"3\";\nexport M;\necho ::add-mask::3;\nN=\"4711\";\nexport N;\necho ::add-mask::4711;") != 0 {
+	if strings.Compare(strings.TrimSpace(nio.out.get("bla").buf.String()), "M=3;\nexport M;\necho ::add-mask::3;\nN=4711;\nexport N;\necho ::add-mask::4711;") != 0 {
 		t.Error(nio.out.get("bla").buf.String())
 	}
 
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --ghAddMask M@bla N@bla N M")
-	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "M=\"3\"\necho ::add-mask::3\nN=\"4711\"\necho ::add-mask::4711") != 0 {
+	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "M=3\necho ::add-mask::3\nN=4711\necho ::add-mask::4711") != 0 {
 		t.Error(nio.out.first().buf.String())
 	}
-	if strings.Compare(strings.TrimSpace(nio.out.get("bla").buf.String()), "M=\"3\"\necho ::add-mask::3\nN=\"4711\"\necho ::add-mask::4711") != 0 {
+	if strings.Compare(strings.TrimSpace(nio.out.get("bla").buf.String()), "M=3\necho ::add-mask::3\nN=4711\necho ::add-mask::4711") != 0 {
 		t.Error(nio.out.get("bla").buf.String())
+	}
+
+	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --ghAddMask QUOTE")
+	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "QUOTE='$<DOOF>'\necho ::add-mask::'$<DOOF>'") != 0 {
+		t.Error(nio.out.first().buf.String())
 	}
 
 }
@@ -299,6 +304,11 @@ func genRef(param string) string {
 			Value: "4711",
 			Tags:  []string{},
 		},
+		{
+			Key:   "QUOTE",
+			Value: "$<DOOF>",
+			Tags:  []string{},
+		},
 	}
 	jsb, _ := json.MarshalIndent(ref, "", "  ")
 	ret := string(jsb)
@@ -307,7 +317,7 @@ func genRef(param string) string {
 func TestLsJson(t *testing.T) {
 	createTestData(t)
 	// --json           select device keys
-	nio, _ := cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --json M@bla N@bla M N")
+	nio, _ := cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --json M@bla N@bla M N QUOTE QUOTE@bla")
 	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), genRef("")) != 0 {
 		t.Error(nio.out.first().buf.String())
 	}
@@ -320,10 +330,10 @@ func TestLsKeyValue(t *testing.T) {
 	createTestData(t)
 	// --keyValue           select device keys
 	nio, _ := cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --keyValue M@bla N@bla N M")
-	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "M=\"3\"\nN=\"4711\"") != 0 {
+	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "M=3\nN=4711") != 0 {
 		t.Error(nio.out.first().buf.String())
 	}
-	if strings.Compare(strings.TrimSpace(nio.out.get("bla").buf.String()), "M=\"3\"\nN=\"4711\"") != 0 {
+	if strings.Compare(strings.TrimSpace(nio.out.get("bla").buf.String()), "M=3\nN=4711") != 0 {
 		t.Error(nio.out.get("bla").buf.String())
 	}
 }
@@ -331,8 +341,8 @@ func TestLsKeyValue(t *testing.T) {
 func TestLsOnlyValue(t *testing.T) {
 	createTestData(t)
 	// --onlyValue           select device keys
-	nio, _ := cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --onlyValue M@bla N@bla N M")
-	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "3\n4711") != 0 {
+	nio, _ := cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --onlyValue M@bla N@bla N M QUOTE")
+	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "3\n4711\n'$<DOOF>'") != 0 {
 		t.Error(nio.out.first().buf.String())
 	}
 	if strings.Compare(strings.TrimSpace(nio.out.get("bla").buf.String()), "3\n4711") != 0 {
@@ -342,11 +352,11 @@ func TestLsOnlyValue(t *testing.T) {
 func TestLsShKeyValue(t *testing.T) {
 	createTestData(t)
 	// --shKeyValue           select device keys
-	nio, _ := cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --shKeyValue M@bla N@bla N M")
-	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "M=\"3\";\nexport M;\nN=\"4711\";\nexport N;") != 0 {
+	nio, _ := cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --shKeyValue M@bla N@bla N M QUOTE QUOTE@bla")
+	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "M=3;\nexport M;\nN=4711;\nexport N;\nQUOTE='$<DOOF>';\nexport QUOTE;") != 0 {
 		t.Error(nio.out.first().buf.String())
 	}
-	if strings.Compare(strings.TrimSpace(nio.out.get("bla").buf.String()), "M=\"3\";\nexport M;\nN=\"4711\";\nexport N;") != 0 {
+	if strings.Compare(strings.TrimSpace(nio.out.get("bla").buf.String()), "M=3;\nexport M;\nN=4711;\nexport N;\nQUOTE='$<DOOF>';\nexport QUOTE;") != 0 {
 		t.Error(nio.out.get("bla").buf.String())
 	}
 }
@@ -371,7 +381,7 @@ func TestActions(t *testing.T) {
 		t.Error(err.Error())
 	}
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls TOTP@Len(Noop())")
-	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "TOTP=\"16\"") != 0 {
+	if strings.Compare(strings.TrimSpace(nio.out.first().buf.String()), "TOTP=16") != 0 {
 		t.Error(nio.out.first().buf.String())
 	}
 	nio, _ = cmdNeckless(t, "kv --casketFile casket.User1.json --file neckless.shared.json ls --onlyValue TOTP@Totp()")
@@ -477,7 +487,7 @@ func TestSingleUserID(t *testing.T) {
 		t.Error(err)
 	}
 	nio, err = cmdNeckless(t, fmt.Sprintf(
-		"kv --casketFile casket.SingleUser.json --file gem.SingleUser.json --privkeyid %s add MENO=DOOF",
+		"kv --casketFile casket.SingleUser.json --file gem.SingleUser.json --privkeyid %s add MENO=$D>O<OF",
 		jscreate.Id), nio.out.first().buf.String())
 	if err != nil {
 		t.Error(err)
@@ -497,14 +507,32 @@ func TestSingleUserID(t *testing.T) {
 	if strings.Compare(jsadd.Key, "MENO") != 0 {
 		t.Errorf("Expect MENO got %s", jsadd.Key)
 	}
-	if strings.Compare(jsadd.Value, "DOOF") != 0 {
-		t.Errorf("Expect DOOF got %s", jsadd.Value)
+	if strings.Compare(jsadd.Value, "$D>O<OF") != 0 {
+		t.Errorf("Expect $DOOF got %s", jsadd.Value)
 	}
 	if len(jsadd.Tags) != 0 {
 		t.Errorf("Expect Tags length %d", len(jsadd.Tags))
 	}
 	// t.Error(nio.err.first().buf.String())
 	// t.Error(nio.out.first().buf.String())
+
+	nio, err = cmdNeckless(t, fmt.Sprintf(
+		"kv --casketFile casket.SingleUser.json --file gem.SingleUser.json --privkeyid %s ls --keyValue MENO",
+		jscreate.Id))
+	if err != nil {
+		t.Error(err)
+	}
+	inStr := string(nio.out.first().buf.Bytes())
+	kv := strings.Split(strings.TrimSuffix(inStr, "\n"), "=")
+	if len(kv) != 2 {
+		t.Errorf("Split should be 2 %s", inStr)
+	}
+	if strings.Compare(kv[0], "MENO") != 0 {
+		t.Errorf("Key should MENO %s", kv[0])
+	}
+	if strings.Compare(kv[1], "'$D>O<OF'") != 0 {
+		t.Errorf("Key should '$D>O<OF' %s", kv[1])
+	}
 }
 
 func equalFlatKeyValues(t *testing.T, buf *bytes.Buffer, values []FlatKeyValue, caze string) {

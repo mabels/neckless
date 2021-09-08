@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/alessio/shellescape.v1"
 	"neckless.adviser.com/key"
 	"neckless.adviser.com/kvpearl"
 	"neckless.adviser.com/member"
@@ -324,7 +325,7 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 							return merr
 						}
 						out := narg.Nio.out.add(&fname)
-						fmt.Fprintf(out.buf, "%s\n", val)
+						fmt.Fprintf(out.buf, "%s\n", shellescape.Quote(val))
 					}
 					// err = nil
 				} else {
@@ -339,17 +340,18 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 							return merr
 						}
 						// var v []byte
-						v, merr := json.Marshal(val)
-						if merr != nil {
-							fmt.Fprintf(narg.Nio.err.first().buf, "%s", merr)
-							err = merr
-						}
-						fmt.Fprintf(narg.Nio.out.add(&fname).buf, "%s=%s%s", kv.Key, string(v), eol)
+						// v, merr := json.Marshal(val)
+						// if merr != nil {
+						// 	fmt.Fprintf(narg.Nio.err.first().buf, "%s", merr)
+						// 	err = merr
+						// }
+						// fmt.Fprintf(narg.Nio.out.add(&fname).buf, "%s=%s%s", kv.Key, string(v), eol)
+						fmt.Fprintf(narg.Nio.out.add(&fname).buf, "%s=%s%s", kv.Key, shellescape.Quote(val), eol)
 						if *narg.Kvs.Ls.shKeyValue {
 							fmt.Fprintf(narg.Nio.out.add(&fname).buf, "export %s%s", kv.Key, eol)
 						}
 						if *narg.Kvs.Ls.ghAddMask {
-							fmt.Fprintf(narg.Nio.out.add(&fname).buf, "echo ::add-mask::%s%s", string(val), eol)
+							fmt.Fprintf(narg.Nio.out.add(&fname).buf, "echo ::add-mask::%s%s", shellescape.Quote(val), eol)
 						}
 					}
 				}
