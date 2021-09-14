@@ -1207,6 +1207,14 @@ module.exports = require("os");
 "use strict";
 module.exports = require("path");
 
+/***/ }),
+
+/***/ 413:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("stream");
+
 /***/ })
 
 /******/ 	});
@@ -1256,6 +1264,7 @@ const { spawn } = __nccwpck_require__(129);
 const fs = __nccwpck_require__(747).promises;
 const http = __nccwpck_require__(605);
 const https = __nccwpck_require__(211);
+const { Stream } = __nccwpck_require__(413);
 
 function download(url) {
   return new Promise((rs, rj) => {

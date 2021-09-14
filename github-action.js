@@ -4,6 +4,7 @@ const { spawn } = require("child_process");
 const fs = require("fs").promises;
 const http = require("http");
 const https = require("https");
+const { Stream } = require("stream");
 
 function download(url) {
   return new Promise((rs, rj) => {
