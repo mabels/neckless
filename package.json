@@ -1,0 +1,25 @@
+{
+  "name": "neckless-action",
+  "version": "1.0.0",
+  "description": "Neckless-Action-Enviroment",
+  "main": "github-action.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "action": "ncc build  ./github-action.js -o action"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mabels/neckless.git"
+  },
+  "author": "",
+  "license": "AFL-2.0",
+  "bugs": {
+    "url": "https://github.com/mabels/neckless/issues"
+  },
+  "homepage": "https://github.com/mabels/neckless#readme",
+  "devDependencies": {
+    "@actions/core": "^1.5.0",
+    "@vercel/ncc": "^0.31.1",
+    "uuid": "^8.3.2"
+  }
+}
