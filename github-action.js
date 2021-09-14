@@ -4,7 +4,6 @@ const { spawn } = require("child_process");
 const fs = require("fs").promises;
 const http = require("http");
 const https = require("https");
-const { Stream } = require("stream");
 
 function download(url) {
   return new Promise((rs, rj) => {
@@ -17,12 +16,12 @@ function download(url) {
         response.on("error", (e) => {
           rj(e);
         });
-        const data = new Stream();
+        const data = [];
         response.on("data", function (chunk) {
-          data.push(chunk);
+          data.push(Buffer.from(chunk));
         });
         response.on("end", function () {
-          rs(data.read());
+          rs(Buffer.concat(data));
         });
       })
       .end();
