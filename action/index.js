@@ -1254,6 +1254,7 @@ const core = __nccwpck_require__(186);
 const uuid = __nccwpck_require__(840);
 const { spawn } = __nccwpck_require__(129);
 const fs = __nccwpck_require__(747).promises;
+const path = __nccwpck_require__(622);
 const http = __nccwpck_require__(605);
 const https = __nccwpck_require__(211);
 
