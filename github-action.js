@@ -7,14 +7,27 @@ const http = require("http");
 const https = require("https");
 const { ok } = require("assert");
 
-function download(url) {
+function download(url, cnt) {
   return new Promise((rs, rj) => {
+    if (cnt > 8) {
+      rj(Error(`loop detected ${url}`));
+      return;
+    }
     let client = http;
     if (url.toString().indexOf("https") === 0) {
       client = https;
     }
     client
       .request(url, (response) => {
+	if (300<=response.statusCode && response.statusCode < 400) {
+		const url = response.headers['location'];
+		console.log(`url ==> ${url}`);
+		rs(download(url, cnt + 1));
+		return;
+	}
+	if (!(200<=response.statusCode && response.statusCode < 300)) {
+		rj(`fetch error ${url}:${response.statusCode}`);
+	}
         response.on("error", (e) => {
           rj(e);
         });
@@ -68,7 +81,7 @@ async function main() {
       necklessUrl = `${necklessUrl}-${cpu}`;
     }
     core.info(`Fetch neckless from:[${necklessUrl}]`)
-    const necklessBin = await download(necklessUrl);
+    const necklessBin = await download(necklessUrl, 0);
     const dir = path.join(getTempDirectory(), "neckless-bin");
     await fs.mkdir(dir, {
       recursive: true,
