@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"neckless.adviser.com/key"
+	"github.com/mabels/neckless/key"
 )
 
 type MemberType string

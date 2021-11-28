@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"neckless.adviser.com/key"
-	"neckless.adviser.com/member"
+	"github.com/mabels/neckless/key"
+	"github.com/mabels/neckless/member"
 )
 
 func TestCreate(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"neckless.adviser.com/key"
+	"github.com/mabels/neckless/key"
 )
 
 func TestSealOpen(t *testing.T) {

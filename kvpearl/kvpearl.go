@@ -6,8 +6,8 @@ import (
 	"sort"
 	"time"
 
-	"neckless.adviser.com/key"
-	"neckless.adviser.com/pearl"
+	"github.com/mabels/neckless/key"
+	"github.com/mabels/neckless/pearl"
 )
 
 // JSONKVPearl the JSON resprestion of a KVPearl

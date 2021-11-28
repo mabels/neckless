@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"neckless.adviser.com/key"
-	"neckless.adviser.com/member"
+	"github.com/mabels/neckless/key"
+	"github.com/mabels/neckless/member"
 )
 
 func createTestKeyO1() *key.RawKey {

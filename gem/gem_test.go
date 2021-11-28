@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"neckless.adviser.com/member"
+	"github.com/mabels/neckless/member"
 )
 
 func TestCreate(t *testing.T) {

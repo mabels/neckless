@@ -2,7 +2,7 @@ package asymmetric
 
 import (
 	"golang.org/x/crypto/curve25519"
-	"neckless.adviser.com/key"
+	"github.com/mabels/neckless/key"
 )
 
 func CreateShared(priv *key.RawKey, pub *key.RawKey) key.RawKey {

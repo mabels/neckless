@@ -11,9 +11,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"neckless.adviser.com/casket"
-	"neckless.adviser.com/key"
-	"neckless.adviser.com/member"
+	"github.com/mabels/neckless/casket"
+	"github.com/mabels/neckless/key"
+	"github.com/mabels/neckless/member"
 )
 
 // CasketRmArgs the args of the rm command

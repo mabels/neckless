@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"neckless.adviser.com/key"
-	"neckless.adviser.com/pearl"
+	"github.com/mabels/neckless/key"
+	"github.com/mabels/neckless/pearl"
 )
 
 var TestTime int64 = time.Now().UnixNano()

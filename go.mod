@@ -1,4 +1,4 @@
-module neckless.adviser.com
+module github.com/mabels/neckless
 
 go 1.14
 

@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"neckless.adviser.com/key"
+	"github.com/mabels/neckless/key"
 )
 
 type PublicMemberClaim struct {

@@ -5,9 +5,9 @@ import (
 	"sort"
 	"strings"
 
-	"neckless.adviser.com/key"
-	"neckless.adviser.com/member"
-	"neckless.adviser.com/pearl"
+	"github.com/mabels/neckless/key"
+	"github.com/mabels/neckless/member"
+	"github.com/mabels/neckless/pearl"
 )
 
 type Gem struct {

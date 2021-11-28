@@ -12,11 +12,11 @@ import (
 
 	"github.com/spf13/cobra"
 	"gopkg.in/alessio/shellescape.v1"
-	"neckless.adviser.com/key"
-	"neckless.adviser.com/kvpearl"
-	"neckless.adviser.com/member"
-	"neckless.adviser.com/necklace"
-	"neckless.adviser.com/pearl"
+	"github.com/mabels/neckless/key"
+	"github.com/mabels/neckless/kvpearl"
+	"github.com/mabels/neckless/member"
+	"github.com/mabels/neckless/necklace"
+	"github.com/mabels/neckless/pearl"
 )
 
 // KeyValueLsArgs defines the arguments to the kv ls command

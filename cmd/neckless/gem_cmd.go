@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"neckless.adviser.com/gem"
-	"neckless.adviser.com/member"
-	"neckless.adviser.com/necklace"
-	"neckless.adviser.com/pearl"
+	"github.com/mabels/neckless/gem"
+	"github.com/mabels/neckless/member"
+	"github.com/mabels/neckless/necklace"
+	"github.com/mabels/neckless/pearl"
 )
 
 // GemAddArgs defines arguments for the gem add command

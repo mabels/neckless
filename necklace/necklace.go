@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"neckless.adviser.com/pearl"
+	"github.com/mabels/neckless/pearl"
 )
 
 type jsonClosedNecklace []pearl.JSONPearl

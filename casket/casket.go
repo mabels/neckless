@@ -8,7 +8,7 @@ import (
 	"path"
 	"time"
 
-	"neckless.adviser.com/member"
+	"github.com/mabels/neckless/member"
 )
 
 type CreateArg struct {

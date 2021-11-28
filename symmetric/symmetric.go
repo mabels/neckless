@@ -9,7 +9,7 @@ import (
 	"crypto/sha256"
 
 	"golang.org/x/crypto/chacha20poly1305"
-	"neckless.adviser.com/key"
+	"github.com/mabels/neckless/key"
 )
 
 type KeyAndNonce struct {

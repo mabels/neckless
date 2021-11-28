@@ -10,12 +10,12 @@ import (
 	"strings"
 	"testing"
 
-	"neckless.adviser.com/gem"
-	"neckless.adviser.com/member"
+	"github.com/mabels/neckless/gem"
+	"github.com/mabels/neckless/member"
 )
 
 /*
-NECKLESS="go run neckless.adviser.com/cmd/neckless"
+NECKLESS="go run github.com/mabels/neckless/cmd/neckless"
 rm -f casket.User1.json
 $NECKLESS casket --file casket.User1.json create --person --name "Person.User1"
 $NECKLESS casket --file casket.User1.json create --device --name "Device.User1"

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"neckless.adviser.com/key"
+	"github.com/mabels/neckless/key"
 )
 
 func TestDeEnCryptPubKey(t *testing.T) {

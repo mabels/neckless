@@ -11,9 +11,9 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
-	"neckless.adviser.com/asymmetric"
-	"neckless.adviser.com/key"
-	"neckless.adviser.com/symmetric"
+	"github.com/mabels/neckless/asymmetric"
+	"github.com/mabels/neckless/key"
+	"github.com/mabels/neckless/symmetric"
 )
 
 // PearlClaim is the enhanced structure to the jwt.StandardClaims

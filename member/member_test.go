@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"neckless.adviser.com/key"
+	"github.com/mabels/neckless/key"
 )
 
 func TestMakePrivateMemberEmpty(t *testing.T) {

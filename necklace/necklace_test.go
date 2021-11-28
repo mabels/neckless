@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"neckless.adviser.com/pearl"
+	"github.com/mabels/neckless/pearl"
 )
 
 func TestGetAndOpenEmpty(t *testing.T) {
