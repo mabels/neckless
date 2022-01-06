@@ -4,10 +4,22 @@ before:
 builds:
   - env:
       - CGO_ENABLED=0
+    id: "neckless"
+    ldflags:
+      - "-s -w -X main.Version='$(.Env.VERSION)' -X main.GitCommit=$(.Env.GITCOMMIT)"
     goos:
       - linux
+      - freebsd
       - windows
       - darwin
+    goarch:
+      - arm
+      - amd64
+      - 386
+      - arm64
+    goarm:
+      - 6
+      - 7
     main: ./
     binary: neckless
     tags:
