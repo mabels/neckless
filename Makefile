@@ -5,8 +5,10 @@ GITCOMMIT ?= $(shell git rev-list -1 HEAD)
 all: test build
 
 build:
-	go build -ldflags "-s -w -X main.Version='$(VERSION)' -X main.GitCommit=$(GITCOMMIT)" -o $(BIN_NAME) github.com/mabels/neckless/cmd/neckless
+	goreleaser build --rm-dist
 	$(BIN_NAME) version
+	dist/neckless_linux_amd64/neckless
+	# go build -ldflags "-s -w -X main.Version='$(VERSION)' -X main.GitCommit=$(GITCOMMIT)" -o $(BIN_NAME) github.com/mabels/neckless/cmd/neckless
 
 test:
 	go test github.com/mabels/neckless/key
