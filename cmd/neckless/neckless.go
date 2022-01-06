@@ -1,4 +1,5 @@
-package main
+package neckless
+
 
 import (
 	"bufio"
@@ -217,16 +218,10 @@ func buildArgs(osArgs []string, args *NecklessArgs) (*cobra.Command, error) {
 // 	return a + b
 // }
 
-// GitCommit is injected during compile time
-var GitCommit string
-
-// Version is injected during compile time
-var Version string
-
-func main() {
+func Neckless(gitCommit string, version string) {
 	args := NecklessArgs{
-		GitCommit: GitCommit,
-		Version:   Version,
+		GitCommit: gitCommit,
+		Version:   version,
 		Nio: NecklessIO{
 			in: bufio.NewReader(os.Stdin),
 			out: NecklessOutputs{

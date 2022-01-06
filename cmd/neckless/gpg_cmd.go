@@ -13,7 +13,7 @@ committer Meno Abels <meno.abels@adviser.com> 1591382918 +0200
 cleanup for publish
 */
 
-package main
+package neckless
 
 import (
 	"bytes"
