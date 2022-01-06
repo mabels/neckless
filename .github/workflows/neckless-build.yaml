@@ -10,7 +10,7 @@ jobs:
         include:
           - platform: ubuntu-latest
 
-    name: Build Go ${{ matrix.go }} ${{ join(matrix.platform, ',') }} neckless
+    name: Build ${{ join(matrix.platform, ',') }} neckless
     steps:
       - uses: actions/checkout@v2
 
