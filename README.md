@@ -1,6 +1,6 @@
 # neckless
 
-![](https://github.com/mabels/neckless/workflows/go-build-and-test/badge.svg)
+[![.github/workflows/neckless-build.yaml](https://github.com/mabels/neckless/actions/workflows/neckless-build.yaml/badge.svg)](https://github.com/mabels/neckless/actions/workflows/neckless-build.yaml)
 
 A Tool to Inject Gem/Secrets in a Running CI/CD Pipeline
 

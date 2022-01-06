@@ -1,6 +1,8 @@
 name: go-build-neckless
 
 on:
+  pull_request:
+  push:
 
 jobs:
   build:
