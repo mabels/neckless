@@ -7,9 +7,9 @@ builds:
     id: "neckless"
     ldflags:
       - "-s -w -X main.Version='$(.Env.VERSION)' -X main.GitCommit=$(.Env.GITCOMMIT)"
+#      - freebsd
     goos:
       - linux
-      - freebsd
       - windows
       - darwin
     goarch:
