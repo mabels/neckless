@@ -1,4 +1,5 @@
-BIN_NAME ?= ./dist/neckless_$(shell uname -s | tr 'A-Z' 'a-z')_$(shell uname -m | sed 's/x86_64/amd64/'| sed 's/aarch64/arm64/')/neckless
+ARCH_DIR ?= ./dist/neckless_$(shell uname -s | tr 'A-Z' 'a-z')_$(shell uname -m | sed 's/x86_64/amd64/'| sed 's/aarch64/arm64/')
+BIN_NAME ?= $(ARCH_DIR)/neckless
 VERSION ?= dev
 GITCOMMIT ?= $(shell git rev-list -1 HEAD)
 INSTALL_DIR ?= /usr/local/bin
@@ -16,9 +17,17 @@ version: $(BIN_NAME)
 install: $(BIN_NAME)
 	cp $(BIN_NAME) $(INSTALL_DIR)
 
+plain: $(ARCH_DIR) neckless version
+
+$(ARCH_DIR):
+	mkdir -p $(ARCH_DIR)
+
 neckless:
-	go build -ldflags "-s -w -X main.Version='$(VERSION)' -X main.GitCommit=$(GITCOMMIT)" -o $(BIN_NAME) github.com/mabels/neckless/cmd/neckless
-	./neckless version
+	go build -o $(BIN_NAME) -ldflags "-s -w -X main.Version='$(VERSION)' -X main.GitCommit=$(GITCOMMIT)"  github.com/mabels/neckless
+	cp $(BIN_NAME) ./neckless
+
+clean:
+	rm -rf ./neckless ./dist
 
 test:
 	go test github.com/mabels/neckless/key
