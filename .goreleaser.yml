@@ -6,7 +6,7 @@ builds:
       - CGO_ENABLED=0
     id: "neckless"
     ldflags:
-      - "-s -w -X main.Version='$(.Env.VERSION)' -X main.GitCommit=$(.Env.GITCOMMIT)"
+      - "-s -w -X main.Version='{{.Version}}' -X main.GitCommit={{.Commit}}"
 #      - freebsd
     goos:
       - linux

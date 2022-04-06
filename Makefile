@@ -1,15 +1,24 @@
-BIN_NAME ?= ./neckless
+BIN_NAME ?= ./dist/neckless_$(shell uname -s | tr 'A-Z' 'a-z')_$(shell uname -m | sed 's/x86_64/amd64/'| sed 's/aarch64/arm64/')/neckless
 VERSION ?= dev
 GITCOMMIT ?= $(shell git rev-list -1 HEAD)
+INSTALL_DIR ?= /usr/local/bin
 
 all: test build
 
-build:
+build: $(BIN_NAME) version
+
+$(BIN_NAME): .goreleaser.yml
 	goreleaser build --rm-dist
-	dist/neckless_linux_amd64/$(BIN_NAME) version
+
+version: $(BIN_NAME)
+	$(BIN_NAME) version	
+
+install: $(BIN_NAME)
+	cp $(BIN_NAME) $(INSTALL_DIR)
 
 neckless:
 	go build -ldflags "-s -w -X main.Version='$(VERSION)' -X main.GitCommit=$(GITCOMMIT)" -o $(BIN_NAME) github.com/mabels/neckless/cmd/neckless
+	./neckless version
 
 test:
 	go test github.com/mabels/neckless/key
