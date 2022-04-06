@@ -85,8 +85,9 @@ async function main() {
 	    break;
 	}
     }
+    core.info(`Fetch neckless choosen cpu [${params.cpu}][${process.arch}]`)
     const plainVersion = params.version.replace(/^v/, '');
-    const necklessUrl = `${params.url}/${params.version}/${params.filename}_${plainVersion}_${params.os}${params.suffix}`;
+    const necklessUrl = `${params.url}/${params.version}/${params.filename}_${plainVersion}_${params.os}_${params.cpu}${params.suffix}`;
     core.info(`Fetch neckless from:[${necklessUrl}]`)
     const necklessBin = await download(necklessUrl, 0);
     const necklessBinDir = path.join(getTempDirectory(), "neckless-bin");
