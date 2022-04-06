@@ -9160,7 +9160,8 @@ async function main() {
     });
     // await fs.chmod(necklessFname, 0o755);
     core.exportVariable("NECKLESS_URL", necklessUrl);
-    core.exportVariable("NECKLESS_FNAME", path.join(necklessBinDir, "neckless"));
+    const necklessFname = path.join(necklessBinDir, "neckless");
+    core.exportVariable("NECKLESS_FNAME", necklessFname);
     core.addPath(necklessBinDir);
     await fs.unlink(necklessFnameTar);
     core.info(`Installed neckless into:[${necklessFname}]`)
