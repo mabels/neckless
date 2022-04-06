@@ -1,4 +1,4 @@
-BIN_NAME ?= "./neckless"
+BIN_NAME ?= ./neckless
 VERSION ?= dev
 GITCOMMIT ?= $(shell git rev-list -1 HEAD)
 
@@ -6,8 +6,7 @@ all: test build
 
 build:
 	goreleaser build --rm-dist
-	$(BIN_NAME) version
-	dist/neckless_linux_amd64/neckless
+	dist/neckless_linux_amd64/$(BIN_NAME) version
 
 neckless:
 	go build -ldflags "-s -w -X main.Version='$(VERSION)' -X main.GitCommit=$(GITCOMMIT)" -o $(BIN_NAME) github.com/mabels/neckless/cmd/neckless
