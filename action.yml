@@ -1,26 +1,28 @@
 name: 'Setup Neckless'
 description: 'Github Action provides the neckless tool'
 inputs:
-  version:  # id of input
+  version:
     description: 'the version of neckless'
     required: false
-    default: 'v0.1.7'
-  url:  # id of input
+    default: 'v0.1.12'
+  url: 
     description: 'base url to download'
     required: false
     default: 'https://github.com/mabels/neckless/releases/download'
   filename:
     description: 'filename of neckless'
     required: false
-    default: 'default.neckless'
+    default: 'neckless'
   os:
     description: 'os of neckless'
     required: false
-    default: 'linux'
+  suffix:
+    description: 'suffix of neckless'
+    required: false
+    default: '.tar.gz'
   cpu:
     description: 'cpu of neckless'
     required: false
-    default: 'amd64'
 #outputs:
 #  tools: # id of output
 #    description: 'tools are ready'

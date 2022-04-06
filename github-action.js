@@ -5,6 +5,7 @@ const fs = require("fs").promises;
 const path = require("path");
 const http = require("http");
 const https = require("https");
+const tar = require("tar");
 const { ok } = require("assert");
 
 function download(url, cnt) {
@@ -51,48 +52,60 @@ function getTempDirectory() {
 
 async function main() {
   try {
-    const version = core.getInput("version");
-    const url = core.getInput("url");
-    const filename = core.getInput("filename");
-    let os = core.getInput("os");
-    let cpu = core.getInput("cpu");
-    switch (process.platform) {
-      case "darwin":
-        os = "mac";
-        cpu = undefined;
-        break;
-      case "linux":
-        os = "linux";
-        switch (process.arch) {
-          case "x64":
-            cpu = "amd64";
-            break;
-          case "arm":
-            cpu = "arm-v7";
-            break;
-          case "arm64":
-            cpu = "arm-v8";
-            break;
-        }
-        break;
+    const params = {
+	    version: core.getInput("version"),
+	    url: core.getInput("url"),
+	    filename: core.getInput("filename"),
+	    os: core.getInput("os"), // no default
+	    suffix: core.getInput("suffix"),
+	    cpu: core.getInput("cpu") // no default
+    };
+    if (params.os === "") {
+	    switch (process.platform) {
+	      case "darwin":
+		params.os = "Darwin";
+		break;
+	      case "linux":
+		params.os = "Linux";
+	    }
+     }
+     if (params.cpu === "") {
+	switch (process.arch) {
+	  case "i386":
+	    params.cpu = "i386";
+	    break;
+	  case "x64":
+	    params.cpu = "x86_64";
+	    break;
+	  case "arm":
+	    params.cpu = "arm7";
+	    break;
+	  case "arm64":
+	    params.cpu = "arm64";
+	    break;
+	}
     }
-    let necklessUrl = `${url}/${version}/${filename}-${os}`;
-    if (cpu) {
-      necklessUrl = `${necklessUrl}-${cpu}`;
-    }
+    const plainVersion = version.replace(/^v/, '');
+    const necklessUrl = `${url}/${params.version}/${params.filename}_${plainVersion}_${params.os}${params.suffix}`;
     core.info(`Fetch neckless from:[${necklessUrl}]`)
     const necklessBin = await download(necklessUrl, 0);
-    const dir = path.join(getTempDirectory(), "neckless-bin");
-    await fs.mkdir(dir, {
+    const necklessBinDir = path.join(getTempDirectory(), "neckless-bin");
+    // const dir = path.join(getTempDirectory()); // , `neckless${params.suffix}`);
+    await fs.mkdir(necklessBinDir, {
       recursive: true,
       mode: 0o755,
     });
-    const necklessFname = path.join(dir, "neckless");
-    await fs.writeFile(necklessFname, necklessBin);
-    await fs.chmod(necklessFname, 0o755);
+    const necklessFnameTar = path.join(getTempDirectory(), `neckless${params.suffix}`);
+    await fs.writeFile(necklessFnameTar, necklessBin);
+    await tar.x({
+	    file: necklessFnameTar,
+	    cwd: necklessBinDir
+    });
+    // await fs.chmod(necklessFname, 0o755);
     core.exportVariable("NECKLESS_URL", necklessUrl);
-    core.exportVariable("NECKLESS_FNAME", necklessFname);
-    core.addPath(dir);
+    core.exportVariable("NECKLESS_FNAME", path.join(necklessBinDir, "neckless"));
+    core.addPath(necklessBinDir);
+    await fs.unlink(necklessFnameTar);
     core.info(`Installed neckless into:[${necklessFname}]`)
   } catch (e) {
     core.setFailed(e);
