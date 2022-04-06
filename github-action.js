@@ -85,7 +85,7 @@ async function main() {
 	    break;
 	}
     }
-    const plainVersion = version.replace(/^v/, '');
+    const plainVersion = params.version.replace(/^v/, '');
     const necklessUrl = `${url}/${params.version}/${params.filename}_${plainVersion}_${params.os}${params.suffix}`;
     core.info(`Fetch neckless from:[${necklessUrl}]`)
     const necklessBin = await download(necklessUrl, 0);
