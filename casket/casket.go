@@ -139,11 +139,24 @@ func Create(ca CreateArg) (*Casket, *member.PrivateMember, error) {
 // UseCase List casket
 // neckless casket ls
 func Ls(fnames ...string) (*Casket, error) {
-	fname, err := getcasketFilename(fnames)
-	if err != nil {
-		return nil, err
+
+	_, present := os.LookupEnv("NECKLESS_PRIVKEY")
+	if !present {
+		fname, err := getcasketFilename(fnames)
+		if err != nil {
+			return nil, err
+		}
+		return readcasket(fname)
 	}
-	return readcasket(fname)
+	fname := "ENV:NECKLESS_PRIVKEY"
+	return &Casket{
+		CasketAttribute: CasketAttribute{
+			CasketFname: &fname,
+			Created:     time.Time{},
+			Updated:     time.Time{},
+		},
+		Members: map[string]*member.PrivateMember{},
+	}, nil
 }
 
 func (c *Casket) AsPrivateMembers() []*member.PrivateMember {

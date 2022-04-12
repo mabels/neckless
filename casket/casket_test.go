@@ -111,6 +111,20 @@ func TestLs(t *testing.T) {
 	// os.RemoveAll(path.Dir(fname))
 }
 
+func TestLsEnvNecklessPrivkey(t *testing.T) {
+	os.Setenv("NECKLESS_PRIVKEY", "xkxxkxk")
+	ks, err := Ls()
+	if err != nil {
+		t.Error("no error expected", err)
+	}
+	if len(ks.Members) != 0 {
+		t.Error("len members not expected", len(ks.Members))
+	}
+	if *ks.CasketAttribute.CasketFname != "ENV:NECKLESS_PRIVKEY" {
+		t.Error("fname should ENV:NECKLESS_PRIVKEY==", *ks.CasketAttribute.CasketFname)
+	}
+}
+
 func TestRm(t *testing.T) {
 	id := os.Process{}.Pid
 	fname := fmt.Sprintf("./test-%d/casket-test.%d.json", id, id)
