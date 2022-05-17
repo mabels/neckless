@@ -49,6 +49,7 @@ dockers:
   dockerfile: Dockerfile
   goos: linux
   goarch: amd64
+  goarm: ''
   build_flag_templates:
   - --platform=linux/amd64
   - --label=org.opencontainers.image.title={{ .ProjectName }}
@@ -94,7 +95,7 @@ dockers:
   goarch: arm
   goarm: 7
   build_flag_templates:
-  - --platform=linux/arm
+  - --platform=linux/arm/v7
   - --label=org.opencontainers.image.title={{ .ProjectName }}
   - --label=org.opencontainers.image.description={{ .ProjectName }}
   - --label=org.opencontainers.image.url=https://github.com/mabels/{{ .ProjectName }}
