@@ -3,7 +3,6 @@ package casket
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"path"
 	"strings"
 	"testing"
@@ -58,8 +57,6 @@ func TestCreate(t *testing.T) {
 func TestLs(t *testing.T) {
 	id := uuid.New().String()
 	fname := fmt.Sprintf("./test-%s/casket-test.%s.json", id, id)
-	os.RemoveAll(fname)
-	os.RemoveAll(path.Dir(fname))
 	_, t1, err := Create(CreateArg{
 		MemberArg: member.MemberArg{
 			Name:   "Test1",
@@ -113,7 +110,8 @@ func TestLs(t *testing.T) {
 }
 
 func TestLsEnvNecklessPrivkey(t *testing.T) {
-	os.Setenv("NECKLESS_PRIVKEY", "xkxxkxk")
+	// use the os Mock --- if not this has a bad sideeffect
+	t.Setenv("NECKLESS_PRIVKEY", "xkxxkxk")
 	ks, err := Ls()
 	if err != nil {
 		t.Error("no error expected", err)
@@ -129,8 +127,6 @@ func TestLsEnvNecklessPrivkey(t *testing.T) {
 func TestRm(t *testing.T) {
 	id := uuid.New().String()
 	fname := fmt.Sprintf("./test-%s/casket-test.%s.json", id, id)
-	os.RemoveAll(fname)
-	os.RemoveAll(path.Dir(fname))
 	_, t1, err := Create(CreateArg{
 		MemberArg: member.MemberArg{
 			Name:   "Test1",
@@ -150,6 +146,7 @@ func TestRm(t *testing.T) {
 		},
 		Fname: &fname,
 	})
+	// t.Errorf("t1:%v t2:%v", t1.Id, t2.Id)
 	casket, pks, err := Rm(RmArg{
 		Ids:    []string{t1.Id, "doof"},
 		Fname:  &fname,
@@ -159,7 +156,7 @@ func TestRm(t *testing.T) {
 		t.Error("expect no error", err)
 	}
 	if len(pks) != 1 {
-		t.Errorf("not expected pks:%v", pks)
+		t.Errorf("not expected pks:%v:%v", pks, fname)
 	}
 	if len(casket.Members) != 1 {
 		t.Error("not expect len")

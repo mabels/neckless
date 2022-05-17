@@ -139,7 +139,6 @@ func Create(ca CreateArg) (*Casket, *member.PrivateMember, error) {
 // UseCase List casket
 // neckless casket ls
 func Ls(fnames ...string) (*Casket, error) {
-
 	_, present := os.LookupEnv("NECKLESS_PRIVKEY")
 	if !present {
 		fname, err := getcasketFilename(fnames)
