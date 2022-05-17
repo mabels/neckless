@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"github.com/google/uuid"
 
 	"github.com/mabels/neckless/key"
 	"github.com/mabels/neckless/member"
@@ -55,8 +56,8 @@ func TestCreate(t *testing.T) {
 }
 
 func TestLs(t *testing.T) {
-	id := os.Process{}.Pid
-	fname := fmt.Sprintf("./test-%d/casket-test.%d.json", id, id)
+	id := uuid.New().String()
+	fname := fmt.Sprintf("./test-%s/casket-test.%s.json", id, id)
 	os.RemoveAll(fname)
 	os.RemoveAll(path.Dir(fname))
 	_, t1, err := Create(CreateArg{
@@ -126,8 +127,8 @@ func TestLsEnvNecklessPrivkey(t *testing.T) {
 }
 
 func TestRm(t *testing.T) {
-	id := os.Process{}.Pid
-	fname := fmt.Sprintf("./test-%d/casket-test.%d.json", id, id)
+	id := uuid.New().String()
+	fname := fmt.Sprintf("./test-%s/casket-test.%s.json", id, id)
 	os.RemoveAll(fname)
 	os.RemoveAll(path.Dir(fname))
 	_, t1, err := Create(CreateArg{
@@ -158,7 +159,7 @@ func TestRm(t *testing.T) {
 		t.Error("expect no error", err)
 	}
 	if len(pks) != 1 {
-		t.Error("not expected pks")
+		t.Errorf("not expected pks:%v", pks)
 	}
 	if len(casket.Members) != 1 {
 		t.Error("not expect len")
