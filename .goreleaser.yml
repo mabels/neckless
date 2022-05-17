@@ -47,6 +47,8 @@ changelog:
 dockers:
 - image_templates: ["ghcr.io/mabels/{{ .ProjectName }}:{{ .Version }}-amd64"]
   dockerfile: Dockerfile
+  goos: linux
+  goarch: amd64
   build_flag_templates:
   - --platform=linux/amd64
   - --label=org.opencontainers.image.title={{ .ProjectName }}
@@ -71,8 +73,10 @@ dockers:
 #  - --label=org.opencontainers.image.revision={{ .FullCommit }}
 #  - --label=org.opencontainers.image.licenses=APL2
 #
-- image_templates: ["ghcr.io/mabels/{{ .ProjectName }}:{{ .Version }}-arm64v8"]
+- image_templates: ["ghcr.io/mabels/{{ .ProjectName }}:{{ .Version }}-arm64"]
   dockerfile: Dockerfile
+  goos: linux
+  goarch: arm64
   build_flag_templates:
   - --platform=linux/arm64
   - --label=org.opencontainers.image.title={{ .ProjectName }}
@@ -84,8 +88,11 @@ dockers:
   - --label=org.opencontainers.image.revision={{ .FullCommit }}
   - --label=org.opencontainers.image.licenses=APL2
 
-- image_templates: ["ghcr.io/mabels/{{ .ProjectName }}:{{ .Version }}-armv7"]
+- image_templates: ["ghcr.io/mabels/{{ .ProjectName }}:{{ .Version }}-arm"]
   dockerfile: Dockerfile
+  goos: linux
+  goarch: arm
+  goarm: 7
   build_flag_templates:
   - --platform=linux/arm
   - --label=org.opencontainers.image.title={{ .ProjectName }}
