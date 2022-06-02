@@ -41,7 +41,7 @@ func asMatch(val string) (*regexp.Regexp, error) {
 	}
 }
 
-var isKeyValue = regexp.MustCompile(`^([^=@]+)([=@])(.*)$`)
+var isKeyValue = regexp.MustCompile(`(?s)^([^=@]+)([=@])(.*)$`)
 
 // func processResolv(toResolv string, key string, value string) (string, *string, error) {
 // 	if toResolv == "@" {
@@ -97,7 +97,7 @@ func isValue(isAt string, value string) *string {
 func parseComma(arg string) (*KVParsed, error) {
 	split := isKeyValue.FindStringSubmatch(arg)
 	if len(split) != 4 {
-		return nil, errors.New("found no key value")
+		return nil, fmt.Errorf("found no key value:%s:%d", arg, len(split))
 	}
 	commas := tagstring2Array(split[3])
 	value := ""
@@ -200,8 +200,10 @@ func (kvp *KVParsed) ToSetArgs() (*SetArg, error) {
 // Parse the given string to a KVParsed type
 func Parse(arg string) (*KVParsed, error) {
 	parsed, err := parseBrackets(arg)
+	// fmt.Fprintf(os.Stderr, "parseBrackets: %s -> %v\n", arg, err)
 	if err != nil {
 		parsed, err = parseComma(arg)
+		// fmt.Fprintf(os.Stderr, "parseComma: %s -> %v\n", arg, err)
 	}
 	return parsed, err
 }

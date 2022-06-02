@@ -111,3 +111,4 @@ docker_manifests:
   - ghcr.io/mabels/{{ .ProjectName }}:{{ .Version }}-armv7
   - ghcr.io/mabels/{{ .ProjectName }}:{{ .Version }}-arm64v8
 
+

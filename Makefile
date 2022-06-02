@@ -3,12 +3,13 @@ BIN_NAME ?= $(ARCH_DIR)/neckless
 VERSION ?= dev
 GITCOMMIT ?= $(shell git rev-list -1 HEAD)
 INSTALL_DIR ?= /usr/local/bin
+GOS=$(shell find . -name "*.go" -print)
 
 all: test build
 
 build: $(BIN_NAME) version
 
-$(BIN_NAME): .goreleaser.yml
+$(BIN_NAME): .goreleaser.yml $(GOS)
 	goreleaser build --rm-dist
 
 version: $(BIN_NAME)
@@ -22,7 +23,7 @@ plain: $(ARCH_DIR) neckless version
 $(ARCH_DIR):
 	mkdir -p $(ARCH_DIR)
 
-neckless:
+neckless: $(GOS)
 	go build -o $(BIN_NAME) -ldflags "-s -w -X main.Version='$(VERSION)' -X main.GitCommit=$(GITCOMMIT)"  github.com/mabels/neckless
 	cp $(BIN_NAME) ./neckless
 

@@ -1,6 +1,7 @@
 package neckless
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -10,25 +11,29 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/spf13/cobra"
-	"gopkg.in/alessio/shellescape.v1"
 	"github.com/mabels/neckless/key"
 	"github.com/mabels/neckless/kvpearl"
 	"github.com/mabels/neckless/member"
 	"github.com/mabels/neckless/necklace"
 	"github.com/mabels/neckless/pearl"
+	"github.com/spf13/cobra"
+	"gopkg.in/alessio/shellescape.v1"
 )
 
 // KeyValueLsArgs defines the arguments to the kv ls command
 type KeyValueLsArgs struct {
-	json       *bool
-	keyValue   *bool
-	shKeyValue *bool
-	ghAddMask  *bool
-	onlyValue  *bool
-	tags       *[]string
-	emptyTag   *bool
-	writeFname string
+	json           *bool
+	keyValue       *bool
+	shKeyValue     *bool
+	shEvalKeyValue *bool
+	ghAddMask      *bool
+	ghEvalAddMask  *bool
+	onlyValue      *bool
+	rawValue       *bool
+	evalValue      *bool
+	tags           *[]string
+	emptyTag       *bool
+	writeFname     string
 }
 
 // KeyValueArgs defines the global arguments
@@ -47,6 +52,7 @@ func toKVreadFile(args []string) ([]*kvpearl.SetArg, []error) {
 	sas := []*kvpearl.SetArg{}
 	for i := range args {
 		kvp, err := kvpearl.Parse(args[i])
+		// fmt.Fprintf(os.Stderr, "KV-3:%s:%v\n", args[i], err)
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -89,8 +95,13 @@ func kvAddCmd(narg *NecklessArgs) *cobra.Command {
 				return flag.ErrHelp
 			}
 			sas, errs := toKVreadFile(args)
-			for i := range errs {
-				fmt.Fprintln(narg.Nio.err.first().buf, errs[i])
+			if len(errs) > 0 {
+				out := make([]string, len(errs))
+				for i := range errs {
+					out[i] = errs[i].Error()
+					// fmt.Printf(">>>>>>:%s\n", out[i])
+				}
+				return errors.New(strings.Join(out, "|"))
 			}
 			kvp := kvpearl.CreateKVPearls().Add()
 			for i := range sas {
@@ -185,6 +196,7 @@ func parseArgs2KVpearl(args []string, write string, tags []string) (kvpearl.MapB
 		if len(m) == 2 {
 			arg := fmt.Sprintf("%s@%s[%s]", m[1], write, strings.Join(tags, ","))
 			sa, err := kvpearl.Parse(arg)
+			// fmt.Fprintf(os.Stderr, "KV-0:%s:%v\n", arg, err)
 			if err != nil {
 				errs = append(errs, err)
 				continue
@@ -192,6 +204,7 @@ func parseArgs2KVpearl(args []string, write string, tags []string) (kvpearl.MapB
 			ret.Add(sa)
 		} else {
 			kvp, err := kvpearl.Parse(args[i])
+			// fmt.Fprintf(os.Stderr, "KV-1:%s:%v\n", args[i], err)
 			if err != nil {
 				errs = append(errs, err)
 				continue
@@ -226,6 +239,17 @@ type FlatKeyValue struct {
 	Key   string
 	Value string
 	Tags  []string
+}
+
+func evalQuote(val string) string {
+	buf := new(bytes.Buffer)
+	enc := json.NewEncoder(buf)
+	enc.SetEscapeHTML(false)
+	enc.Encode(val)
+	out := strings.Trim(buf.String(), "\n")
+	out = strings.ReplaceAll(out, "\n", "\\n")
+	out = strings.ReplaceAll(out, "\r", "\\r")
+	return out
 }
 
 func kvLsCmd(narg *NecklessArgs) *cobra.Command {
@@ -318,6 +342,16 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 						err = merr
 					}
 					fmt.Fprintln(narg.Nio.out.add(&fname).buf, string(jsStr))
+				} else if *narg.Kvs.Ls.evalValue {
+					for i := range outValues {
+						val, merr := runActions(outValues[i].Vals.Value())
+						if merr != nil {
+							return merr
+						}
+						out := narg.Nio.out.add(&fname)
+						fmt.Fprintf(out.buf, "%s\n", evalQuote(val))
+					}
+					// err = nil
 				} else if *narg.Kvs.Ls.onlyValue {
 					for i := range outValues {
 						val, merr := runActions(outValues[i].Vals.Value())
@@ -328,9 +362,19 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 						fmt.Fprintf(out.buf, "%s\n", shellescape.Quote(val))
 					}
 					// err = nil
+				} else if *narg.Kvs.Ls.rawValue {
+					for i := range outValues {
+						val, merr := runActions(outValues[i].Vals.Value())
+						if merr != nil {
+							return merr
+						}
+						out := narg.Nio.out.add(&fname)
+						fmt.Fprintf(out.buf, "%s\n", val)
+					}
+					// err = nil
 				} else {
 					eol := "\n"
-					if *narg.Kvs.Ls.shKeyValue {
+					if *narg.Kvs.Ls.shKeyValue || *narg.Kvs.Ls.shEvalKeyValue {
 						eol = ";\n"
 					}
 					for i := range outValues {
@@ -346,12 +390,19 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 						// 	err = merr
 						// }
 						// fmt.Fprintf(narg.Nio.out.add(&fname).buf, "%s=%s%s", kv.Key, string(v), eol)
-						fmt.Fprintf(narg.Nio.out.add(&fname).buf, "%s=%s%s", kv.Key, shellescape.Quote(val), eol)
-						if *narg.Kvs.Ls.shKeyValue {
+						if *narg.Kvs.Ls.shEvalKeyValue || *narg.Kvs.Ls.ghEvalAddMask {
+							fmt.Fprintf(narg.Nio.out.add(&fname).buf, "%s=%s%s", kv.Key, evalQuote(val), eol)
+						} else {
+							fmt.Fprintf(narg.Nio.out.add(&fname).buf, "%s=%s%s", kv.Key, shellescape.Quote(val), eol)
+						}
+						if *narg.Kvs.Ls.shKeyValue || *narg.Kvs.Ls.shEvalKeyValue {
 							fmt.Fprintf(narg.Nio.out.add(&fname).buf, "export %s%s", kv.Key, eol)
 						}
 						if *narg.Kvs.Ls.ghAddMask {
 							fmt.Fprintf(narg.Nio.out.add(&fname).buf, "echo ::add-mask::%s%s", shellescape.Quote(val), eol)
+						}
+						if *narg.Kvs.Ls.ghEvalAddMask {
+							fmt.Fprintf(narg.Nio.out.add(&fname).buf, "echo ::add-mask::%s%s", evalQuote(val), eol)
 						}
 					}
 				}
@@ -362,11 +413,15 @@ func kvLsCmd(narg *NecklessArgs) *cobra.Command {
 		},
 	}
 	flags := cmd.PersistentFlags()
-	narg.Kvs.Ls.json = flags.Bool("json", false, "select device keys")
-	narg.Kvs.Ls.keyValue = flags.Bool("keyValue", true, "select device keys")
-	narg.Kvs.Ls.onlyValue = flags.Bool("onlyValue", false, "select device keys")
-	narg.Kvs.Ls.shKeyValue = flags.Bool("shKeyValue", false, "select device keys")
-	narg.Kvs.Ls.ghAddMask = flags.Bool("ghAddMask", false, "set Value as github mask")
+	narg.Kvs.Ls.json = flags.Bool("json", false, "out as json")
+	narg.Kvs.Ls.keyValue = flags.Bool("keyValue", true, "output key=value")
+	narg.Kvs.Ls.onlyValue = flags.Bool("onlyValue", false, "single quoted value")
+	narg.Kvs.Ls.evalValue = flags.Bool("evalValue", false, "double quoted value")
+	narg.Kvs.Ls.rawValue = flags.Bool("rawValue", false, "unquoted value")
+	narg.Kvs.Ls.shKeyValue = flags.Bool("shKeyValue", false, "shell quoted key=value")
+	narg.Kvs.Ls.shEvalKeyValue = flags.Bool("shEvalKeyValue", false, "double quoted key=value")
+	narg.Kvs.Ls.ghAddMask = flags.Bool("ghAddMask", false, "output single quoted as github mask")
+	narg.Kvs.Ls.ghEvalAddMask = flags.Bool("ghEvalAddMask", false, "output double quoted as github mask")
 	narg.Kvs.Ls.emptyTag = flags.Bool("emptyTag", false, "add empty to tag list")
 	narg.Kvs.Ls.tags = flags.StringSlice("tag", []string{}, "list of tags to filter")
 	flags.StringVar(&narg.Kvs.Ls.writeFname, "write", "", "name of the file to write to")
