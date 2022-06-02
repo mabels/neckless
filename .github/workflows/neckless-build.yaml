@@ -28,6 +28,7 @@ jobs:
         run: go test -v ./...
 
       - name: Docker login
+        if: startsWith(github.ref, 'refs/tags/v')
         run: echo ${{ secrets.GH_TOKEN }} | docker login ghcr.io -u mabels --password-stdin
 
       - name: Run GoReleaser
