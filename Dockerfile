@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM scratch
 
 COPY ./neckless /usr/local/bin/neckless
 
