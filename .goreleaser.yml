@@ -24,14 +24,17 @@ builds:
     binary: neckless
     tags:
       - release
+
 archives:
+  - id: archive_id
     name_template: >-
       {{ .ProjectName }}_
-      {{ .Version }}_
-      {{ title .Os }}_
+      {{- .Version }}_
+      {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
+      {{- .Arm }}
 
 checksum:
   name_template: 'checksums.txt'
