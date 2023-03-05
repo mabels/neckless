@@ -1,6 +1,4 @@
 const core = require("@actions/core");
-const uuid = require("uuid");
-const { spawn } = require("child_process");
 const fs = require("fs").promises;
 const path = require("path");
 const http = require("http");
