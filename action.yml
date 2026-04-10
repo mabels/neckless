@@ -27,5 +27,5 @@ inputs:
 #  tools: # id of output
 #    description: 'tools are ready'
 runs:
-  using: 'node16'
+  using: 'node24'
   main: 'action/index.js'
