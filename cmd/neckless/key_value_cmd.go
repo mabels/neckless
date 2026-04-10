@@ -6,7 +6,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
@@ -58,7 +57,7 @@ func toKVreadFile(args []string) ([]*kvpearl.SetArg, []error) {
 			continue
 		}
 		kvp, err = kvp.Resolv(func(key string, fparam kvpearl.FuncsAndParam) (*string, error) {
-			c, err := ioutil.ReadFile(fparam.Param)
+			c, err := os.ReadFile(fparam.Param)
 			if err != nil {
 				return nil, err
 			}

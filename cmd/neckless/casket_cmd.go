@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -201,13 +200,13 @@ func casketGetCmd(arg *NecklessArgs) *cobra.Command {
 					out[i] = pkms[i].PrivateKey.Marshal()
 				}
 				if len(arg.Casket.get.PubFile) > 0 {
-					ioutil.WriteFile(arg.Casket.get.PubFile, []byte(strings.Join(out, "\n")), 0644)
+					os.WriteFile(arg.Casket.get.PubFile, []byte(strings.Join(out, "\n")), 0644)
 				} else {
 					fmt.Fprintln(arg.Nio.out.first().buf, strings.Join(out, "\n"))
 				}
 			} else {
 				if len(arg.Casket.get.PubFile) > 0 {
-					ioutil.WriteFile(arg.Casket.get.PubFile, js, 0644)
+					os.WriteFile(arg.Casket.get.PubFile, js, 0644)
 				} else {
 					fmt.Fprintln(arg.Nio.out.first().buf, string(js))
 				}

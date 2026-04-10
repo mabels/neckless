@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -87,7 +86,7 @@ func (no *NecklessOutputs) write(quite ...bool) {
 			if out.Perm == 0000 {
 				out.Perm = 0644
 			}
-			out.Error = ioutil.WriteFile(out.Name, out.buf.Bytes(), out.Perm)
+			out.Error = os.WriteFile(out.Name, out.buf.Bytes(), out.Perm)
 			status = append(status, &out)
 		}
 		out.Size = len(out.buf.Bytes())
@@ -138,6 +137,33 @@ func versionCmd(arg *NecklessArgs) *cobra.Command {
 	}
 }
 
+var sensitiveFlags = []string{"--privkey", "--password", "--key"}
+
+func redactArgs(args []string) []string {
+	out := make([]string, len(args))
+	redactNext := false
+	for i, arg := range args {
+		if redactNext {
+			out[i] = "***"
+			redactNext = false
+			continue
+		}
+		redactNext = false
+		for _, flag := range sensitiveFlags {
+			if arg == flag {
+				redactNext = true
+				break
+			}
+			if strings.HasPrefix(arg, flag+"=") {
+				arg = flag + "=***"
+				break
+			}
+		}
+		out[i] = arg
+	}
+	return out
+}
+
 func buildArgs(osArgs []string, args *NecklessArgs) (*cobra.Command, error) {
 	// fmt.Println(osArgs)
 	// rootFlags := flag.NewFlagSet("neckless", flag.ExitOnError)
@@ -165,12 +191,12 @@ func buildArgs(osArgs []string, args *NecklessArgs) (*cobra.Command, error) {
 	var logF *os.File
 	if found {
 		var err error
-		logF, err = os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		logF, err = os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 		if err != nil {
 			log.Fatalf("error: %v", err)
 		}
 		log.SetOutput(io.Writer(logF))
-		log.Println("Called with=>", osArgs)
+		log.Println("Called with=>", redactArgs(osArgs))
 	}
 	// err = rootCmd.ParseAndRun(context.Background(), osArgs)
 	// // // fmt.Printf(">>>>>", osArgs)

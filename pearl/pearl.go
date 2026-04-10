@@ -1,8 +1,8 @@
 package pearl
 
 import (
-	"bytes"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -133,7 +133,7 @@ func checkFingerprint(p *OpenPearl) (*OpenPearl, error) {
 	if err != nil {
 		return nil, err
 	}
-	if bytes.Compare(p.Closed.FingerPrint, sum) != 0 {
+	if subtle.ConstantTimeCompare(p.Closed.FingerPrint, sum) != 1 {
 		return nil, errors.New("checksum missmatch")
 	}
 	return p, nil
@@ -276,6 +276,9 @@ func (pea *Pearl) tryOpenWithKey(pk *key.PrivateKey) (*key.RawKey, *jwt.Token, *
 		sharedKey := asymmetric.CreateShared(&pk.Key.Raw, &creatorPubKey.Key.Raw)
 		token, err := jwt.ParseWithClaims(string(pea.Owners.Tokens[i]), &claims,
 			func(token *jwt.Token) (interface{}, error) {
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+				}
 				return sharedKey[:], nil
 			})
 		// fmt.Printf("Open:%x:%x=>%x:%s\n", pk.Key.Raw, creatorPubKey, sharedKey, err)

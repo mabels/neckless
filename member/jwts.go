@@ -1,6 +1,7 @@
 package member
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -33,6 +34,9 @@ func MakePublicMemberJWT(signer *key.PrivateKey, pm *PublicMember) (string, erro
 func VerifyJWT(pk *key.PrivateKey, tknStr string) (*PublicMemberClaim, *jwt.Token, error) {
 	claims := PublicMemberClaim{}
 	token, err := jwt.ParseWithClaims(tknStr, &claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
 		return pk.Key.Raw[:], nil
 	})
 	return &claims, token, err

@@ -3,7 +3,7 @@ package necklace
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/mabels/neckless/pearl"
@@ -20,7 +20,7 @@ type Necklace struct {
 // Read reads a Necklace
 func Read(fname string) (Necklace, []error) {
 	warns := []error{}
-	dat, err := ioutil.ReadFile(fname)
+	dat, err := os.ReadFile(fname)
 	nl := Necklace{
 		FileName: fname,
 		Pearls:   []*pearl.Pearl{},
@@ -100,7 +100,7 @@ func (nl *Necklace) Save(fnames ...string) ([]byte, error) {
 		return nil, err
 	}
 	if len(fnames) > 0 {
-		err := ioutil.WriteFile(fnames[0], jsStr, 0644)
+		err := os.WriteFile(fnames[0], jsStr, 0644)
 		if err != nil {
 			return nil, err
 		}

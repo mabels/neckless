@@ -2,8 +2,6 @@ package casket
 
 import (
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"time"
@@ -49,7 +47,7 @@ func readcasket(fname string) (*Casket, error) {
 		},
 		Members: map[string]member.JsonPrivateMember{},
 	}
-	dat, err := ioutil.ReadFile(fname)
+	dat, err := os.ReadFile(fname)
 	if err == nil {
 		err = json.Unmarshal(dat, &jsonCasket)
 		if err != nil {
@@ -97,13 +95,28 @@ func writecasket(casket *Casket) error {
 	if err != nil {
 		return err
 	}
-	tmp := path.Join(path.Dir(*casket.CasketFname),
-		fmt.Sprintf(".%d.%s", os.Process{}.Pid, path.Base(*casket.CasketFname)))
-	err = ioutil.WriteFile(tmp, jsstr, 0600)
+	tmpf, err := os.CreateTemp(path.Dir(*casket.CasketFname), ".casket-*.tmp")
 	if err != nil {
 		return err
 	}
-	os.Rename(tmp, *casket.CasketFname)
+	tmp := tmpf.Name()
+	if err = os.Chmod(tmp, 0600); err != nil {
+		os.Remove(tmp)
+		return err
+	}
+	if _, err = tmpf.Write(jsstr); err != nil {
+		tmpf.Close()
+		os.Remove(tmp)
+		return err
+	}
+	if err = tmpf.Close(); err != nil {
+		os.Remove(tmp)
+		return err
+	}
+	if err = os.Rename(tmp, *casket.CasketFname); err != nil {
+		os.Remove(tmp)
+		return err
+	}
 	return nil
 }
 

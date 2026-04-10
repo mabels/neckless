@@ -19,7 +19,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -92,14 +92,14 @@ func gpgRunE(args *NecklessArgs) func(_ *cobra.Command, arg []string) error {
 			}
 			cmd := exec.Command(args.Gpg.GpgCli, opt...)
 			if len(arg) == 0 {
-				data, _ := ioutil.ReadAll(os.Stdin)
+				data, _ := io.ReadAll(os.Stdin)
 				cmd.Stdin = strings.NewReader(string(data))
 			}
 			return runCmd(cmd, args)
 		}
 		// func(_ *cobra.Command, arg []string) error {
 		if len(args.Gpg.Verify) > 0 {
-			content, err := ioutil.ReadFile(args.Gpg.Verify)
+			content, err := os.ReadFile(args.Gpg.Verify)
 			if err != nil {
 				return err
 			}
@@ -111,7 +111,7 @@ func gpgRunE(args *NecklessArgs) func(_ *cobra.Command, arg []string) error {
 					fmt.Sprintf("--status-fd=%d", args.Gpg.StatusFd),
 					"--verify", args.Gpg.Verify, arg[0])
 				if arg[0] == "-" {
-					data, _ := ioutil.ReadAll(os.Stdin)
+					data, _ := io.ReadAll(os.Stdin)
 					cmd.Stdin = strings.NewReader(string(data))
 				}
 				return runCmd(cmd, args)

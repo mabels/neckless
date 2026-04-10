@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -189,7 +188,7 @@ func createTestData(t *testing.T) {
 	_, _ = cmdNeckless(t, "casket --file casket.User1.json create --device --name Device.User1")
 	_, _ = cmdNeckless(t, "casket --file casket.User1.json get --outFile device1.pub.json --device")
 	os.Remove("neckless.shared.json")
-	dev1, _ := ioutil.ReadFile("device1.pub.json")
+	dev1, _ := os.ReadFile("device1.pub.json")
 	nio, _ := cmdNeckless(t, "gem --casketFile casket.User1.json --file neckless.shared.json add", string(dev1))
 	fromStdin := nio.out.first().buf.String()
 	nio, _ = cmdNeckless(t, "gem --casketFile casket.User1.json --file neckless.shared.json add --pubFile device1.pub.json")

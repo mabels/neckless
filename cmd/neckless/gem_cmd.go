@@ -3,7 +3,7 @@ package neckless
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
@@ -112,9 +112,9 @@ func gemAddCmd(arg *NecklessArgs) *cobra.Command {
 			}
 			var jsStr []byte
 			if strings.Compare(arg.Gems.Add.PubFile, "stdin") == 0 {
-				jsStr, err = ioutil.ReadAll(arg.Nio.in)
+				jsStr, err = io.ReadAll(arg.Nio.in)
 			} else {
-				jsStr, err = ioutil.ReadFile(arg.Gems.Add.PubFile)
+				jsStr, err = os.ReadFile(arg.Gems.Add.PubFile)
 			}
 			if err != nil {
 				return err
